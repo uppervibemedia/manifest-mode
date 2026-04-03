@@ -86,7 +86,16 @@ export function generateAnalysis(form) {
   if (financial_score < 70) habit_upgrades.push("Review and track your finances every Sunday — money flows where attention goes");
   if (mindset_score < 70) habit_upgrades.push("Read or listen to 20 minutes of growth content daily to rewire your thinking");
   if (confidence_score < 70) habit_upgrades.push("Take one uncomfortable action every day that your future self would be proud of");
-  while (habit_upgrades.length < 3) habit_upgrades.push("Spend 10 minutes each night reviewing what you accomplished and what's next");
+  const fallbackHabits = [
+    "Spend 10 minutes each night reviewing what you accomplished and what's next",
+    "Do a 5-minute morning intention-setting practice before checking your phone",
+    "Drink 2L of water daily and prioritize 7–8 hours of quality sleep",
+  ];
+  let fi = 0;
+  while (habit_upgrades.length < 3 && fi < fallbackHabits.length) {
+    if (!habit_upgrades.includes(fallbackHabits[fi])) habit_upgrades.push(fallbackHabits[fi]);
+    fi++;
+  }
 
   const affirmations = [
     "I am becoming the version of me that naturally attracts the life I'm building toward",

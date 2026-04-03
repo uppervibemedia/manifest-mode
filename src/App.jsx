@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
 import Progress from './pages/Progress';
 import RealityShiftTracker from './pages/RealityShiftTracker';
+import FutureSelfCoach from './pages/FutureSelfCoach';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/progress" element={<Progress />} />
       <Route path="/tracker" element={<RealityShiftTracker />} />
+      <Route path="/coach" element={<FutureSelfCoach />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

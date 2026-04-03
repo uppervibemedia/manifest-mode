@@ -279,9 +279,23 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
+        {/* Future Self Coach CTA */}
+        <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
+          onClick={() => navigate("/coach")}
+          className="w-full glass-card glow-gold rounded-2xl p-4 mb-3 border border-primary/25 flex items-center gap-4 hover:border-primary/50 transition-colors text-left">
+          <div className="w-11 h-11 gold-gradient rounded-xl flex items-center justify-center shrink-0 text-background">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">Future Self Coach</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Get personalized AI coaching now</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </motion.button>
+
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
+          <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
             onClick={() => navigate("/blueprint")}
             className="glass-card rounded-xl p-4 text-left hover:border-primary/30 transition-colors border border-border">
             <span className="text-2xl block mb-2">🧬</span>
@@ -289,7 +303,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground mt-0.5">Your blueprint</p>
           </motion.button>
 
-          <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}
             onClick={() => navigate("/journal")}
             className="glass-card rounded-xl p-4 text-left hover:border-primary/30 transition-colors border border-border">
             <span className="text-2xl block mb-2">📝</span>

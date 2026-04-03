@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { generateAnalysis } from "@/lib/aiEngine";
+import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 
 const INCOME_RANGES = ["Under $30k", "$30k–$60k", "$60k–$100k", "$100k–$200k", "$200k–$500k", "$500k+"];
 
@@ -120,10 +121,23 @@ export default function Assessment() {
       });
     }
 
-    // Mark onboarding complete
+    // Mark onboarding complete + award points for score improvement
     const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
     if (profiles[0]) {
-      await base44.entities.UserProfile.update(profiles[0].id, { onboarding_completed: true });
+      const prevScores = await base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 2);
+      const prevScore = prevScores[1]?.overall_score;
+      let bonusPoints = 0;
+      if (!prevScore || analysis.overall_score > prevScore) bonusPoints = POINT_VALUES.SCORE_IMPROVEMENT;
+      const currentPoints = profiles[0].alignment_points || 0;
+      const newPoints = currentPoints + bonusPoints;
+      await base44.entities.UserProfile.update(profiles[0].id, {
+        onboarding_completed: true,
+        ...(bonusPoints > 0 ? {
+          alignment_points: newPoints,
+          identity_level: getLevelForPoints(newPoints).level,
+          score_improvements: (profiles[0].score_improvements || 0) + 1,
+        } : {}),
+      });
     }
 
     navigate("/score");

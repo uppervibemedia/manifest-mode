@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Sparkles, BarChart3, List, Loader2, Trash2, Settings } from "lucide-react";
+import { Plus, Sparkles, BarChart3, List, Loader2, Trash2 } from "lucide-react";
+import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
 import HabitCard from "@/components/habits/HabitCard";
 import HabitStreakBanner from "@/components/habits/HabitStreakBanner";
@@ -148,6 +149,22 @@ export default function HabitTracker() {
       setHabits(prev => prev.map(h => h.id === habit.id
         ? { ...h, streak_count: newStreak, last_completed_date: today, total_completions: (h.total_completions || 0) + 1 }
         : h));
+
+      // Award alignment points
+      const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
+      if (profiles[0]) {
+        const updatedHabits = habits.map(h => h.id === habit.id ? { ...h, streak_count: newStreak } : h);
+        const newCompletedToday = updatedHabits.filter(h => h.id === habit.id ? true : todayLogs.some(l => l.habit_id === h.id && l.completed)).length;
+        const allDone = newCompletedToday >= habits.length;
+        let pts = POINT_VALUES.HABIT_COMPLETE + (allDone ? POINT_VALUES.ALL_HABITS_COMPLETE : 0);
+        const currentPoints = profiles[0].alignment_points || 0;
+        const newPoints = currentPoints + pts;
+        await base44.entities.UserProfile.update(profiles[0].id, {
+          alignment_points: newPoints,
+          identity_level: getLevelForPoints(newPoints).level,
+          total_habits_completed: (profiles[0].total_habits_completed || 0) + 1,
+        });
+      }
     }
   };
 

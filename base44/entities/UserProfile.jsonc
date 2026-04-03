@@ -55,6 +55,39 @@
     },
     "last_checkin_date": {
       "type": "string"
+    },
+    "alignment_points": {
+      "type": "number",
+      "default": 0
+    },
+    "identity_level": {
+      "type": "number",
+      "default": 0
+    },
+    "total_habits_completed": {
+      "type": "number",
+      "default": 0
+    },
+    "total_checkins": {
+      "type": "number",
+      "default": 0
+    },
+    "total_journal_entries": {
+      "type": "number",
+      "default": 0
+    },
+    "score_improvements": {
+      "type": "number",
+      "default": 0
+    },
+    "earned_badge_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_points_awarded_date": {
+      "type": "string"
     }
   },
   "required": []

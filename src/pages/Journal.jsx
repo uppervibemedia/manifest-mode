@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Plus, ChevronLeft, Loader2, BookOpen } from "lucide-react";
+import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
 
@@ -52,6 +53,19 @@ export default function Journal() {
       entry_type: form.prompt_question ? "guided" : "freeform",
     });
     setEntries(prev => [entry, ...prev]);
+
+    // Award alignment points
+    const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
+    if (profiles[0]) {
+      const currentPoints = profiles[0].alignment_points || 0;
+      const newPoints = currentPoints + POINT_VALUES.JOURNAL_ENTRY;
+      await base44.entities.UserProfile.update(profiles[0].id, {
+        alignment_points: newPoints,
+        identity_level: getLevelForPoints(newPoints).level,
+        total_journal_entries: (profiles[0].total_journal_entries || 0) + 1,
+      });
+    }
+
     setShowNew(false);
     setSaving(false);
   };

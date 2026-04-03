@@ -7,6 +7,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import AccountabilityBanner from "@/components/notifications/AccountabilityBanner";
 import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
 import DashboardHabitWidget from "@/components/habits/DashboardHabitWidget";
+import { getLevelForPoints } from "@/lib/identityEngine";
 
 const MOTIVATIONS = [
   "Your future responds to who you become daily.",
@@ -94,9 +95,21 @@ export default function Dashboard() {
               {user?.full_name?.split(" ")[0] || "Welcome"} ✦
             </h1>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
-            <Flame className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-semibold text-primary">{profile?.streak_count || 0} day streak</span>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-full">
+              <Flame className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary">{profile?.streak_count || 0} day streak</span>
+            </div>
+            {profile && (() => {
+              const lvl = getLevelForPoints(profile.alignment_points || 0);
+              return (
+                <button onClick={() => navigate("/profile")}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full border text-[10px] font-semibold"
+                  style={{ borderColor: lvl.color + "40", color: lvl.color, background: lvl.color + "12" }}>
+                  <span>{lvl.symbol}</span> {lvl.title}
+                </button>
+              );
+            })()}
           </div>
         </div>
 

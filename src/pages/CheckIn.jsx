@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Check, ChevronLeft, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import { awardPoints, POINT_VALUES } from "@/lib/identityEngine";
 
 const MOODS = [
   { value: 1, emoji: "😔", label: "Low" },
@@ -54,7 +55,7 @@ export default function CheckIn() {
       checkin_date: today,
     });
 
-    // Update streak
+    // Update streak + award points
     const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
     if (profiles[0]) {
       const yesterday = new Date();
@@ -62,9 +63,20 @@ export default function CheckIn() {
       const yDate = yesterday.toISOString().split("T")[0];
       const lastDate = profiles[0].last_checkin_date;
       const newStreak = lastDate === yDate ? (profiles[0].streak_count || 0) + 1 : 1;
+      const totalCheckins = (profiles[0].total_checkins || 0) + 1;
+      const currentPoints = profiles[0].alignment_points || 0;
+      let bonusPoints = POINT_VALUES.DAILY_CHECKIN;
+      if (newStreak === 7) bonusPoints += POINT_VALUES.STREAK_7;
+      if (newStreak === 14) bonusPoints += POINT_VALUES.STREAK_14;
+      if (newStreak === 30) bonusPoints += POINT_VALUES.STREAK_30;
+      const newPoints = currentPoints + bonusPoints;
+      const { getLevelForPoints } = await import("@/lib/identityEngine");
       await base44.entities.UserProfile.update(profiles[0].id, {
         streak_count: newStreak,
         last_checkin_date: today,
+        total_checkins: totalCheckins,
+        alignment_points: newPoints,
+        identity_level: getLevelForPoints(newPoints).level,
       });
     }
     navigate("/");

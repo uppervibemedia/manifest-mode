@@ -1,0 +1,61 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "age": {
+      "type": "number"
+    },
+    "gender": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "goal_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "primary_focus": {
+      "type": "string"
+    },
+    "current_lifestyle_summary": {
+      "type": "string"
+    },
+    "biggest_challenge": {
+      "type": "string"
+    },
+    "future_self_statement": {
+      "type": "string"
+    },
+    "subscription_tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "supporter",
+        "premium"
+      ],
+      "default": "free"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "notifications_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "streak_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_checkin_date": {
+      "type": "string"
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,38 @@
+{
+  "name": "DailyCheckIn",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "checkin_date": {
+      "type": "string"
+    },
+    "mood": {
+      "type": "number"
+    },
+    "energy": {
+      "type": "number"
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "discipline": {
+      "type": "number"
+    },
+    "gratitude": {
+      "type": "string"
+    },
+    "progress_made": {
+      "type": "string"
+    },
+    "plan_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "journal_entry": {
+      "type": "string"
+    }
+  },
+  "required": []
+}

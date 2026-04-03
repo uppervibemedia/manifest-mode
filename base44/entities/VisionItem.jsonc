@@ -1,0 +1,48 @@
+{
+  "name": "VisionItem",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "wealth",
+        "body",
+        "love",
+        "business",
+        "home",
+        "lifestyle",
+        "spiritual"
+      ]
+    },
+    "emotional_goal": {
+      "type": "string"
+    },
+    "desired_timeline": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_priority": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title",
+    "category"
+  ]
+}

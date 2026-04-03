@@ -1,0 +1,61 @@
+{
+  "name": "Assessment",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "income_range": {
+      "type": "string"
+    },
+    "energy_level": {
+      "type": "number"
+    },
+    "confidence_level": {
+      "type": "number"
+    },
+    "discipline_level": {
+      "type": "number"
+    },
+    "sleep_quality": {
+      "type": "number"
+    },
+    "stress_level": {
+      "type": "number"
+    },
+    "productivity_level": {
+      "type": "number"
+    },
+    "fitness_habits": {
+      "type": "number"
+    },
+    "financial_habits": {
+      "type": "number"
+    },
+    "emotional_state": {
+      "type": "number"
+    },
+    "self_image": {
+      "type": "number"
+    },
+    "consistency_level": {
+      "type": "number"
+    },
+    "limiting_beliefs": {
+      "type": "string"
+    },
+    "biggest_obstacles": {
+      "type": "string"
+    },
+    "goal_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "journal_notes": {
+      "type": "string"
+    }
+  },
+  "required": []
+}

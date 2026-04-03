@@ -1,0 +1,31 @@
+{
+  "name": "Affirmation",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "text": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "ai",
+        "manual",
+        "system"
+      ],
+      "default": "ai"
+    },
+    "is_favorited": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "text"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "name": "AIAnalysis",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "assessment_id": {
+      "type": "string"
+    },
+    "score_id": {
+      "type": "string"
+    },
+    "strengths_summary": {
+      "type": "string"
+    },
+    "misalignment_summary": {
+      "type": "string"
+    },
+    "limiting_beliefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "replacement_beliefs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "habit_upgrades": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "daily_focus": {
+      "type": "string"
+    },
+    "future_self_statement": {
+      "type": "string"
+    },
+    "affirmations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "action_plan": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "identity_shifts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": []
+}

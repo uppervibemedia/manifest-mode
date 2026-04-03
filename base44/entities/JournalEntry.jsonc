@@ -1,0 +1,31 @@
+{
+  "name": "JournalEntry",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "prompt_question": {
+      "type": "string"
+    },
+    "response_text": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "guided",
+        "freeform",
+        "checkin"
+      ],
+      "default": "guided"
+    }
+  },
+  "required": []
+}

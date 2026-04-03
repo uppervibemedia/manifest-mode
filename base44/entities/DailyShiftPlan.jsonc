@@ -1,0 +1,44 @@
+{
+  "name": "DailyShiftPlan",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "plan_date": {
+      "type": "string"
+    },
+    "habits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "mindset_focus": {
+      "type": "string"
+    },
+    "affirmation": {
+      "type": "string"
+    },
+    "action_challenge": {
+      "type": "string"
+    },
+    "visualization_prompt": {
+      "type": "string"
+    },
+    "reflection_prompt": {
+      "type": "string"
+    },
+    "completed_habits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": []
+}

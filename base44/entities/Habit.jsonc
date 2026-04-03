@@ -1,0 +1,76 @@
+{
+  "name": "Habit",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "wealth",
+        "body",
+        "love",
+        "business",
+        "home",
+        "lifestyle",
+        "spiritual",
+        "mindset",
+        "discipline"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "is_priority": {
+      "type": "boolean",
+      "default": false
+    },
+    "reminder_time": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "blueprint",
+        "manual",
+        "ai"
+      ],
+      "default": "manual"
+    },
+    "blueprint_area": {
+      "type": "string"
+    },
+    "alignment_impact": {
+      "type": "string",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "medium"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "streak_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_completed_date": {
+      "type": "string"
+    },
+    "total_completions": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "title",
+    "category"
+  ]
+}

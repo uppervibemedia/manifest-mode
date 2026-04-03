@@ -6,6 +6,7 @@ import { Sparkles, ChevronRight, Check, Plus, RefreshCw, Flame, TrendingUp, BarC
 import AppLayout from "@/components/layout/AppLayout";
 import AccountabilityBanner from "@/components/notifications/AccountabilityBanner";
 import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
+import DashboardHabitWidget from "@/components/habits/DashboardHabitWidget";
 
 const MOTIVATIONS = [
   "Your future responds to who you become daily.",
@@ -279,6 +280,9 @@ export default function Dashboard() {
             )}
           </motion.div>
         </div>
+
+        {/* Habit Tracker Widget */}
+        <DashboardHabitWidget />
 
         {/* Pinned Visions */}
         <PinnedVisionsWidget />

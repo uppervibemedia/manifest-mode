@@ -1,11 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Image, TrendingUp, Zap, User } from "lucide-react";
+import { Home, Image, TrendingUp, CheckSquare, User } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/vision-vault", icon: Image, label: "Vision" },
   { path: "/tracker", icon: TrendingUp, label: "Tracker" },
-  { path: "/shift-plan", icon: Zap, label: "Shift" },
+  { path: "/habits", icon: CheckSquare, label: "Habits" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 

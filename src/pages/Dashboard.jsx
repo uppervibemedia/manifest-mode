@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Sparkles, ChevronRight, Check, Plus, RefreshCw, Flame, TrendingUp, BarChart3, Eye, Zap } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import AccountabilityBanner from "@/components/notifications/AccountabilityBanner";
+import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
 
 const MOTIVATIONS = [
   "Your future responds to who you become daily.",
@@ -278,6 +279,9 @@ export default function Dashboard() {
             )}
           </motion.div>
         </div>
+
+        {/* Pinned Visions */}
+        <PinnedVisionsWidget />
 
         {/* Future Self Coach CTA */}
         <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}

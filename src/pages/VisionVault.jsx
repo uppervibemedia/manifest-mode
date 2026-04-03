@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit3, Star, Trash2, Image, Lock } from "lucide-react";
+import { Plus, Edit3, Star, Trash2, Image, Lock, Pin } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
+import VisionDetailModal from "@/components/vision/VisionDetailModal";
 
 const CATEGORIES = [
   { id: "all", label: "All" },
@@ -23,6 +24,7 @@ export default function VisionVault() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [showUpload, setShowUpload] = useState(false);
   const [editVision, setEditVision] = useState(null);
+  const [detailVision, setDetailVision] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +51,11 @@ export default function VisionVault() {
   const handlePriority = async (vision) => {
     await base44.entities.VisionItem.update(vision.id, { is_priority: !vision.is_priority });
     setVisions(prev => prev.map(v => v.id === vision.id ? { ...v, is_priority: !v.is_priority } : v));
+  };
+
+  const handlePin = async (vision) => {
+    await base44.entities.VisionItem.update(vision.id, { is_pinned: !vision.is_pinned });
+    setVisions(prev => prev.map(v => v.id === vision.id ? { ...v, is_pinned: !v.is_pinned } : v));
   };
 
   const tier = profile?.subscription_tier || "free";
@@ -138,24 +145,36 @@ export default function VisionVault() {
                     </div>
                   )}
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  {/* Priority star */}
-                  <button onClick={() => handlePriority(vision)}
-                    className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center">
-                    <Star className={`w-3.5 h-3.5 ${vision.is_priority ? "text-primary fill-primary" : "text-white/70"}`} />
-                  </button>
-                  {/* Bottom info */}
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+                    onClick={() => setDetailVision(vision)} />
+                  {/* Top-right buttons: pin + star */}
+                  <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
+                    <button onClick={(e) => { e.stopPropagation(); handlePin(vision); }}
+                      className="w-7 h-7 rounded-full bg-black/40 flex items-center justify-center">
+                      <Pin className={`w-3.5 h-3.5 ${vision.is_pinned ? "text-blue-400 fill-blue-400" : "text-white/70"}`} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handlePriority(vision); }}
+                      className="w-7 h-7 rounded-full bg-black/40 flex items-center justify-center">
+                      <Star className={`w-3.5 h-3.5 ${vision.is_priority ? "text-primary fill-primary" : "text-white/70"}`} />
+                    </button>
+                  </div>
+                  {/* Bottom info + progress */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3" onClick={() => setDetailVision(vision)}>
                     <p className="text-xs font-semibold text-white leading-tight line-clamp-1">{vision.title}</p>
                     <p className="text-[10px] text-white/60 mt-0.5 capitalize">{vision.category}</p>
+                    {(vision.progress > 0) && (
+                      <div className="mt-1.5 h-1 bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: `${vision.progress}%` }} />
+                      </div>
+                    )}
                   </div>
                   {/* Action buttons on hover */}
                   <div className="absolute top-2.5 left-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setEditVision(vision)}
+                    <button onClick={(e) => { e.stopPropagation(); setEditVision(vision); }}
                       className="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center">
                       <Edit3 className="w-3 h-3 text-white" />
                     </button>
-                    <button onClick={() => handleDelete(vision.id)}
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete(vision.id); }}
                       className="w-7 h-7 rounded-full bg-black/50 flex items-center justify-center">
                       <Trash2 className="w-3 h-3 text-red-400" />
                     </button>
@@ -166,6 +185,19 @@ export default function VisionVault() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {detailVision && (
+          <VisionDetailModal
+            vision={detailVision}
+            onClose={() => setDetailVision(null)}
+            onUpdate={(updated) => {
+              setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
+              setDetailVision(updated);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {(showUpload || editVision) && (

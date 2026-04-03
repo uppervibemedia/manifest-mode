@@ -140,7 +140,7 @@ export default function Dashboard() {
 
           {/* Streak */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            onClick={() => navigate("/progress")}
+            onClick={() => navigate("/tracker")}
             className="glass-card rounded-xl p-3 text-center cursor-pointer hover:border-primary/30 transition-colors border border-border">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Streak</p>
             <p className="font-playfair text-2xl font-bold text-primary">{profile?.streak_count || 0}</p>
@@ -257,7 +257,7 @@ export default function Dashboard() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}
-            onClick={() => navigate(checkinDone ? "/progress" : "/checkin")}
+            onClick={() => navigate(checkinDone ? "/tracker" : "/checkin")}
             className={`glass-card rounded-xl p-4 cursor-pointer transition-colors border ${
               checkinDone ? "border-emerald-500/30 bg-emerald-500/5" : "border-border hover:border-primary/30"
             }`}>

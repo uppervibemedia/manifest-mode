@@ -1,28 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, TrendingUp, Target, Flame, CheckCircle2, Circle, Plus, ArrowRight } from "lucide-react";
+import { TrendingUp, ArrowRight, RefreshCw, BarChart3, Flame, Crown, AlertCircle } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
-
-const CATEGORY_META = {
-  wealth:    { icon: "💰", color: "#fbbf24" },
-  body:      { icon: "💪", color: "#34d399" },
-  love:      { icon: "❤️", color: "#f87171" },
-  business:  { icon: "🚀", color: "#60a5fa" },
-  home:      { icon: "🏡", color: "#a78bfa" },
-  lifestyle: { icon: "✨", color: "#f9a8d4" },
-  spiritual: { icon: "🌙", color: "#818cf8" },
-};
-
-const SCORE_KEYS = {
-  mindset:    "mindset_score",
-  discipline: "discipline_score",
-  health:     "health_score",
-  financial:  "financial_score",
-  confidence: "confidence_score",
-  environment:"environment_score",
-};
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 function RadialProgress({ pct, color, size = 64, stroke = 6 }) {
   const r = (size - stroke) / 2;
@@ -43,69 +25,111 @@ function RadialProgress({ pct, color, size = 64, stroke = 6 }) {
   );
 }
 
+const CATEGORY_SCORES = [
+  { key: "mindset_score",     label: "Mindset",     color: "#a78bfa", icon: "🧠" },
+  { key: "discipline_score",  label: "Discipline",  color: "#fbbf24", icon: "⚡" },
+  { key: "health_score",      label: "Health",      color: "#34d399", icon: "💪" },
+  { key: "financial_score",   label: "Financial",   color: "#60a5fa", icon: "💰" },
+  { key: "confidence_score",  label: "Confidence",  color: "#f9a8d4", icon: "🔥" },
+  { key: "environment_score", label: "Environment", color: "#818cf8", icon: "🌿" },
+];
+
+const CATEGORY_META = {
+  wealth:    { icon: "💰", color: "#fbbf24" },
+  body:      { icon: "💪", color: "#34d399" },
+  love:      { icon: "❤️", color: "#f87171" },
+  business:  { icon: "🚀", color: "#60a5fa" },
+  home:      { icon: "🏡", color: "#a78bfa" },
+  lifestyle: { icon: "✨", color: "#f9a8d4" },
+  spiritual: { icon: "🌙", color: "#818cf8" },
+};
+
 export default function RealityShiftTracker() {
   const navigate = useNavigate();
   const [scores, setScores] = useState([]);
   const [visions, setVisions] = useState([]);
   const [checkins, setCheckins] = useState([]);
-  const [plans, setPlans] = useState([]);
+  const [habits, setHabits] = useState([]);
+  const [habitLogs, setHabitLogs] = useState([]);
+  const [journals, setJournals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const user = await base44.auth.me();
-      const [s, v, c, p] = await Promise.all([
-        base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 10),
+      const [s, v, c, h, hl, j] = await Promise.all([
+        base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20),
         base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }),
-        base44.entities.DailyCheckIn.filter({ user_email: user.email }, "-created_date", 14),
-        base44.entities.DailyShiftPlan.filter({ user_email: user.email }, "-created_date", 14),
+        base44.entities.DailyCheckIn.filter({ user_email: user.email }, "-created_date", 30),
+        base44.entities.Habit.filter({ user_email: user.email, is_active: true }, "-created_date", 50),
+        base44.entities.HabitLog.filter({ user_email: user.email }, "-log_date", 200),
+        base44.entities.JournalEntry.filter({ user_email: user.email }, "-created_date", 30),
       ]);
-      setScores(s);
-      setVisions(v);
-      setCheckins(c);
-      setPlans(p);
+      setScores(s); setVisions(v); setCheckins(c);
+      setHabits(h); setHabitLogs(hl); setJournals(j);
       setLoading(false);
     })();
   }, []);
 
   const latest = scores[0];
   const prev = scores[1];
+  const growth = latest && prev ? latest.overall_score - prev.overall_score : 0;
 
-  // Category progress from latest score
-  const categoryProgress = latest ? [
-    { label: "Mindset",     val: latest.mindset_score,     color: "#a78bfa" },
-    { label: "Discipline",  val: latest.discipline_score,  color: "#fbbf24" },
-    { label: "Health",      val: latest.health_score,      color: "#34d399" },
-    { label: "Financial",   val: latest.financial_score,   color: "#60a5fa" },
-    { label: "Confidence",  val: latest.confidence_score,  color: "#f9a8d4" },
-    { label: "Environment", val: latest.environment_score, color: "#818cf8" },
-  ] : [];
+  // Momentum narrative
+  const momentum = !latest ? null
+    : latest.overall_score >= 75 ? "Highly Aligned"
+    : latest.overall_score >= 60 ? "Building Momentum"
+    : latest.overall_score >= 40 ? "Closing the Gap"
+    : "Foundation Building";
 
-  // Vision category distribution
-  const visionByCategory = visions.reduce((acc, v) => {
-    acc[v.category] = (acc[v.category] || 0) + 1;
-    return acc;
-  }, {});
-
-  // Weekly habit completion rate (last 7 plans)
-  const last7Plans = plans.slice(0, 7);
-  const weeklyRate = last7Plans.length
-    ? Math.round(last7Plans.reduce((acc, p) => {
-        const total = p.habits?.length || 0;
-        const done = p.completed_habits?.length || 0;
-        return acc + (total ? done / total : 0);
-      }, 0) / last7Plans.length * 100)
-    : 0;
-
-  // 14-day checkin energy trend
-  const energyTrend = checkins.slice(0, 14).reverse().map((c, i) => ({
-    day: i,
-    energy: c.energy || 0,
-    discipline: c.discipline || 0,
+  // Score chart
+  const chartData = scores.slice().reverse().map((s, i) => ({
+    i: i + 1,
+    score: s.overall_score,
+    date: new Date(s.created_date).toLocaleDateString("en", { month: "short", day: "numeric" }),
   }));
 
-  // Overall growth
-  const growth = latest && prev ? latest.overall_score - prev.overall_score : 0;
+  // Best/worst categories
+  const catScores = latest ? CATEGORY_SCORES.map(c => ({ ...c, val: latest[c.key] || 0 })) : [];
+  const strongest = catScores.length ? catScores.reduce((a, b) => a.val > b.val ? a : b) : null;
+  const weakest = catScores.length ? catScores.reduce((a, b) => a.val < b.val ? a : b) : null;
+
+  // Weekly habit rate (from Habit + HabitLog entities)
+  const weeklyHabitRate = (() => {
+    if (habits.length === 0) return 0;
+    let possible = 0, done = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split("T")[0];
+      possible += habits.length;
+      done += habitLogs.filter(l => l.log_date === ds && l.completed).length;
+    }
+    return possible > 0 ? Math.round((done / possible) * 100) : 0;
+  })();
+
+  // Monthly habit rate
+  const monthlyHabitRate = (() => {
+    if (habits.length === 0) return 0;
+    let possible = 0, done = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split("T")[0];
+      possible += habits.length;
+      done += habitLogs.filter(l => l.log_date === ds && l.completed).length;
+    }
+    return possible > 0 ? Math.round((done / possible) * 100) : 0;
+  })();
+
+  // Vision categories
+  const visionByCategory = visions.reduce((acc, v) => { acc[v.category] = (acc[v.category] || 0) + 1; return acc; }, {});
+
+  // Energy trend (14-day checkins)
+  const energyTrend = checkins.slice(0, 14).reverse().map((c) => ({
+    date: c.checkin_date,
+    energy: c.energy || 0,
+    confidence: c.confidence || 0,
+    discipline: c.discipline || 0,
+  }));
 
   if (loading) return (
     <AppLayout>
@@ -118,20 +142,20 @@ export default function RealityShiftTracker() {
   return (
     <AppLayout>
       <div className="px-5 pt-12 pb-6">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-xs text-muted-foreground mb-5">
-          <ChevronLeft className="w-3.5 h-3.5" /> Back
-        </button>
-
+        {/* Header */}
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Visual Progress</p>
+          <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Transformation Results</p>
           <h1 className="font-playfair text-2xl font-semibold">Reality Shift Tracker</h1>
           <p className="text-xs text-muted-foreground mt-1">Your alignment journey, visualized</p>
         </div>
 
         {!latest ? (
           <div className="flex flex-col items-center py-20 text-center">
-            <TrendingUp className="w-10 h-10 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground mb-6">Complete an assessment to unlock your Reality Shift Tracker</p>
+            <BarChart3 className="w-10 h-10 text-muted-foreground mb-3" />
+            <p className="text-sm font-semibold text-foreground mb-2">No alignment data yet</p>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+              Complete your Reality Assessment to unlock your full progress dashboard.
+            </p>
             <button onClick={() => navigate("/assessment")}
               className="px-6 py-3 gold-gradient text-background font-semibold rounded-xl flex items-center gap-2">
               Take Assessment <ArrowRight className="w-4 h-4" />
@@ -139,39 +163,73 @@ export default function RealityShiftTracker() {
           </div>
         ) : (
           <>
-            {/* Overall score + growth banner */}
+            {/* ── OVERALL SCORE HERO ── */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
-              className="glass-card glow-gold rounded-2xl p-5 mb-5 border border-primary/20 flex items-center gap-5">
-              <div className="relative shrink-0">
-                <RadialProgress pct={latest.overall_score} color="hsl(45 80% 60%)" size={80} stroke={7} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="font-playfair text-lg font-bold text-primary">{latest.overall_score}</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-1">Overall Alignment</p>
-                <p className="font-playfair text-xl font-semibold text-foreground">
-                  {latest.overall_score >= 75 ? "Highly Aligned" : latest.overall_score >= 50 ? "Building Momentum" : "Gap to Close"}
-                </p>
-                {growth !== 0 && (
-                  <div className={`flex items-center gap-1 mt-1 ${growth > 0 ? "text-emerald-400" : "text-orange-400"}`}>
-                    <TrendingUp className="w-3 h-3" />
-                    <span className="text-xs font-semibold">{growth > 0 ? "+" : ""}{growth} pts since last assessment</span>
+              className="glass-card glow-gold rounded-2xl p-5 mb-5 border border-primary/20">
+              <div className="flex items-center gap-5">
+                <div className="relative shrink-0">
+                  <RadialProgress pct={latest.overall_score} color="hsl(45 80% 60%)" size={88} stroke={8} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="font-playfair text-xl font-bold text-primary">{latest.overall_score}</span>
+                    <span className="text-[9px] text-muted-foreground">/100</span>
                   </div>
-                )}
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <Flame className="w-3 h-3 text-primary" />
-                  <span className="text-xs text-primary">Weekly habit rate: {weeklyRate}%</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-0.5">Reality Match Score</p>
+                  <p className="font-playfair text-lg font-semibold text-foreground">{momentum}</p>
+                  {growth !== 0 && (
+                    <div className={`flex items-center gap-1 mt-1 text-xs font-semibold ${growth > 0 ? "text-emerald-400" : "text-orange-400"}`}>
+                      <TrendingUp className="w-3 h-3" />
+                      {growth > 0 ? "+" : ""}{growth} pts since last assessment
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-primary" />
+                      <span className="text-[10px] text-primary font-medium">{weeklyHabitRate}% this week</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground">{monthlyHabitRate}% this month</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <button onClick={() => navigate("/assessment")}
+                className="mt-4 w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+                <RefreshCw className="w-3 h-3" /> Retake assessment to update score
+              </button>
             </motion.div>
 
-            {/* Category radial rings */}
+            {/* ── STRONGEST / WEAKEST ── */}
+            {strongest && weakest && (
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                  className="glass-card border border-emerald-500/20 rounded-xl p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Crown className="w-3.5 h-3.5 text-emerald-400" />
+                    <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-medium">Strongest</p>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">{strongest.label}</p>
+                  <p className="font-playfair text-xl font-bold" style={{ color: strongest.color }}>{strongest.val}</p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+                  className="glass-card border border-orange-500/20 rounded-xl p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
+                    <p className="text-[10px] uppercase tracking-widest text-orange-400 font-medium">Focus Area</p>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">{weakest.label}</p>
+                  <p className="font-playfair text-xl font-bold" style={{ color: weakest.color }}>{weakest.val}</p>
+                </motion.div>
+              </div>
+            )}
+
+            {/* ── CATEGORY ALIGNMENT RINGS ── */}
             <div className="mb-5">
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Category Alignment</p>
               <div className="grid grid-cols-3 gap-3">
-                {categoryProgress.map((cat, i) => (
-                  <motion.div key={cat.label}
+                {catScores.map((cat, i) => (
+                  <motion.div key={cat.key}
                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
                     className="glass-card rounded-xl p-3 flex flex-col items-center">
                     <div className="relative mb-1.5">
@@ -180,121 +238,152 @@ export default function RealityShiftTracker() {
                         <span className="text-xs font-bold" style={{ color: cat.color }}>{cat.val}</span>
                       </div>
                     </div>
+                    <span className="text-sm mb-0.5">{cat.icon}</span>
                     <p className="text-[10px] text-muted-foreground text-center">{cat.label}</p>
                   </motion.div>
                 ))}
               </div>
             </div>
 
-            {/* Score History Timeline */}
-            {scores.length > 1 && (
-              <div className="glass-card rounded-2xl p-4 mb-5">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Score Timeline</p>
-                <div className="flex items-end gap-2 h-16">
-                  {scores.slice(0, 8).reverse().map((s, i) => {
-                    const pct = s.overall_score / 100;
-                    const color = s.overall_score >= 75 ? "#34d399" : s.overall_score >= 50 ? "#fbbf24" : "#f97316";
-                    return (
-                      <div key={s.id} className="flex-1 flex flex-col items-center gap-1">
-                        <motion.div
-                          initial={{ height: 0 }} animate={{ height: `${pct * 48}px` }}
-                          transition={{ delay: i * 0.06, duration: 0.6, ease: "easeOut" }}
-                          className="w-full rounded-t-sm min-h-[4px]"
-                          style={{ backgroundColor: color, opacity: 0.7 + i * 0.04 }}
-                        />
-                        <span className="text-[9px] text-muted-foreground">{s.overall_score}</span>
-                      </div>
-                    );
-                  })}
+            {/* ── SCORE HISTORY CHART ── */}
+            {chartData.length > 1 && (
+              <div className="glass-card rounded-2xl p-5 mb-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Score Over Time</p>
+                  <span className="text-[10px] text-muted-foreground">{chartData.length} assessments</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground/50 text-center mt-1">Oldest → Latest</p>
+                <ResponsiveContainer width="100%" height={130}>
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(220 10% 50%)" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "hsl(220 10% 50%)" }} axisLine={false} tickLine={false} width={24} />
+                    <Tooltip
+                      contentStyle={{ background: "hsl(220 18% 10%)", border: "1px solid hsl(220 15% 18%)", borderRadius: 8, fontSize: 11 }}
+                      labelStyle={{ color: "hsl(45 30% 95%)" }}
+                      itemStyle={{ color: "hsl(45 80% 60%)" }}
+                    />
+                    <Line type="monotone" dataKey="score" stroke="hsl(45 80% 60%)" strokeWidth={2.5}
+                      dot={{ fill: "hsl(45 80% 60%)", r: 3 }} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="flex items-center justify-between mt-2">
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">First</p>
+                    <p className="text-xs font-bold text-foreground">{scores[scores.length - 1]?.overall_score}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Latest</p>
+                    <p className={`text-xs font-bold ${growth >= 0 ? "text-emerald-400" : "text-orange-400"}`}>
+                      {latest.overall_score} {growth !== 0 ? `(${growth > 0 ? "+" : ""}${growth})` : ""}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Best</p>
+                    <p className="text-xs font-bold text-primary">{Math.max(...scores.map(s => s.overall_score))}</p>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Vision Progress by Category */}
+            {/* ── HABIT CONSISTENCY TRENDS ── */}
+            <div className="glass-card rounded-2xl p-4 mb-5">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Habit Consistency Trends</p>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {[
+                  { label: "This Week", value: `${weeklyHabitRate}%`, color: weeklyHabitRate >= 70 ? "text-emerald-400" : "text-yellow-400" },
+                  { label: "This Month", value: `${monthlyHabitRate}%`, color: monthlyHabitRate >= 70 ? "text-emerald-400" : "text-yellow-400" },
+                  { label: "Total Habits", value: habits.length, color: "text-primary" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <p className={`font-playfair text-xl font-bold ${s.color}`}>{s.value}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Progress ring for weekly */}
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>Weekly completion rate</span>
+                  <span>{weeklyHabitRate}%</span>
+                </div>
+                <div className="h-2 bg-border rounded-full overflow-hidden">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${weeklyHabitRate}%` }}
+                    transition={{ duration: 1 }}
+                    className={`h-full rounded-full ${weeklyHabitRate >= 70 ? "bg-emerald-400" : "gold-gradient"}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* ── 14-DAY ENERGY TREND ── */}
+            {energyTrend.length > 0 && (
+              <div className="glass-card rounded-2xl p-4 mb-5">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Energy & Discipline Trend</p>
+                <div className="flex items-end gap-1 h-12 mb-1">
+                  {energyTrend.map((d, i) => (
+                    <div key={i} className="flex-1 flex gap-px items-end h-full">
+                      <motion.div initial={{ height: 0 }} animate={{ height: `${(d.energy / 10) * 100}%` }}
+                        transition={{ delay: i * 0.04, duration: 0.5 }}
+                        className="flex-1 rounded-t-sm min-h-[2px]"
+                        style={{ backgroundColor: `hsl(45 80% ${40 + d.energy * 3}%)`, opacity: 0.85 }} />
+                      <motion.div initial={{ height: 0 }} animate={{ height: `${(d.discipline / 10) * 100}%` }}
+                        transition={{ delay: i * 0.04 + 0.1, duration: 0.5 }}
+                        className="flex-1 rounded-t-sm min-h-[2px] bg-blue-400/60" />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground/50">14 days ago</span>
+                  <div className="flex gap-3">
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm" style={{ background: "hsl(45 80% 55%)" }} /><span className="text-[9px] text-muted-foreground">Energy</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-sm bg-blue-400/60" /><span className="text-[9px] text-muted-foreground">Discipline</span></div>
+                  </div>
+                  <span className="text-[9px] text-muted-foreground/50">Today</span>
+                </div>
+              </div>
+            )}
+
+            {/* ── VISION ALIGNMENT ── */}
             {visions.length > 0 && (
               <div className="glass-card rounded-2xl p-4 mb-5">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Vision Vault Progress</p>
-                <div className="space-y-3">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Vision Alignment</p>
+                  <button onClick={() => navigate("/vision-vault")} className="text-[10px] text-primary">View vault →</button>
+                </div>
+                <div className="space-y-2.5">
                   {Object.entries(visionByCategory).map(([cat, count], i) => {
                     const meta = CATEGORY_META[cat] || { icon: "✦", color: "#fbbf24" };
-                    const priorityCount = visions.filter(v => v.category === cat && v.is_priority).length;
                     return (
-                      <motion.div key={cat} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}>
+                      <motion.div key={cat} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <span>{meta.icon}</span>
+                            <span className="text-sm">{meta.icon}</span>
                             <span className="text-xs font-medium text-foreground capitalize">{cat}</span>
-                            {priorityCount > 0 && <span className="text-[9px] text-primary">★ {priorityCount} priority</span>}
                           </div>
                           <span className="text-xs text-muted-foreground">{count} vision{count > 1 ? "s" : ""}</span>
                         </div>
                         <div className="h-1.5 bg-border rounded-full overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(count * 20, 100)}%` }}
-                            transition={{ delay: i * 0.06 + 0.2, duration: 0.8 }}
+                            transition={{ delay: i * 0.05 + 0.2, duration: 0.8 }}
                             className="h-full rounded-full" style={{ backgroundColor: meta.color }} />
                         </div>
                       </motion.div>
                     );
                   })}
                 </div>
-                <button onClick={() => navigate("/vision-vault")}
-                  className="mt-4 text-xs text-primary flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Add more visions
-                </button>
               </div>
             )}
 
-            {/* Weekly habit dots */}
-            {last7Plans.length > 0 && (
-              <div className="glass-card rounded-2xl p-4 mb-5">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Last 7 Days — Habit Completion</p>
-                <div className="flex gap-2">
-                  {last7Plans.reverse().map((p, i) => {
-                    const total = p.habits?.length || 0;
-                    const done = p.completed_habits?.length || 0;
-                    const pct = total ? done / total : 0;
-                    const color = pct >= 1 ? "#34d399" : pct >= 0.5 ? "#fbbf24" : "#f97316";
-                    return (
-                      <div key={p.id} className="flex-1 flex flex-col items-center gap-1.5">
-                        <motion.div
-                          initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ delay: i * 0.05 }}
-                          className="w-full rounded-sm"
-                          style={{ height: `${Math.max(pct * 32, 4)}px`, backgroundColor: color, opacity: 0.85 }}
-                        />
-                        {pct >= 1
-                          ? <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                          : <Circle className="w-3 h-3 text-muted-foreground/40" />}
-                        <span className="text-[9px] text-muted-foreground">
-                          {new Date(p.plan_date).toLocaleDateString("en", { weekday: "short" }).charAt(0)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 14-day energy trend dots */}
-            {energyTrend.length > 0 && (
-              <div className="glass-card rounded-2xl p-4 mb-2">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Energy Trend (14 days)</p>
-                <div className="flex items-end gap-1 h-10">
-                  {energyTrend.map((d, i) => (
-                    <motion.div key={i}
-                      initial={{ height: 0 }} animate={{ height: `${(d.energy / 10) * 40}px` }}
-                      transition={{ delay: i * 0.04, duration: 0.5 }}
-                      className="flex-1 rounded-t-sm min-h-[2px]"
-                      style={{ backgroundColor: `hsl(45 80% ${40 + d.energy * 3}%)`, opacity: 0.8 }}
-                    />
-                  ))}
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-[9px] text-muted-foreground/50">14 days ago</span>
-                  <span className="text-[9px] text-muted-foreground/50">Today</span>
-                </div>
-              </div>
-            )}
+            {/* ── PROGRESS NARRATIVE ── */}
+            <div className="glass-card border border-primary/15 rounded-2xl p-4 mb-2">
+              <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-2">Growth Narrative</p>
+              <p className="text-sm text-foreground/80 leading-relaxed">
+                {latest.overall_score >= 75
+                  ? `You are operating in high alignment. Your score of ${latest.overall_score} reflects a life that is increasingly matching your vision. Keep compounding daily.`
+                  : latest.overall_score >= 55
+                  ? `At ${latest.overall_score}, you are building real momentum. ${strongest ? `Your ${strongest.label.toLowerCase()} is your strongest asset.` : ""} ${weakest ? `Direct your next growth phase toward ${weakest.label.toLowerCase()}.` : ""}`
+                  : `Your score of ${latest.overall_score} shows real self-awareness — you see the gap. ${weakest ? `Your biggest lever right now is ${weakest.label.toLowerCase()}.` : ""} Every habit completed today moves this number.`
+                }
+              </p>
+            </div>
           </>
         )}
       </div>

@@ -4,7 +4,7 @@ import { Home, Image, TrendingUp, CheckSquare, User } from "lucide-react";
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/vision-vault", icon: Image, label: "Vision" },
-  { path: "/tracker", icon: TrendingUp, label: "Tracker" },
+  { path: "/tracker", icon: TrendingUp, label: "Progress" },
   { path: "/habits", icon: CheckSquare, label: "Habits" },
   { path: "/profile", icon: User, label: "Profile" },
 ];

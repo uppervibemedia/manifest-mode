@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Sparkles, ChevronRight, Check, Plus, RefreshCw, Flame, TrendingUp, BarChart3, Eye, Zap } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import AccountabilityBanner from "@/components/notifications/AccountabilityBanner";
 
 const MOTIVATIONS = [
   "Your future responds to who you become daily.",
@@ -79,7 +80,8 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-4 relative">
+      <AccountabilityBanner />
+      <div className="px-5 pt-4 pb-4 relative">
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
         {/* Header */}

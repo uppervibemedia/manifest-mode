@@ -18,6 +18,7 @@ import Journal from './pages/Journal';
 import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
 import Progress from './pages/Progress';
+import RealityShiftTracker from './pages/RealityShiftTracker';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
       <Route path="/profile" element={<Profile />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/progress" element={<Progress />} />
+      <Route path="/tracker" element={<RealityShiftTracker />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -33,3 +33,18 @@ export function useActiveEmail(realUserEmail) {
   const { testEmail } = useTestProfile();
   return testEmail || realUserEmail;
 }
+
+// Get display name from test email or real user
+export function getDisplayName(testEmail, realUser) {
+  if (testEmail) {
+    // Extract label from email: test+newuser-20260404@testprofile.local → "New User"
+    const match = testEmail.match(/test\+([^-]+)/);
+    if (match) {
+      return match[1]
+        .split(/[-_]/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+  }
+  return realUser?.full_name || "User";
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
+import { useTestProfile } from "@/lib/testProfileContext";
 import { Plus, Sparkles, BarChart3, Loader2, Trash2, Sun, Moon, Check } from "lucide-react";
 import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
@@ -9,8 +10,6 @@ import HabitCard from "@/components/habits/HabitCard";
 import HabitCalendar from "@/components/habits/HabitCalendar";
 import AddHabitModal from "@/components/habits/AddHabitModal";
 import { getLocalToday } from "@/lib/dateUtils";
-
-const today = getLocalToday();
 
 const CATEGORY_META = {
   wealth:     { icon: "💰", color: "#fbbf24" },
@@ -252,6 +251,8 @@ function EveningReview({ userEmail, onSaved }) {
 
 export default function HabitTracker() {
   const navigate = useNavigate();
+  const { testEmail } = useTestProfile();
+  const today = getLocalToday();
 
   const [user, setUser] = useState(null);
   const [habits, setHabits] = useState([]);
@@ -267,18 +268,20 @@ export default function HabitTracker() {
   const [morningSaved, setMorningSaved] = useState(false);
   const [eveningSaved, setEveningSaved] = useState(false);
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); }, [testEmail]);
 
   const loadAll = async () => {
     const u = await base44.auth.me();
     setUser(u);
+    const activeEmail = testEmail || u.email;
+    const today = getLocalToday();
     const [h, tl, hl, ai, checkins, eveningEntries] = await Promise.all([
-      base44.entities.Habit.filter({ user_email: u.email, is_active: true }, "-is_priority", 50),
-      base44.entities.HabitLog.filter({ user_email: u.email, log_date: today }),
-      base44.entities.HabitLog.filter({ user_email: u.email }, "-log_date", 200),
-      base44.entities.AIAnalysis.filter({ user_email: u.email }, "-created_date", 1),
-      base44.entities.DailyCheckIn.filter({ user_email: u.email, checkin_date: today }),
-      base44.entities.JournalEntry.filter({ user_email: u.email }, "-created_date", 10),
+      base44.entities.Habit.filter({ user_email: activeEmail, is_active: true }, "-is_priority", 50),
+      base44.entities.HabitLog.filter({ user_email: activeEmail, log_date: today }),
+      base44.entities.HabitLog.filter({ user_email: activeEmail }, "-log_date", 200),
+      base44.entities.AIAnalysis.filter({ user_email: activeEmail }, "-created_date", 1),
+      base44.entities.DailyCheckIn.filter({ user_email: activeEmail, checkin_date: today }),
+      base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 10),
     ]);
     setHabits(h);
     setTodayLogs(tl);
@@ -307,6 +310,7 @@ export default function HabitTracker() {
   const isCompleted = (habitId) => todayLogs.some(l => l.habit_id === habitId && l.completed);
 
   const toggleHabit = async (habit) => {
+    const activeEmail = testEmail || user.email;
     const done = isCompleted(habit.id);
     if (done) {
       const log = todayLogs.find(l => l.habit_id === habit.id && l.completed);
@@ -325,7 +329,7 @@ export default function HabitTracker() {
         newLog = await base44.entities.HabitLog.update(existing.id, { completed: true });
         setTodayLogs(prev => prev.map(l => l.id === existing.id ? { ...l, completed: true } : l));
       } else {
-        newLog = await base44.entities.HabitLog.create({ user_email: user.email, habit_id: habit.id, habit_title: habit.title, category: habit.category, log_date: today, completed: true });
+        newLog = await base44.entities.HabitLog.create({ user_email: activeEmail, habit_id: habit.id, habit_title: habit.title, category: habit.category, log_date: today, completed: true });
         setTodayLogs(prev => [...prev, newLog]);
         setHistoryLogs(prev => [newLog, ...prev]);
       }
@@ -334,7 +338,7 @@ export default function HabitTracker() {
       const newStreak = habit.last_completed_date === yStr ? (habit.streak_count || 0) + 1 : habit.last_completed_date === today ? habit.streak_count : 1;
       await base44.entities.Habit.update(habit.id, { streak_count: newStreak, last_completed_date: today, total_completions: (habit.total_completions || 0) + 1 });
       setHabits(prev => prev.map(h => h.id === habit.id ? { ...h, streak_count: newStreak, last_completed_date: today, total_completions: (h.total_completions || 0) + 1 } : h));
-      const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
+      const profiles = await base44.entities.UserProfile.filter({ user_email: activeEmail });
       if (profiles[0]) {
         const updatedHabits = habits.map(h => h.id === habit.id ? { ...h, streak_count: newStreak } : h);
         const newCompletedToday = updatedHabits.filter(h => h.id === habit.id ? true : todayLogs.some(l => l.habit_id === h.id && l.completed)).length;
@@ -350,6 +354,8 @@ export default function HabitTracker() {
     await base44.entities.Habit.update(habitId, { is_active: false });
     setHabits(prev => prev.filter(h => h.id !== habitId));
   };
+
+  const activeEmail = testEmail || user?.email;
 
   const completedToday = habits.filter(h => isCompleted(h.id)).length;
   const totalToday = habits.length;
@@ -451,7 +457,7 @@ export default function HabitTracker() {
                   </div>
                 </motion.div>
               ) : !morningSaved ? (
-                <MorningCheckIn userEmail={user?.email} onSaved={() => setMorningSaved(true)} />
+                <MorningCheckIn userEmail={activeEmail} onSaved={() => setMorningSaved(true)} />
               ) : null}
 
               {/* Divider */}
@@ -514,7 +520,7 @@ export default function HabitTracker() {
                   </div>
                 </motion.div>
               ) : !eveningSaved ? (
-                <EveningReview userEmail={user?.email} onSaved={() => setEveningSaved(true)} />
+                <EveningReview userEmail={activeEmail} onSaved={() => setEveningSaved(true)} />
               ) : null}
 
               {/* All done banner */}
@@ -624,7 +630,7 @@ export default function HabitTracker() {
 
       <AnimatePresence>
         {showAdd && (
-          <AddHabitModal userEmail={user?.email} onClose={() => setShowAdd(false)} onSave={(h) => { setHabits(prev => [h, ...prev]); setShowAdd(false); }} />
+          <AddHabitModal userEmail={activeEmail} onClose={() => setShowAdd(false)} onSave={(h) => { setHabits(prev => [h, ...prev]); setShowAdd(false); }} />
         )}
       </AnimatePresence>
     </AppLayout>

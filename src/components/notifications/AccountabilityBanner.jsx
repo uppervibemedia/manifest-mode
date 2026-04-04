@@ -28,28 +28,34 @@ function buildNotifications({ profile, latestScore, shiftPlan, checkinToday, che
       id: "streak_risk",
       type: "warning",
       icon: <Flame className="w-4 h-4 text-orange-400 shrink-0" />,
-      message: `Your ${profile.streak_count}-day streak is at risk. Check in before midnight.`,
-      cta: "Check in →",
-      route: "/checkin",
+      message: `Your ${profile.streak_count}-day streak is at risk. Log your daily habits before midnight.`,
+      cta: "Log Habits →",
+      route: "/daily-shift",
       color: "border-orange-400/30 bg-orange-400/5",
     });
   }
 
   // Habits incomplete — after 6pm
-  if (shiftPlan && hour >= 18) {
-    const done = shiftPlan.completed_habits?.length || 0;
-    const total = shiftPlan.habits?.length || 0;
-    if (done < total) {
-      notes.push({
-        id: "habits_incomplete",
-        type: "warning",
-        icon: <Zap className="w-4 h-4 text-yellow-400 shrink-0" />,
-        message: `${total - done} habit${total - done > 1 ? "s" : ""} left today. Your future self is watching.`,
-        cta: "Complete →",
-        route: "/shift-plan",
-        color: "border-yellow-400/30 bg-yellow-400/5",
-      });
-    }
+  if (hour >= 18) {
+    notes.push({
+      id: "habits_incomplete",
+      type: "warning",
+      icon: <Zap className="w-4 h-4 text-yellow-400 shrink-0" />,
+      message: "Don't forget to log your daily habits before the day ends!",
+      cta: "Log Habits →",
+      route: "/daily-shift",
+      color: "border-yellow-400/30 bg-yellow-400/5",
+    });
+  } else if (hour >= 6) {
+    notes.push({
+      id: "habits_reminder",
+      type: "action",
+      icon: <Zap className="w-4 h-4 text-primary shrink-0" />,
+      message: "Have you logged your daily habits today?",
+      cta: "Log Now →",
+      route: "/daily-shift",
+      color: "border-primary/30 bg-primary/5",
+    });
   }
 
   // All habits done — positive reinforcement
@@ -84,9 +90,9 @@ function buildNotifications({ profile, latestScore, shiftPlan, checkinToday, che
       id: "no_checkin",
       type: "action",
       icon: <AlertCircle className="w-4 h-4 text-blue-400 shrink-0" />,
-      message: "You haven't logged a check-in yet. Start tracking your daily state.",
-      cta: "Check in →",
-      route: "/checkin",
+      message: "You haven't logged your daily habits yet. Start building your streak!",
+      cta: "Log Habits →",
+      route: "/daily-shift",
       color: "border-blue-400/30 bg-blue-400/5",
     });
   }

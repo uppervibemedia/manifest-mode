@@ -193,24 +193,24 @@ export default function VisionVault() {
                     {/* Top-right: pin + priority */}
                     <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-10">
                       <button onClick={(e) => { e.stopPropagation(); handlePin(vision); }}
-                        className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                        <Pin className={`w-3.5 h-3.5 ${vision.is_pinned ? "text-blue-400 fill-blue-400" : "text-white/60"}`} />
+                        className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <Pin className={`w-4 h-4 ${vision.is_pinned ? "text-blue-400 fill-blue-400" : "text-white/60"}`} />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); handlePriority(vision); }}
-                        className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                        <Star className={`w-3.5 h-3.5 ${vision.is_priority ? "text-primary fill-primary" : "text-white/60"}`} />
+                        className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <Star className={`w-4 h-4 ${vision.is_priority ? "text-primary fill-primary" : "text-white/60"}`} />
                       </button>
                     </div>
 
                     {/* Top-left: edit/delete on hover */}
                     <div className="absolute top-2.5 left-2.5 flex gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={(e) => { e.stopPropagation(); setEditVision(vision); }}
-                        className="w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <Edit3 className="w-3 h-3 text-white" />
+                        className="w-8 h-8 rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center">
+                        <Edit3 className="w-4 h-4 text-white" />
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); handleDelete(vision.id); }}
-                        className="w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <Trash2 className="w-3 h-3 text-red-400" />
+                        className="w-8 h-8 rounded-full bg-black/55 backdrop-blur-sm flex items-center justify-center">
+                        <Trash2 className="w-4 h-4 text-red-400" />
                       </button>
                     </div>
 

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Plus, Trash2, Loader2, Image, Sparkles, Camera, Zap, Target } from "lucide-react";
+import { X, Plus, Trash2, Loader2, Image, Sparkles, Camera, Target } from "lucide-react";
 import { getCategoryMeta } from "@/lib/categories";
+import VisionMilestones from "./VisionMilestones";
 
 export default function VisionDetailModal({ vision, onClose, onUpdate }) {
   const meta = getCategoryMeta(vision.category);
@@ -10,6 +11,7 @@ export default function VisionDetailModal({ vision, onClose, onUpdate }) {
   const [steps, setSteps] = useState(vision.action_steps || []);
   const [proofImages, setProofImages] = useState(vision.proof_images || []);
   const [newStep, setNewStep] = useState("");
+  const [milestones, setMilestones] = useState(vision.milestones || []);
   const [saving, setSaving] = useState(false);
   const [loadingInsight, setLoadingInsight] = useState(false);
   const [insight, setInsight] = useState(vision.ai_insight || null);
@@ -265,6 +267,17 @@ Return as JSON: { "insight": "...", "daily_action": "..." }`;
               </button>
             </div>
           </div>
+
+          {/* Monthly Milestones Timeline */}
+          <VisionMilestones
+            vision={vision}
+            milestones={milestones}
+            accentColor={meta.color}
+            onSave={(updates) => {
+              setMilestones(updates.milestones);
+              saveChanges(updates);
+            }}
+          />
 
           {/* Proof of Progress Images */}
           <div>

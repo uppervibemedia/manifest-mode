@@ -323,8 +323,6 @@ export default function Progress() {
               </div>
             )}
 
-
-
             {/* ── SCORE HISTORY CHART ── */}
             {chartData.length > 1 && (
               <div className="glass-card rounded-2xl p-5 mb-5">
@@ -363,6 +361,47 @@ export default function Progress() {
                 </div>
               </div>
             )}
+
+            {/* ── ACHIEVEMENTS ── */}
+            <div className="glass-card rounded-2xl p-5 mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-primary" />
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Achievements</p>
+                </div>
+                {earnedBadges.length > 0 && (
+                  <span className="text-[10px] text-primary font-semibold">{earnedBadges.length}/{BADGES.length}</span>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground/70 mb-4 leading-relaxed">
+                Unlock milestones as you build consistency and reach new identity levels.
+              </p>
+              <div className="grid grid-cols-4 gap-2.5">
+                {BADGES.map((badge, i) => {
+                  const isEarned = earnedBadges.some(b => b.id === badge.id);
+                  return (
+                    <motion.div
+                      key={badge.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.04 }}
+                      title={badge.desc}
+                      className={`rounded-2xl p-2.5 flex flex-col items-center text-center transition-all border ${
+                        isEarned
+                          ? "border-primary/30 bg-primary/5 cursor-default"
+                          : "border-border/40 bg-muted/10 opacity-40"
+                      }`}
+                    >
+                      <span className={`text-2xl mb-1 ${!isEarned ? "grayscale" : ""}`}>{badge.icon}</span>
+                      <p className={`text-[9px] font-semibold leading-tight ${isEarned ? "text-foreground" : "text-muted-foreground/60"}`}>
+                        {badge.title}
+                      </p>
+                      {!isEarned && <p className="text-[8px] text-muted-foreground/40 mt-0.5">Locked</p>}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* ── HABIT CONSISTENCY TRENDS ── */}
             <div className="glass-card rounded-2xl p-4 mb-5">
@@ -463,35 +502,6 @@ export default function Progress() {
                 }
               </p>
             </div>
-
-            {/* ── ACHIEVEMENTS ── */}
-            {earnedBadges.length > 0 && (
-              <div className="mb-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <Award className="w-4 h-4 text-primary" />
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Achievements Unlocked</p>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {earnedBadges.slice(0, 9).map((badge, i) => (
-                    <motion.div
-                      key={badge.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.06 }}
-                      className="glass-card border border-primary/20 rounded-2xl p-3 flex flex-col items-center text-center hover:border-primary/40 transition-colors"
-                    >
-                      <span className="text-3xl mb-2">{badge.icon}</span>
-                      <p className="text-[10px] font-semibold text-foreground leading-tight">{badge.title}</p>
-                    </motion.div>
-                  ))}
-                </div>
-                {earnedBadges.length > 9 && (
-                  <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">
-                    +{earnedBadges.length - 9} more achievements
-                  </p>
-                )}
-              </div>
-            )}
           </>
         )}
       </div>

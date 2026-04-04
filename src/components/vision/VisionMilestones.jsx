@@ -2,11 +2,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Loader2, CalendarDays, Check, RefreshCw, Eye, Brain, Footprints, Lock } from "lucide-react";
+import MonthCompletionModal from "./MonthCompletionModal";
 
 export default function VisionMilestones({ vision, milestones, onSave, accentColor }) {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState(milestones || []);
   const [expanded, setExpanded] = useState(null);
+  const [completionModal, setCompletionModal] = useState(null); // index of month to complete
 
   const generate = async () => {
     if (loading) return;
@@ -74,11 +76,14 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
     setLoading(false);
   };
 
-  const toggleComplete = (idx, e) => {
-    e.stopPropagation();
-    const updated = items.map((m, i) => i === idx ? { ...m, completed: !m.completed } : m);
-    setItems(updated);
-    onSave({ milestones: updated });
+  const handleAdvance = (choice) => {
+    if (choice === "advance" && completionModal !== null) {
+      const updated = items.map((m, i) => i === completionModal ? { ...m, completed: true } : m);
+      setItems(updated);
+      onSave({ milestones: updated });
+      setExpanded(null);
+    }
+    setCompletionModal(null);
   };
 
   // Current month = first non-completed. Everything before = completed. Everything after = locked.
@@ -177,7 +182,7 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
                   >
                     {/* Node */}
                     <button
-                      onClick={(e) => isActive && toggleComplete(i, e)}
+                      onClick={(e) => { e.stopPropagation(); if (isActive) setCompletionModal(i); }}
                       className="w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center shrink-0 mt-2.5 transition-all z-10 relative"
                       style={{
                         borderColor: isCompleted ? accentColor : isActive ? accentColor + "80" : "hsl(220 15% 22%)",
@@ -328,17 +333,17 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
                                 </div>
                               )}
 
-                              {/* Mark complete button — only for active */}
+                              {/* Advance button — only for active */}
                               {isActive && (
                                 <button
-                                  onClick={(e) => toggleComplete(i, e)}
-                                  className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all border mt-1"
+                                  onClick={(e) => { e.stopPropagation(); setCompletionModal(i); }}
+                                  className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all border mt-1 flex items-center justify-center gap-1.5"
                                   style={{
                                     borderColor: accentColor + "50",
                                     color: accentColor,
                                     backgroundColor: accentColor + "10",
                                   }}>
-                                  Mark This Month Complete ✦
+                                  Ready to advance? ✦
                                 </button>
                               )}
                             </div>
@@ -353,6 +358,18 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
           </div>
         </>
       )}
+
+      <AnimatePresence>
+        {completionModal !== null && items[completionModal] && (
+          <MonthCompletionModal
+            milestone={items[completionModal]}
+            monthIndex={completionModal}
+            accentColor={accentColor}
+            onConfirm={handleAdvance}
+            onCancel={() => setCompletionModal(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

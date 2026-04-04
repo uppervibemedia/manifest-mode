@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Loader2, CalendarDays, Check, RefreshCw, ChevronDown, ChevronUp, Zap, Eye, Brain, Footprints } from "lucide-react";
+import { Loader2, CalendarDays, Check, RefreshCw, Eye, Brain, Footprints, Lock } from "lucide-react";
 
 export default function VisionMilestones({ vision, milestones, onSave, accentColor }) {
   const [loading, setLoading] = useState(false);
@@ -24,8 +24,6 @@ The user has a vision they are working toward:
 Your job: create a month-by-month transformation roadmap for their "${vision.desired_timeline || "1 year"}" journey.
 
 This is NOT a generic goal planner or financial checklist. Each month should feel like a coaching session from their future self — blending identity work, emotional connection, visualization, belief rewiring, and practical movement.
-
-For goals like a car, house, business, or body transformation: help them emotionally inhabit the vision WHILE taking concrete steps that make it real.
 
 Progression arc:
 - Early months (1-3): Identity foundation, emotional connection, releasing old beliefs
@@ -71,7 +69,7 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
 
     const generated = (result?.milestones || []).map(m => ({ ...m, completed: false }));
     setItems(generated);
-    setExpanded(0);
+    setExpanded(null);
     onSave({ milestones: generated });
     setLoading(false);
   };
@@ -83,8 +81,16 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
     onSave({ milestones: updated });
   };
 
+  // Current month = first non-completed. Everything before = completed. Everything after = locked.
+  const currentIdx = items.findIndex(m => !m.completed);
   const completedCount = items.filter(m => m.completed).length;
   const pct = items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0;
+
+  const getState = (i) => {
+    if (items[i].completed) return "completed";
+    if (i === currentIdx || currentIdx === -1) return "active"; // -1 means all done
+    return "locked";
+  };
 
   return (
     <div>
@@ -155,7 +161,12 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
 
             <div className="space-y-2">
               {items.map((milestone, i) => {
-                const isOpen = expanded === i;
+                const state = getState(i);
+                const isCompleted = state === "completed";
+                const isActive = state === "active";
+                const isLocked = state === "locked";
+                const isOpen = expanded === i && !isLocked;
+
                 return (
                   <motion.div
                     key={i}
@@ -166,58 +177,93 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
                   >
                     {/* Node */}
                     <button
-                      onClick={(e) => toggleComplete(i, e)}
+                      onClick={(e) => isActive && toggleComplete(i, e)}
                       className="w-[30px] h-[30px] rounded-full border-2 flex items-center justify-center shrink-0 mt-2.5 transition-all z-10 relative"
                       style={{
-                        borderColor: milestone.completed ? accentColor : "hsl(220 15% 28%)",
-                        backgroundColor: milestone.completed ? accentColor : "hsl(220 18% 10%)",
-                        boxShadow: milestone.completed ? `0 0 10px ${accentColor}40` : "none",
+                        borderColor: isCompleted ? accentColor : isActive ? accentColor + "80" : "hsl(220 15% 22%)",
+                        backgroundColor: isCompleted ? accentColor : isActive ? accentColor + "18" : "hsl(220 18% 9%)",
+                        boxShadow: isCompleted ? `0 0 10px ${accentColor}40` : isActive ? `0 0 8px ${accentColor}25` : "none",
+                        cursor: isActive ? "pointer" : "default",
                       }}>
-                      {milestone.completed
+                      {isCompleted
                         ? <Check className="w-3.5 h-3.5 text-background" />
-                        : <span className="text-[9px] font-bold text-muted-foreground">{i + 1}</span>
+                        : isLocked
+                        ? <Lock className="w-2.5 h-2.5 text-muted-foreground/40" />
+                        : <span className="text-[9px] font-bold" style={{ color: accentColor }}>{i + 1}</span>
                       }
                     </button>
 
                     {/* Card */}
                     <div
-                      className={`flex-1 rounded-2xl border overflow-hidden transition-all cursor-pointer ${
-                        milestone.completed ? "opacity-55" : ""
+                      className={`flex-1 rounded-2xl border overflow-hidden transition-all ${
+                        isLocked ? "cursor-default" : "cursor-pointer"
                       }`}
                       style={{
-                        borderColor: isOpen ? accentColor + "50" : "hsl(220 15% 18%)",
-                        background: isOpen ? `linear-gradient(135deg, hsl(220 18% 11%), hsl(220 18% 10%))` : "rgba(255,255,255,0.03)"
+                        borderColor: isCompleted
+                          ? accentColor + "30"
+                          : isActive
+                          ? isOpen ? accentColor + "60" : accentColor + "35"
+                          : "hsl(220 15% 15%)",
+                        background: isCompleted
+                          ? "rgba(255,255,255,0.02)"
+                          : isActive
+                          ? isOpen ? `linear-gradient(135deg, hsl(220 18% 12%), hsl(220 18% 10%))` : "rgba(255,255,255,0.04)"
+                          : "rgba(255,255,255,0.015)",
+                        opacity: isCompleted ? 0.6 : 1,
                       }}
-                      onClick={() => setExpanded(isOpen ? null : i)}
+                      onClick={() => !isLocked && setExpanded(isOpen ? null : i)}
                     >
-                      {/* Collapsed header */}
+                      {/* Card header — always visible */}
                       <div className="flex items-center justify-between px-3.5 py-3 gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[10px] font-semibold" style={{ color: accentColor }}>
+                            <span className="text-[10px] font-semibold"
+                              style={{ color: isLocked ? "hsl(220 10% 40%)" : accentColor }}>
                               {milestone.month}
                             </span>
+                            {isActive && (
+                              <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                                style={{ backgroundColor: accentColor + "20", color: accentColor }}>
+                                Active
+                              </span>
+                            )}
                             {milestone.theme && (
-                              <span className="text-[10px] text-muted-foreground/70 font-medium italic truncate">
+                              <span className={`text-[10px] font-medium italic truncate ${isLocked ? "text-muted-foreground/30" : "text-muted-foreground/70"}`}>
                                 · {milestone.theme}
                               </span>
                             )}
                           </div>
-                          {milestone.identity_shift && !isOpen && (
-                            <p className="text-xs text-foreground/70 truncate leading-snug">
+
+                          {/* Identity shift — visible for all states but blurred for locked */}
+                          {milestone.identity_shift && (
+                            <p className={`text-xs leading-snug ${
+                              isLocked
+                                ? "text-muted-foreground/25 select-none"
+                                : isCompleted
+                                ? "text-muted-foreground/50 line-through"
+                                : "text-foreground/75"
+                            }`}
+                              style={isLocked ? { filter: "blur(3px)" } : {}}>
                               {milestone.identity_shift}
                             </p>
                           )}
                         </div>
-                        {isOpen
-                          ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        }
+
+                        {/* Right side indicator */}
+                        {isLocked ? (
+                          <Lock className="w-3 h-3 text-muted-foreground/25 shrink-0" />
+                        ) : isCompleted ? (
+                          <Check className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
+                        ) : (
+                          <span className="text-muted-foreground/60 shrink-0 text-xs">
+                            {isOpen ? "▲" : "▼"}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Expanded detail */}
+                      {/* Expanded detail — only for active/completed */}
                       <AnimatePresence>
-                        {isOpen && (
+                        {isOpen && !isLocked && (
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
@@ -225,7 +271,7 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
                             transition={{ duration: 0.25 }}
                             className="overflow-hidden"
                           >
-                            <div className="px-3.5 pb-4 space-y-3 border-t border-border/50">
+                            <div className="px-3.5 pb-4 space-y-3 border-t border-border/40">
 
                               {/* Identity Shift */}
                               {milestone.identity_shift && (
@@ -278,6 +324,20 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
                                     ✦ {milestone.affirmation}
                                   </p>
                                 </div>
+                              )}
+
+                              {/* Mark complete button — only for active */}
+                              {isActive && (
+                                <button
+                                  onClick={(e) => toggleComplete(i, e)}
+                                  className="w-full py-2.5 rounded-xl text-xs font-semibold transition-all border mt-1"
+                                  style={{
+                                    borderColor: accentColor + "50",
+                                    color: accentColor,
+                                    backgroundColor: accentColor + "10",
+                                  }}>
+                                  Mark This Month Complete ✦
+                                </button>
                               )}
                             </div>
                           </motion.div>

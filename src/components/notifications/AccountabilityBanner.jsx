@@ -4,9 +4,11 @@ import { base44 } from "@/api/base44Client";
 import { X, Flame, AlertCircle, TrendingUp, Zap, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { getLocalToday } from "@/lib/dateUtils";
+
 function buildNotifications({ profile, latestScore, shiftPlan, checkinToday, checkins }) {
   const notes = [];
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalToday();
   const hour = new Date().getHours();
 
   // No assessment yet
@@ -109,7 +111,7 @@ export default function AccountabilityBanner() {
     (async () => {
       const user = await base44.auth.me();
       if (!user) return;
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalToday();
       const [profiles, scores, plans, checkins] = await Promise.all([
         base44.entities.UserProfile.filter({ user_email: user.email }),
         base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 1),

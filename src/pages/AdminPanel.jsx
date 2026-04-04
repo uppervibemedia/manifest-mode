@@ -5,12 +5,20 @@ import { useNavigate } from "react-router-dom";
 import { useTestProfile } from "@/lib/testProfileContext";
 import { Shield, Plus, Trash2, User, CheckCircle, LogOut, ChevronRight, AlertTriangle } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import { getLocalToday } from "@/lib/dateUtils";
 
-const PRESET_PROFILES = [
-  { label: "New User (no data)", email: "test+newuser@testprofile.local" },
-  { label: "Mid Journey User", email: "test+miduser@testprofile.local" },
-  { label: "Power User", email: "test+poweruser@testprofile.local" },
-];
+function getDailySlug() {
+  return getLocalToday().replace(/-/g, "");
+}
+
+function getPresetProfiles() {
+  const d = getDailySlug();
+  return [
+    { label: "New User (no data)", email: `test+newuser-${d}@testprofile.local` },
+    { label: "Mid Journey User", email: `test+miduser-${d}@testprofile.local` },
+    { label: "Power User", email: `test+poweruser-${d}@testprofile.local` },
+  ];
+}
 
 export default function AdminPanel() {
   const [realUser, setRealUser] = useState(null);
@@ -46,7 +54,8 @@ export default function AdminPanel() {
   const addProfile = () => {
     const label = newLabel.trim() || `Test Profile ${profiles.length + 1}`;
     const slug = label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    const email = `test+${slug}@testprofile.local`;
+    const d = getDailySlug();
+    const email = `test+${slug}-${d}@testprofile.local`;
     const newProfile = { label, email, created: new Date().toISOString() };
     saveProfiles([...profiles, newProfile]);
     setNewLabel("");
@@ -118,9 +127,9 @@ export default function AdminPanel() {
         )}
 
         {/* Preset profiles */}
-        <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-2">Quick Presets</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-2">Quick Presets <span className="text-[9px] text-muted-foreground/50 normal-case font-normal">(fresh each day)</span></p>
         <div className="space-y-2 mb-5">
-          {PRESET_PROFILES.map(preset => {
+          {getPresetProfiles().map(preset => {
             const alreadyAdded = profiles.find(p => p.email === preset.email);
             return (
               <div key={preset.email} className="glass-card border border-border rounded-xl p-3 flex items-center gap-3">

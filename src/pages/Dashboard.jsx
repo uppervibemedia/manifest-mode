@@ -9,6 +9,7 @@ import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
 import DashboardHabitWidget from "@/components/habits/DashboardHabitWidget";
 import { getLevelForPoints } from "@/lib/identityEngine";
 import { useTestProfile } from "@/lib/testProfileContext";
+import { getLocalToday } from "@/lib/dateUtils";
 
 const MOTIVATIONS = [
   "Your future responds to who you become daily.",
@@ -32,7 +33,7 @@ export default function Dashboard() {
   const [recentCheckin, setRecentCheckin] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalToday();
   const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length];
 
   useEffect(() => { loadData(); }, []);

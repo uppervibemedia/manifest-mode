@@ -5,8 +5,9 @@ import { base44 } from "@/api/base44Client";
 import { Sun, Moon, Check, ChevronLeft, Loader2, Sparkles } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { POINT_VALUES, getLevelForPoints } from "@/lib/identityEngine";
+import { getLocalToday } from "@/lib/dateUtils";
 
-const today = new Date().toISOString().split("T")[0];
+const today = getLocalToday();
 
 // ─── Morning Section ──────────────────────────────────────────────────────────
 

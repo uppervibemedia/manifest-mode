@@ -8,8 +8,9 @@ import AppLayout from "@/components/layout/AppLayout";
 import HabitCard from "@/components/habits/HabitCard";
 import HabitCalendar from "@/components/habits/HabitCalendar";
 import AddHabitModal from "@/components/habits/AddHabitModal";
+import { getLocalToday } from "@/lib/dateUtils";
 
-const today = new Date().toISOString().split("T")[0];
+const today = getLocalToday();
 
 const CATEGORY_META = {
   wealth:     { icon: "💰", color: "#fbbf24" },

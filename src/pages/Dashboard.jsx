@@ -256,8 +256,7 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Habit Tracker Widget */}
-        <DashboardHabitWidget />
+
 
         {/* Pinned Visions */}
         <PinnedVisionsWidget />

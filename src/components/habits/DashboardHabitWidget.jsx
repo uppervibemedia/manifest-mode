@@ -37,7 +37,7 @@ export default function DashboardHabitWidget() {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      onClick={() => navigate("/habits")}
+      onClick={() => navigate("/daily-shift")}
       className={`glass-card rounded-2xl p-4 mb-3 cursor-pointer border transition-colors ${
         allDone ? "border-emerald-500/30" : "border-border hover:border-primary/30"
       }`}
@@ -45,7 +45,7 @@ export default function DashboardHabitWidget() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Flame className={`w-4 h-4 ${bestStreak > 0 ? "text-orange-400" : "text-muted-foreground"}`} />
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Habits</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Shift</p>
           {bestStreak > 0 && (
             <span className="text-xs font-bold text-orange-400">{bestStreak}d</span>
           )}

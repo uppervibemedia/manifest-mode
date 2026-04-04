@@ -61,7 +61,7 @@ const AuthenticatedApp = () => {
       <Route path="/progress" element={<Progress />} />
       <Route path="/tracker" element={<RealityShiftTracker />} />
       <Route path="/coach" element={<FutureSelfCoach />} />
-      <Route path="/habits" element={<HabitTracker />} />
+      <Route path="/daily-shift" element={<HabitTracker />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

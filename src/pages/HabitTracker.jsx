@@ -290,8 +290,8 @@ export default function HabitTracker() {
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Alignment System</p>
-            <h1 className="font-playfair text-2xl font-semibold">Daily Habits</h1>
+            <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Your Daily Practice</p>
+            <h1 className="font-playfair text-2xl font-semibold">Daily Shift</h1>
             <p className="text-xs text-muted-foreground mt-1">
               {new Date().toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" })}
             </p>

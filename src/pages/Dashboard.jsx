@@ -142,7 +142,7 @@ export default function Dashboard() {
 
           {/* Habit Progress */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            onClick={() => navigate("/shift-plan")}
+            onClick={() => navigate("/daily-shift")}
             className="glass-card rounded-xl p-3 text-center cursor-pointer hover:border-primary/30 transition-colors border border-border">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Habits</p>
             <p className={`font-playfair text-2xl font-bold ${habitPct === 100 ? "text-emerald-400" : "text-foreground"}`}>
@@ -221,11 +221,11 @@ export default function Dashboard() {
         {/* Daily Shift Plan card */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
           className="glass-card rounded-2xl p-5 mb-3 cursor-pointer"
-          onClick={() => navigate("/shift-plan")}>
+          onClick={() => navigate("/daily-shift")}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-400" />
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Shift Plan</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Shift</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>

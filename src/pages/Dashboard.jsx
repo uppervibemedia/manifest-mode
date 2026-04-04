@@ -92,7 +92,7 @@ export default function Dashboard() {
           <div>
             <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Good {getTimeOfDay()}</p>
             <h1 className="font-playfair text-2xl font-semibold text-foreground">
-              {user?.full_name?.split(" ")[0] || "Welcome"} ✦
+              Daily Habits ✦
             </h1>
           </div>
           <div className="flex flex-col items-end gap-1.5">
@@ -215,44 +215,6 @@ export default function Dashboard() {
               className="mt-2 w-full py-2.5 gold-gradient text-background text-sm font-semibold rounded-xl flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" /> Take Your First Assessment
             </button>
-          )}
-        </motion.div>
-
-        {/* Daily Shift Plan card */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
-          className="glass-card rounded-2xl p-5 mb-3 cursor-pointer"
-          onClick={() => navigate("/daily-shift")}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-400" />
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Habit</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </div>
-          {shiftPlan ? (
-            <>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex gap-2">
-                  {shiftPlan.habits?.map((_, i) => {
-                    const done = shiftPlan.completed_habits?.includes(shiftPlan.habits[i]);
-                    return (
-                      <div key={i} className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${done ? "border-emerald-500 bg-emerald-500/20" : "border-border"}`}>
-                        {done && <Check className="w-3 h-3 text-emerald-400" />}
-                      </div>
-                    );
-                  })}
-                </div>
-                <span className={`text-xs font-semibold ${habitPct === 100 ? "text-emerald-400" : "text-muted-foreground"}`}>
-                  {habitPct}%
-                </span>
-              </div>
-              <div className="h-1.5 bg-border rounded-full overflow-hidden mb-2">
-                <div className="h-full rounded-full transition-all" style={{ width: `${habitPct}%`, backgroundColor: habitPct === 100 ? "#34d399" : "hsl(45 80% 60%)" }} />
-              </div>
-              <p className="text-xs text-primary/80 italic">"{shiftPlan.affirmation}"</p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">Complete an assessment to unlock your plan</p>
           )}
         </motion.div>
 

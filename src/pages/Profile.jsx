@@ -101,8 +101,7 @@ export default function Profile() {
 
   const toggleNotifications = async () => {
     if (!profile) return;
-    await base44.entities.UserProfile.update(profile.id, { notifications_enabled: !profile.notifications_enabled });
-    setProfile(prev => ({ ...prev, notifications_enabled: !prev.notifications_enabled }));
+    await updateProfile({ notifications_enabled: !profile.notifications_enabled });
   };
 
   if (loading || profileLoading) return (

@@ -46,6 +46,8 @@ const AuthenticatedApp = () => {
     } else if (authError.type === 'auth_required') {
       navigateToLogin();
       return null;
+    } else {
+      console.error('Auth error:', authError);
     }
   }
 

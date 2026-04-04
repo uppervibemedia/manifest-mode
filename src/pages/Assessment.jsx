@@ -154,7 +154,7 @@ export default function Assessment() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-6">
+      <div className="px-5 pt-12 pb-32">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
           {step > 0 && (

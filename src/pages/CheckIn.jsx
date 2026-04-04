@@ -372,7 +372,7 @@ export default function CheckIn() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-8">
+      <div className="px-5 pt-12 pb-32">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => navigate("/")}

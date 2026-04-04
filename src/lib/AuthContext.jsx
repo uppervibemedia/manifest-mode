@@ -92,8 +92,10 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
+      if (currentUser) {
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      }
       setIsLoadingAuth(false);
     } catch (error) {
       console.error('User auth check failed:', error);

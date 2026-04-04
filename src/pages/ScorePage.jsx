@@ -51,7 +51,7 @@ export default function ScorePage() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-6">
+      <div className="px-5 pt-12 pb-32">
         <div className="mb-6">
           <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Your Alignment</p>
           <h1 className="font-playfair text-2xl font-semibold">Reality Match Score</h1>

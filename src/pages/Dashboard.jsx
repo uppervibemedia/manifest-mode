@@ -99,7 +99,7 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <AccountabilityBanner />
-      <div className="px-5 pt-4 pb-4 relative">
+      <div className="px-5 pt-4 pb-32 relative">
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
         {/* Header */}

@@ -7,6 +7,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import AccountabilityBanner from "@/components/notifications/AccountabilityBanner";
 import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
 import DashboardHabitWidget from "@/components/habits/DashboardHabitWidget";
+import BlueprintPreviewCard from "@/components/blueprint/BlueprintPreviewCard";
 import { getLevelForPoints } from "@/lib/identityEngine";
 import { useTestProfile, getDisplayName } from "@/lib/testProfileContext";
 import { useUserProfile } from "@/lib/UserProfileContext";
@@ -269,16 +270,19 @@ export default function Dashboard() {
         {/* Pinned Visions */}
         <PinnedVisionsWidget />
 
+        {/* Blueprint Preview */}
+        <BlueprintPreviewCard />
+
         {/* Future Self Coach CTA */}
         <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
           onClick={() => navigate("/coach")}
-          className="w-full glass-card glow-gold rounded-2xl p-4 mb-3 border border-primary/25 flex items-center gap-4 hover:border-primary/50 transition-colors text-left">
-          <div className="w-11 h-11 gold-gradient rounded-xl flex items-center justify-center shrink-0 text-background">
+          className="w-full glass-card rounded-2xl p-4 mb-3 border border-border flex items-center gap-4 hover:border-primary/30 transition-colors text-left">
+          <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 text-primary">
             <Sparkles className="w-5 h-5" />
           </div>
           <div className="flex-1">
             <p className="text-sm font-semibold text-foreground">Future Self Coach</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Get personalized AI coaching now</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Get personalized AI coaching</p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
         </motion.button>

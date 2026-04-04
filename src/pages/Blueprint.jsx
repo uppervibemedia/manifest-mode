@@ -2,16 +2,16 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Lock, ArrowRight, Sparkles } from "lucide-react";
+import { Lock, ArrowRight, Sparkles, ChevronLeft, TrendingUp, Eye, Zap } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
 const BLUEPRINT_SECTIONS = [
-  { key: "identity", label: "Identity", icon: "🧬", desc: "Who you are becoming" },
-  { key: "mindset", label: "How You Think", icon: "🧠", desc: "Beliefs that drive you" },
-  { key: "habits", label: "Daily Habits", icon: "⚡", desc: "How you move through each day" },
-  { key: "money", label: "Money Mindset", icon: "💰", desc: "Your financial operating system" },
-  { key: "health", label: "Health Standards", icon: "💪", desc: "Your body, your non-negotiables" },
-  { key: "standards", label: "What You No Longer Tolerate", icon: "🛡️", desc: "Your boundaries and standards" },
+  { key: "identity", label: "Your Future Self Is", icon: "🧬", premium: false },
+  { key: "mindset", label: "How You Think", icon: "🧠", premium: false },
+  { key: "standards", label: "Your Daily Standards", icon: "⭐", premium: false },
+  { key: "money", label: "Money Standards", icon: "💰", premium: true },
+  { key: "health", label: "Health Standards", icon: "💪", premium: true },
+  { key: "boundaries", label: "What You No Longer Tolerate", icon: "🛡️", premium: true },
 ];
 
 function generateBlueprint(analysis) {
@@ -59,11 +59,18 @@ export default function Blueprint() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-6">
-        <div className="mb-6">
-          <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Identity Upgrade</p>
-          <h1 className="font-playfair text-2xl font-semibold">Future Self Blueprint</h1>
-          <p className="text-sm text-muted-foreground mt-1">The operating manual of your evolved identity</p>
+      <div className="px-5 pt-12 pb-32">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => navigate("/")}
+            className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex-1">
+            <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Identity Upgrade</p>
+            <h1 className="font-playfair text-2xl font-semibold">Future Self Blueprint</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">The operating manual of your evolved identity</p>
+          </div>
         </div>
 
         {!analysis ? (
@@ -80,68 +87,92 @@ export default function Blueprint() {
           </div>
         ) : (
           <>
-            {/* Future self statement */}
-            <div className="glass-card glow-gold rounded-2xl p-5 mb-5 border border-primary/20">
-              <p className="text-xs uppercase tracking-widest text-primary font-medium mb-2">Your Future Self Is</p>
-              <p className="text-base text-foreground leading-relaxed font-medium">
-                {blueprint?.identity}
-              </p>
+            {/* Blueprint Sections */}
+            <div className="space-y-3 mb-6">
+              {BLUEPRINT_SECTIONS.map((section, i) => {
+                const locked = section.premium && !hasAccess;
+                return (
+                  <motion.div key={section.key}
+                    initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+                    className={`glass-card rounded-2xl p-5 border transition-all ${
+                      locked ? "border-border/40 opacity-50" : section.key === "identity" ? "border-primary/30 bg-primary/5 glow-gold" : "border-border hover:border-primary/20"
+                    }`}>
+                    <div className="flex items-start gap-4">
+                      <span className="text-3xl mt-0.5 shrink-0">{section.icon}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">{section.label}</p>
+                          {locked && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+                        </div>
+                        {locked ? (
+                          <p className="text-sm text-muted-foreground/50 italic">Premium feature. Upgrade to unlock.</p>
+                        ) : (
+                          <p className={`text-sm leading-relaxed ${section.key === "identity" ? "text-foreground font-medium" : "text-foreground/80"}`}>
+                            {blueprint?.[section.key]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+            {/* Blueprint Connections */}
+            <div className="mb-6">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Your Blueprint Is Connected To</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button onClick={() => navigate("/daily-shift")}
+                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
+                  <Zap className="w-5 h-5 text-primary mb-2" />
+                  <p className="text-xs font-semibold text-foreground">Daily Shift Habits</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Activate your blueprint daily</p>
+                </button>
+                <button onClick={() => navigate("/coach")}
+                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
+                  <Sparkles className="w-5 h-5 text-primary mb-2" />
+                  <p className="text-xs font-semibold text-foreground">AI Coach</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Get personalized guidance</p>
+                </button>
+                <button onClick={() => navigate("/progress")}
+                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
+                  <TrendingUp className="w-5 h-5 text-primary mb-2" />
+                  <p className="text-xs font-semibold text-foreground">Reality Match Score</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Track alignment progress</p>
+                </button>
+                <button onClick={() => navigate("/vision-vault")}
+                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
+                  <Eye className="w-5 h-5 text-primary mb-2" />
+                  <p className="text-xs font-semibold text-foreground">Living Vision Board</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Visual proof of your future</p>
+                </button>
+              </div>
             </div>
 
-            {/* Sections */}
-            {BLUEPRINT_SECTIONS.filter(s => s.key !== "identity").map((section, i) => {
-              const locked = !hasAccess && i > 1;
-              return (
-                <motion.div key={section.key}
-                  initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-                  className={`glass-card rounded-2xl p-4 mb-3 border transition-all ${
-                    locked ? "border-border opacity-60" : "border-border hover:border-primary/20"
-                  }`}>
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl mt-0.5">{section.icon}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">{section.label}</p>
-                        {locked && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
-                      </div>
-                      {locked ? (
-                        <p className="text-sm text-muted-foreground/40">Upgrade to Premium to unlock</p>
-                      ) : (
-                        <p className="text-sm text-foreground/80 leading-relaxed">{blueprint?.[section.key]}</p>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-
-            {/* Action plan */}
+            {/* Activation Steps */}
             {analysis.action_plan && (
-              <div className="glass-card rounded-2xl p-4 mb-4">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Your Activation Steps</p>
-                <div className="space-y-2">
-                  {analysis.action_plan.slice(0, hasAccess ? 5 : 2).map((step, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <span className="text-xs font-bold text-primary shrink-0 mt-0.5">{i + 1}.</span>
+              <div className="glass-card rounded-2xl p-5 mb-6">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-4">Your Activation Steps</p>
+                <div className="space-y-3">
+                  {analysis.action_plan.slice(0, hasAccess ? 10 : 3).map((step, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                      className="flex items-start gap-3">
+                      <span className="text-xs font-bold text-primary shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-lg bg-primary/10">
+                        {i + 1}
+                      </span>
                       <p className="text-sm text-foreground/80 leading-relaxed">{step}</p>
-                    </div>
+                    </motion.div>
                   ))}
-                  {!hasAccess && (
-                    <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">+{analysis.action_plan.length - 2} more steps</p>
+                  {!hasAccess && analysis.action_plan.length > 3 && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <p className="text-xs text-muted-foreground mb-3">+{analysis.action_plan.length - 3} more activation steps</p>
                       <button onClick={() => navigate("/pricing")}
-                        className="text-xs text-primary font-medium">Upgrade to Premium →</button>
+                        className="w-full py-2.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary font-semibold hover:bg-primary/15 transition-colors">
+                        Unlock Full Blueprint — Premium
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
-            )}
-
-            {!hasAccess && (
-              <button onClick={() => navigate("/pricing")}
-                className="w-full py-4 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 mt-2">
-                <Sparkles className="w-4 h-4" /> Unlock Full Blueprint — Premium
-              </button>
             )}
           </>
         )}

@@ -21,7 +21,7 @@ export default function VisionVault() {
   const [sceneVision, setSceneVision] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [user?.email]);
 
   const loadData = async () => {
     try {

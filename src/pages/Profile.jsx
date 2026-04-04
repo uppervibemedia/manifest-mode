@@ -30,6 +30,10 @@ export default function Profile() {
         const u = await base44.auth.me();
         setUser(u);
         const activeEmail = testEmail || u.email;
+        setProfile(null);
+        setScores([]);
+        setEarnedBadges([]);
+        setCreditBalance(0);
         const [p, s, credits, habitLogs, checkins, journals] = await Promise.all([
           base44.entities.UserProfile.filter({ user_email: activeEmail }),
           base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 10),

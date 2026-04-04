@@ -268,7 +268,7 @@ export default function HabitTracker() {
   const [morningSaved, setMorningSaved] = useState(false);
   const [eveningSaved, setEveningSaved] = useState(false);
 
-  useEffect(() => { loadAll(); }, [testEmail]);
+  useEffect(() => { loadAll(); }, [testEmail, user?.email]);
 
   const loadAll = async () => {
     const u = await base44.auth.me();

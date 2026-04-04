@@ -36,7 +36,7 @@ export default function Dashboard() {
   const today = getLocalToday();
   const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length];
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [user?.email]);
 
   const loadData = async () => {
     const u = await base44.auth.me();

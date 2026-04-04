@@ -48,6 +48,7 @@ const CATEGORY_META = {
 export default function Progress() {
   const navigate = useNavigate();
   const { testEmail } = useTestProfile();
+  const [user, setUser] = useState(null);
   const [scores, setScores] = useState([]);
   const [visions, setVisions] = useState([]);
   const [checkins, setCheckins] = useState([]);
@@ -58,8 +59,13 @@ export default function Progress() {
 
   useEffect(() => {
     (async () => {
-      const user = await base44.auth.me();
-      const activeEmail = testEmail || user.email;
+      const u = await base44.auth.me();
+      if (!u) {
+        navigate("/");
+        return;
+      }
+      setUser(u);
+      const activeEmail = testEmail || u.email;
       const [s, v, c, h, hl, a] = await Promise.all([
         base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 20),
         base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),

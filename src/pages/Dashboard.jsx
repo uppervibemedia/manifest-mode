@@ -92,7 +92,7 @@ export default function Dashboard() {
           <div>
             <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Good {getTimeOfDay()}</p>
             <h1 className="font-playfair text-2xl font-semibold text-foreground">
-              Daily Habits
+              {user?.full_name?.split(" ")[0] || "Welcome"}
             </h1>
           </div>
           <div className="flex flex-col items-end gap-1.5">

@@ -26,51 +26,56 @@ export default function Profile() {
 
   useEffect(() => {
     (async () => {
-      const u = await base44.auth.me();
-      setUser(u);
-      const activeEmail = testEmail || u.email;
-      const [p, s, credits, habitLogs, checkins, journals] = await Promise.all([
-        base44.entities.UserProfile.filter({ user_email: activeEmail }),
-        base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 10),
-        base44.entities.AICreditPack.filter({ user_email: activeEmail }),
-        base44.entities.HabitLog.filter({ user_email: activeEmail, completed: true }, "-log_date", 1000),
-        base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 200),
-        base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 500),
-      ]);
-      const prof = p[0] || null;
+      try {
+        const u = await base44.auth.me();
+        setUser(u);
+        const activeEmail = testEmail || u.email;
+        const [p, s, credits, habitLogs, checkins, journals] = await Promise.all([
+          base44.entities.UserProfile.filter({ user_email: activeEmail }),
+          base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 10),
+          base44.entities.AICreditPack.filter({ user_email: activeEmail }),
+          base44.entities.HabitLog.filter({ user_email: activeEmail, completed: true }, "-log_date", 1000),
+          base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 200),
+          base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 500),
+        ]);
+        const prof = p[0] || null;
 
-      // Compute real counts from actual data (not stale profile counters)
-      const realHabitsCompleted = habitLogs.length;
-      const realCheckins = checkins.length;
-      const realJournals = journals.length;
+        // Compute real counts from actual data (not stale profile counters)
+        const realHabitsCompleted = habitLogs.length;
+        const realCheckins = checkins.length;
+        const realJournals = journals.length;
 
-      // Build an accurate profile-like object for badge computation
-      const accurateProfile = prof ? {
-        ...prof,
-        total_habits_completed: realHabitsCompleted,
-        total_checkins: realCheckins,
-        total_journal_entries: realJournals,
-      } : null;
-
-      // Sync counts back to DB if they differ
-      if (prof && (
-        prof.total_habits_completed !== realHabitsCompleted ||
-        prof.total_checkins !== realCheckins ||
-        prof.total_journal_entries !== realJournals
-      )) {
-        base44.entities.UserProfile.update(prof.id, {
+        // Build an accurate profile-like object for badge computation
+        const accurateProfile = prof ? {
+          ...prof,
           total_habits_completed: realHabitsCompleted,
           total_checkins: realCheckins,
           total_journal_entries: realJournals,
-        });
-      }
+        } : null;
 
-      setProfile(accurateProfile);
-      setScores(s);
-      if (accurateProfile) setEarnedBadges(computeEarnedBadges(accurateProfile, s));
-      const packCredits = credits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0);
-      setCreditBalance((prof?.ai_credits || 0) + packCredits);
-      setLoading(false);
+        // Sync counts back to DB if they differ
+        if (prof && (
+          prof.total_habits_completed !== realHabitsCompleted ||
+          prof.total_checkins !== realCheckins ||
+          prof.total_journal_entries !== realJournals
+        )) {
+          base44.entities.UserProfile.update(prof.id, {
+            total_habits_completed: realHabitsCompleted,
+            total_checkins: realCheckins,
+            total_journal_entries: realJournals,
+          });
+        }
+
+        setProfile(accurateProfile);
+        setScores(s);
+        if (accurateProfile) setEarnedBadges(computeEarnedBadges(accurateProfile, s));
+        const packCredits = credits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0);
+        setCreditBalance((prof?.ai_credits || 0) + packCredits);
+      } catch (error) {
+        console.error("Profile load error:", error);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, [testEmail]);
 

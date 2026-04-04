@@ -5,7 +5,7 @@ import { X, Plus, Trash2, Loader2, Image, Sparkles, Camera, Target } from "lucid
 import { getCategoryMeta } from "@/lib/categories";
 import VisionMilestones from "./VisionMilestones";
 
-export default function VisionDetailModal({ vision, onClose, onUpdate }) {
+export default function VisionDetailModal({ vision, profile, onClose, onUpdate, onGenerateScene }) {
   const meta = getCategoryMeta(vision.category);
   const [progress, setProgress] = useState(vision.progress || 0);
   const [steps, setSteps] = useState(vision.action_steps || []);
@@ -17,6 +17,7 @@ export default function VisionDetailModal({ vision, onClose, onUpdate }) {
   const [insight, setInsight] = useState(vision.ai_insight || null);
   const [dailyAction, setDailyAction] = useState(vision.daily_action || null);
   const [uploadingProof, setUploadingProof] = useState(false);
+  const isPremium = profile?.subscription_tier === "premium";
 
   const saveChanges = async (updates) => {
     setSaving(true);
@@ -181,6 +182,25 @@ Return as JSON: { "insight": "...", "daily_action": "..." }`;
               <span className="text-[10px] text-muted-foreground/50">Achieved ✦</span>
             </div>
           </div>
+
+          {/* Future Self Scene (Premium) */}
+          {isPremium && (
+            <button
+              onClick={() => onGenerateScene?.(vision)}
+              className="w-full glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-left hover:border-primary/50 transition-colors flex items-center gap-3"
+            >
+              <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shrink-0 text-background">
+                <Camera className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">Future Self Scene</p>
+                  <span className="text-[9px] font-bold text-primary bg-primary/20 border border-primary/30 rounded px-1.5 py-0.5">✦ Premium</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">Place yourself in your vision. Upload a photo and generate an aspirational scene.</p>
+              </div>
+            </button>
+          )}
 
           {/* AI Insight block */}
           <div className="glass-card border rounded-2xl p-4" style={{ borderColor: meta.color + "30" }}>

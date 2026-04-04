@@ -5,6 +5,7 @@ import { Plus, Edit3, Star, Trash2, Image, Lock, Pin, Sparkles } from "lucide-re
 import AppLayout from "@/components/layout/AppLayout";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionDetailModal from "@/components/vision/VisionDetailModal";
+import FutureSelfSceneModal from "@/components/vision/FutureSelfSceneModal";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 
 const FILTER_CATS = [{ id: "all", label: "All", icon: "✦", color: "#fbbf24" }, ...CATEGORIES];
@@ -17,6 +18,7 @@ export default function VisionVault() {
   const [showUpload, setShowUpload] = useState(false);
   const [editVision, setEditVision] = useState(null);
   const [detailVision, setDetailVision] = useState(null);
+  const [sceneVision, setSceneVision] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadData(); }, []);
@@ -255,10 +257,28 @@ export default function VisionVault() {
         {detailVision && (
           <VisionDetailModal
             vision={detailVision}
+            profile={profile}
             onClose={() => setDetailVision(null)}
             onUpdate={(updated) => {
               setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
               setDetailVision(updated);
+            }}
+            onGenerateScene={(vision) => {
+              setDetailVision(null);
+              setSceneVision(vision);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {sceneVision && (
+          <FutureSelfSceneModal
+            vision={sceneVision}
+            onClose={() => setSceneVision(null)}
+            onSave={(updated) => {
+              setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
+              setSceneVision(null);
             }}
           />
         )}

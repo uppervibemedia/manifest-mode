@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Sparkles, BarChart3, Loader2, Trash2, Star, Brain, Calendar } from "lucide-react";
+import { Plus, Sparkles, BarChart3, Loader2, Trash2, Star, Brain } from "lucide-react";
 import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
 import HabitCard from "@/components/habits/HabitCard";
@@ -345,6 +345,7 @@ export default function HabitTracker() {
                     habits={habits}
                     todayLogs={todayLogs}
                     weeklyRate={weeklyRate}
+                    userEmail={user?.email}
                   />
 
                   {/* 0% guidance nudge */}
@@ -364,7 +365,7 @@ export default function HabitTracker() {
                   )}
 
                   {(() => {
-                    const { top3, daily, identity, weekly } = getSections(sortedHabits);
+                    const { top3, daily, identity } = getSections(sortedHabits);
 
                     const SectionHeader = ({ icon: Icon, title, color }) => (
                       <div className="flex items-center gap-2 mb-2.5">
@@ -400,10 +401,10 @@ export default function HabitTracker() {
                           </div>
                         )}
 
-                        {/* Identity Activation */}
+                        {/* Identity Align */}
                         {identity.length > 0 && (
                           <div>
-                            <SectionHeader icon={Brain} title="Identity Activation" color="#c084fc" />
+                            <SectionHeader icon={Brain} title="Identity Align" color="#c084fc" />
                             <div className="space-y-2">
                               {identity.map((habit, i) => (
                                 <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
@@ -412,20 +413,8 @@ export default function HabitTracker() {
                           </div>
                         )}
 
-                        {/* Weekly Alignment Rituals */}
-                        {weekly.length > 0 && (
-                          <div>
-                            <SectionHeader icon={Calendar} title="Weekly Alignment Rituals" color="#34d399" />
-                            <div className="space-y-2">
-                              {weekly.map((habit, i) => (
-                                <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* If no sections have habits, show all */}
-                        {top3.length === 0 && daily.length === 0 && identity.length === 0 && weekly.length === 0 && sortedHabits.map((habit, i) => (
+                        {/* If no sections have habits, show all (excluding weekly) */}
+                        {top3.length === 0 && daily.length === 0 && identity.length === 0 && sortedHabits.filter(h => !isWeeklyRitual(h)).map((habit, i) => (
                           <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
                         ))}
                       </div>

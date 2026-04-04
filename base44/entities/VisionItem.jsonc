@@ -69,10 +69,19 @@
           "month": {
             "type": "string"
           },
-          "title": {
+          "theme": {
             "type": "string"
           },
-          "description": {
+          "identity_shift": {
+            "type": "string"
+          },
+          "visualization": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "affirmation": {
             "type": "string"
           },
           "completed": {

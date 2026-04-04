@@ -122,44 +122,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* ── KEY METRICS ROW ── */}
-        <div className="grid grid-cols-3 gap-2.5 mb-5">
-          {/* Reality Score */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            onClick={() => navigate("/score")}
-            className="glass-card rounded-xl p-3 text-center cursor-pointer hover:border-primary/30 transition-colors border border-border">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Score</p>
-            <p className={`font-playfair text-2xl font-bold ${scoreColor(latestScore?.overall_score)}`}>
-              {latestScore?.overall_score ?? "—"}
-            </p>
-            {scoreDelta !== null && (
-              <p className={`text-[10px] font-semibold mt-0.5 ${scoreDelta >= 0 ? "text-emerald-400" : "text-orange-400"}`}>
-                {scoreDelta >= 0 ? "+" : ""}{scoreDelta}
-              </p>
-            )}
-            {!latestScore && <p className="text-[10px] text-muted-foreground/60 mt-0.5">Not set</p>}
-          </motion.div>
 
-          {/* Habit Progress */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            onClick={() => navigate("/daily-shift")}
-            className="glass-card rounded-xl p-3 text-center cursor-pointer hover:border-primary/30 transition-colors border border-border">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Daily Habit</p>
-            <p className={`font-playfair text-2xl font-bold ${habitPct === 100 ? "text-emerald-400" : "text-foreground"}`}>
-              {shiftPlan ? `${habitsDone}/${habitsTotal}` : "—"}
-            </p>
-            <p className="text-[10px] text-muted-foreground/60 mt-0.5">today</p>
-          </motion.div>
-
-          {/* Streak */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            onClick={() => navigate("/tracker")}
-            className="glass-card rounded-xl p-3 text-center cursor-pointer hover:border-primary/30 transition-colors border border-border">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Streak</p>
-            <p className="font-playfair text-2xl font-bold text-primary">{profile?.streak_count || 0}</p>
-            <p className="text-[10px] text-muted-foreground/60 mt-0.5">days</p>
-          </motion.div>
-        </div>
 
         {/* ── PROJECT OVERVIEW CARDS ── */}
         <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Overview</p>

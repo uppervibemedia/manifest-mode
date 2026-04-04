@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame } from "lucide-react";
+import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame, FlaskConical } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import IdentityLevelCard from "@/components/profile/IdentityLevelCard";
 import AchievementBadges from "@/components/profile/AchievementBadges";
@@ -206,6 +206,18 @@ export default function Profile() {
               ))}
             </div>
           </div>
+        )}
+
+        {user?.role === "admin" && (
+          <button onClick={() => navigate("/admin")}
+            className="w-full glass-card border border-amber-400/20 rounded-xl p-4 flex items-center gap-3 hover:border-amber-400/40 transition-colors mb-2">
+            <FlaskConical className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="flex-1 text-left">
+              <p className="text-sm font-semibold text-foreground">Test Profiles</p>
+              <p className="text-xs text-muted-foreground">Admin panel for testing</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
         )}
 
         <button onClick={handleLogout}

@@ -8,6 +8,7 @@ import AccountabilityBanner from "@/components/notifications/AccountabilityBanne
 import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
 import DashboardHabitWidget from "@/components/habits/DashboardHabitWidget";
 import { getLevelForPoints } from "@/lib/identityEngine";
+import { useTestProfile } from "@/lib/testProfileContext";
 
 const MOTIVATIONS = [
   "Your future responds to who you become daily.",
@@ -19,6 +20,7 @@ const MOTIVATIONS = [
 ];
 
 export default function Dashboard() {
+  const { testEmail } = useTestProfile();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [latestScore, setLatestScore] = useState(null);
@@ -39,13 +41,14 @@ export default function Dashboard() {
     const u = await base44.auth.me();
     if (!u) return;
     setUser(u);
+    const activeEmail = testEmail || u.email;
     const [profiles, scores, plans, checkins, visions, journals] = await Promise.all([
-      base44.entities.UserProfile.filter({ user_email: u.email }),
-      base44.entities.ScoreHistory.filter({ user_email: u.email }, "-created_date", 5),
-      base44.entities.DailyShiftPlan.filter({ user_email: u.email, plan_date: today }),
-      base44.entities.DailyCheckIn.filter({ user_email: u.email }, "-created_date", 2),
-      base44.entities.VisionItem.filter({ user_email: u.email, is_active: true }),
-      base44.entities.JournalEntry.filter({ user_email: u.email }, "-created_date", 1),
+      base44.entities.UserProfile.filter({ user_email: activeEmail }),
+      base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 5),
+      base44.entities.DailyShiftPlan.filter({ user_email: activeEmail, plan_date: today }),
+      base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 2),
+      base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),
+      base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 1),
     ]);
     setProfile(profiles[0] || null);
     setLatestScore(scores[0] || null);

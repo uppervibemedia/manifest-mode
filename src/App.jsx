@@ -5,6 +5,9 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import { TestProfileProvider } from '@/lib/testProfileContext';
+import TestModeBanner from '@/components/admin/TestModeBanner';
+import AdminPanel from './pages/AdminPanel';
 
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
@@ -62,6 +65,7 @@ const AuthenticatedApp = () => {
       <Route path="/tracker" element={<Progress />} />
       <Route path="/coach" element={<FutureSelfCoach />} />
       <Route path="/daily-shift" element={<HabitTracker />} />
+      <Route path="/admin" element={<AdminPanel />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -70,12 +74,15 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <TestProfileProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <TestModeBanner />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </TestProfileProvider>
     </AuthProvider>
   )
 }

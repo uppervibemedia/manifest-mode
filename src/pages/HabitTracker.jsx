@@ -256,6 +256,14 @@ export default function HabitTracker() {
   const { user, loading: profileLoading } = useUserProfile();
   const today = getLocalToday();
 
+  // Auth guard
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, profileLoading, navigate]);
+
   const [habits, setHabits] = useState([]);
   const [todayLogs, setTodayLogs] = useState([]);
   const [historyLogs, setHistoryLogs] = useState([]);

@@ -17,12 +17,20 @@ const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 
 export default function Profile() {
   const { testEmail } = useTestProfile();
-  const { user, profile, loading: profileLoading, updateProfile } = useUserProfile();
+  const { user, profile, loading: profileLoading, updateProfile, clearProfile } = useUserProfile();
   const [scores, setScores] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [creditBalance, setCreditBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Auth guard
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, profileLoading, navigate]);
 
   useEffect(() => {
     (async () => {
@@ -79,7 +87,10 @@ export default function Profile() {
     })();
   }, [testEmail, user?.email, profileLoading]);
 
-  const handleLogout = () => base44.auth.logout();
+  const handleLogout = async () => {
+    clearProfile();
+    base44.auth.logout();
+  };
 
   const handleResetAssessment = async () => {
     if (!confirm("This will reset your assessment data. Are you sure?")) return;

@@ -24,6 +24,16 @@ const MOTIVATIONS = [
 export default function Dashboard() {
   const { testEmail } = useTestProfile();
   const { user, profile, loading: profileLoading } = useUserProfile();
+  const navigate = useNavigate();
+
+  // Auth guard
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, profileLoading, navigate]);
+
   const [latestScore, setLatestScore] = useState(null);
   const [prevScore, setPrevScore] = useState(null);
   const [shiftPlan, setShiftPlan] = useState(null);
@@ -32,7 +42,6 @@ export default function Dashboard() {
   const [journalCount, setJournalCount] = useState(0);
   const [recentCheckin, setRecentCheckin] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const today = getLocalToday();
   const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length];
 

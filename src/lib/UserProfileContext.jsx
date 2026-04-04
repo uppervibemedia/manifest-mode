@@ -7,17 +7,28 @@ export function UserProfileProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [prevUserEmail, setPrevUserEmail] = useState(null);
+
+  const clearProfile = () => {
+    setUser(null);
+    setProfile(null);
+    setPrevUserEmail(null);
+  };
 
   const loadUserAndProfile = async () => {
     try {
       const u = await base44.auth.me();
       if (!u) {
-        setUser(null);
-        setProfile(null);
+        clearProfile();
         setLoading(false);
         return;
       }
+      // User changed (logout/login different account)
+      if (prevUserEmail && prevUserEmail !== u.email) {
+        setProfile(null);
+      }
       setUser(u);
+      setPrevUserEmail(u.email);
       const profiles = await base44.entities.UserProfile.filter({ user_email: u.email });
       setProfile(profiles[0] || null);
     } catch (error) {
@@ -33,15 +44,18 @@ export function UserProfileProvider({ children }) {
 
   // Refetch when user logs in/out
   useEffect(() => {
-    if (!user) return;
     const timer = setInterval(async () => {
       const u = await base44.auth.me();
-      if (u?.email !== user.email) {
+      if (u && prevUserEmail && u.email !== prevUserEmail) {
+        // User changed, reload
         loadUserAndProfile();
+      } else if (!u && user) {
+        // Logged out
+        clearProfile();
       }
-    }, 1000);
+    }, 500);
     return () => clearInterval(timer);
-  }, [user?.email]);
+  }, [user, prevUserEmail]);
 
   const updateProfile = async (updates) => {
     if (!profile) return;
@@ -51,7 +65,7 @@ export function UserProfileProvider({ children }) {
   };
 
   return (
-    <UserProfileContext.Provider value={{ user, profile, loading, updateProfile, refetch: loadUserAndProfile }}>
+    <UserProfileContext.Provider value={{ user, profile, loading, updateProfile, refetch: loadUserAndProfile, clearProfile }}>
       {children}
     </UserProfileContext.Provider>
   );

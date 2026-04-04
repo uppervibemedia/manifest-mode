@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Plus, Edit3, Star, Trash2, Image, Lock, Pin, Sparkles } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
@@ -20,6 +21,15 @@ export default function VisionVault() {
   const [detailVision, setDetailVision] = useState(null);
   const [sceneVision, setSceneVision] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Auth guard
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, profileLoading, navigate]);
 
   useEffect(() => { loadData(); }, [user?.email, profileLoading]);
 

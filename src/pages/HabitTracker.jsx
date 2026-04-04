@@ -287,9 +287,11 @@ export default function HabitTracker() {
     setTodayLogs(tl);
     setHistoryLogs(hl);
     setAnalysis(ai[0] || null);
-    if (checkins.length > 0) setMorningDone(true);
+    setMorningDone(checkins.length > 0);
     const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
-    if (todayEvening.length > 0) setEveningDone(true);
+    setEveningDone(todayEvening.length > 0);
+    setMorningSaved(false);
+    setEveningSaved(false);
     setLoading(false);
   };
 

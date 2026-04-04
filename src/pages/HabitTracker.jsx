@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Sparkles, BarChart3, List, Loader2, Trash2 } from "lucide-react";
+import { Plus, Sparkles, BarChart3, Loader2, Trash2, Star, Brain, Calendar } from "lucide-react";
 import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
 import HabitCard from "@/components/habits/HabitCard";
-import HabitStreakBanner from "@/components/habits/HabitStreakBanner";
 import HabitCalendar from "@/components/habits/HabitCalendar";
 import AddHabitModal from "@/components/habits/AddHabitModal";
+import AlignmentSummary from "@/components/habits/AlignmentSummary";
 
 const CATEGORY_META = {
   wealth:     { icon: "💰", color: "#fbbf24" },
@@ -23,6 +23,23 @@ const CATEGORY_META = {
 };
 
 const TABS = ["Today", "Stats", "All Habits"];
+
+// Categorize habits into sections
+function getSections(habits) {
+  const top3 = habits.filter(h => h.is_priority).slice(0, 3);
+  const weekly = habits.filter(h =>
+    h.blueprint_area === "finance" ||
+    h.category === "wealth" && h.alignment_impact === "low"
+  );
+  const identity = habits.filter(h =>
+    (h.source === "ai" || h.category === "spiritual") &&
+    !top3.includes(h) && !weekly.includes(h)
+  );
+  const daily = habits.filter(h =>
+    !top3.includes(h) && !weekly.includes(h) && !identity.includes(h)
+  );
+  return { top3, daily, identity, weekly };
+}
 
 export default function HabitTracker() {
   const navigate = useNavigate();
@@ -238,8 +255,8 @@ export default function HabitTracker() {
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Daily Practice</p>
-            <h1 className="font-playfair text-2xl font-semibold">Habit Tracker</h1>
+            <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Alignment System</p>
+            <h1 className="font-playfair text-2xl font-semibold">Daily Habits</h1>
             <p className="text-xs text-muted-foreground mt-1">
               {new Date().toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" })}
             </p>
@@ -285,43 +302,89 @@ export default function HabitTracker() {
             {activeTab === "Today" && (
               <AnimatePresence mode="wait">
                 <motion.div key="today" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <HabitStreakBanner
+
+                  {/* Daily Alignment Summary */}
+                  <AlignmentSummary
                     streak={bestStreak}
-                    completedToday={completedToday}
-                    totalToday={totalToday}
+                    completionPct={completionPct}
+                    habits={habits}
+                    todayLogs={todayLogs}
                     weeklyRate={weeklyRate}
                   />
 
-                  {/* Missed yesterday alert */}
-                  {missedYesterday.length > 0 && (
-                    <div className="glass-card border border-orange-400/20 bg-orange-400/5 rounded-xl px-4 py-3 mb-4">
-                      <p className="text-xs font-semibold text-orange-400 mb-0.5">
-                        {missedYesterday.length} habit{missedYesterday.length > 1 ? "s" : ""} missed yesterday
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {missedYesterday.slice(0, 2).map(h => h.title).join(", ")}
-                        {missedYesterday.length > 2 ? ` +${missedYesterday.length - 2} more` : ""}
-                      </p>
-                    </div>
-                  )}
+                  {(() => {
+                    const { top3, daily, identity, weekly } = getSections(sortedHabits);
 
-                  {/* Habits list */}
-                  <div className="space-y-2.5">
-                    {sortedHabits.map((habit, i) => (
-                      <HabitCard
-                        key={habit.id}
-                        habit={habit}
-                        completed={isCompleted(habit.id)}
-                        onToggle={toggleHabit}
-                        index={i}
-                      />
-                    ))}
-                  </div>
+                    const SectionHeader = ({ icon: Icon, title, color }) => (
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} />
+                        <p className="text-[10px] uppercase tracking-widest font-semibold" style={{ color }}>{title}</p>
+                        <div className="flex-1 h-px bg-border/60" />
+                      </div>
+                    );
+
+                    return (
+                      <div className="space-y-5">
+                        {/* Top 3 */}
+                        {top3.length > 0 && (
+                          <div>
+                            <SectionHeader icon={Star} title="Today's Top 3 Alignment Habits" color="hsl(45 80% 60%)" />
+                            <div className="space-y-2">
+                              {top3.map((habit, i) => (
+                                <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Daily Habits */}
+                        {daily.length > 0 && (
+                          <div>
+                            <SectionHeader icon={Sparkles} title="Daily Habits" color="#60a5fa" />
+                            <div className="space-y-2">
+                              {daily.map((habit, i) => (
+                                <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Identity Activation */}
+                        {identity.length > 0 && (
+                          <div>
+                            <SectionHeader icon={Brain} title="Identity Activation" color="#c084fc" />
+                            <div className="space-y-2">
+                              {identity.map((habit, i) => (
+                                <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Weekly Alignment Rituals */}
+                        {weekly.length > 0 && (
+                          <div>
+                            <SectionHeader icon={Calendar} title="Weekly Alignment Rituals" color="#34d399" />
+                            <div className="space-y-2">
+                              {weekly.map((habit, i) => (
+                                <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* If no sections have habits, show all */}
+                        {top3.length === 0 && daily.length === 0 && identity.length === 0 && weekly.length === 0 && sortedHabits.map((habit, i) => (
+                          <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
+                        ))}
+                      </div>
+                    );
+                  })()}
 
                   {/* Add from blueprint */}
                   {analysis && habits.length > 0 && (
                     <button onClick={generateFromBlueprint} disabled={generating}
-                      className="mt-4 w-full glass-card border border-primary/20 rounded-xl py-3 flex items-center justify-center gap-2 text-xs text-primary hover:border-primary/40 transition-colors disabled:opacity-40">
+                      className="mt-5 w-full glass-card border border-primary/20 rounded-xl py-3 flex items-center justify-center gap-2 text-xs text-primary hover:border-primary/40 transition-colors disabled:opacity-40">
                       {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                       {generating ? "Generating..." : "Add Blueprint Habits"}
                     </button>

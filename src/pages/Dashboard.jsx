@@ -288,23 +288,13 @@ export default function Dashboard() {
         </motion.button>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-            onClick={() => navigate("/blueprint")}
-            className="glass-card rounded-xl p-4 text-left hover:border-primary/30 transition-colors border border-border">
-            <span className="text-2xl block mb-2">🧬</span>
-            <p className="text-sm font-semibold text-foreground">Future Self</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Your blueprint</p>
-          </motion.button>
-
-          <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.27 }}
-            onClick={() => navigate("/journal")}
-            className="glass-card rounded-xl p-4 text-left hover:border-primary/30 transition-colors border border-border">
-            <span className="text-2xl block mb-2">📝</span>
-            <p className="text-sm font-semibold text-foreground">Journal</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Reflect & grow</p>
-          </motion.button>
-        </div>
+        <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          onClick={() => navigate("/journal")}
+          className="w-full glass-card rounded-xl p-4 text-left hover:border-primary/30 transition-colors border border-border mb-4">
+          <span className="text-2xl block mb-2">📝</span>
+          <p className="text-sm font-semibold text-foreground">Journal</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Reflect & grow</p>
+        </motion.button>
 
         {/* Assessment CTA */}
         {needsAssessment && (

@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Image, TrendingUp, Zap, User } from "lucide-react";
+import { Home, Image, TrendingUp, Zap, User, Sparkles } from "lucide-react";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "Home" },
+  { path: "/blueprint", icon: Sparkles, label: "Blueprint" },
   { path: "/vision-vault", icon: Image, label: "Vision Board" },
   { path: "/progress", icon: TrendingUp, label: "Progress" },
   { path: "/daily-shift", icon: Zap, label: "Daily Habits" },

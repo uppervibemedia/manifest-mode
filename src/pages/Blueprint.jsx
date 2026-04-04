@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Lock, ArrowRight, Sparkles, ChevronLeft, TrendingUp, Eye, Zap } from "lucide-react";
+import { Lock, ChevronLeft, Sparkles, MessageCircle, ArrowRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
 const BLUEPRINT_SECTIONS = [
@@ -29,18 +29,21 @@ function generateBlueprint(analysis) {
 export default function Blueprint() {
   const [analysis, setAnalysis] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [latestScore, setLatestScore] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
       const user = await base44.auth.me();
-      const [analyses, profiles] = await Promise.all([
+      const [analyses, profiles, scores] = await Promise.all([
         base44.entities.AIAnalysis.filter({ user_email: user.email }, "-created_date", 1),
         base44.entities.UserProfile.filter({ user_email: user.email }),
+        base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 1),
       ]);
       setAnalysis(analyses[0] || null);
       setProfile(profiles[0] || null);
+      setLatestScore(scores[0] || null);
       setLoading(false);
     })();
   }, []);
@@ -49,28 +52,24 @@ export default function Blueprint() {
   const hasAccess = tier === "premium";
   const blueprint = generateBlueprint(analysis);
 
-  if (loading) return (
-    <AppLayout>
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    </AppLayout>
-  );
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
       <div className="px-5 pt-12 pb-32">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate("/")}
-            className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center">
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="flex-1">
-            <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Identity Upgrade</p>
-            <h1 className="font-playfair text-2xl font-semibold">Future Self Blueprint</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">The operating manual of your evolved identity</p>
-          </div>
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Identity Upgrade</p>
+          <h1 className="font-playfair text-2xl font-semibold">Future Self Blueprint</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">The operating manual of your evolved identity</p>
         </div>
 
         {!analysis ? (
@@ -87,8 +86,8 @@ export default function Blueprint() {
           </div>
         ) : (
           <>
-            {/* Blueprint Sections */}
-            <div className="space-y-3 mb-6">
+            {/* Future Self Blueprint Sections */}
+            <div className="space-y-3 mb-8">
               {BLUEPRINT_SECTIONS.map((section, i) => {
                 const locked = section.premium && !hasAccess;
                 return (
@@ -116,46 +115,16 @@ export default function Blueprint() {
                   </motion.div>
                 );
               })}
-              </div>
-
-              {/* Blueprint Connections */}
-            <div className="mb-6">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Your Blueprint Is Connected To</p>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button onClick={() => navigate("/daily-shift")}
-                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
-                  <Zap className="w-5 h-5 text-primary mb-2" />
-                  <p className="text-xs font-semibold text-foreground">Daily Shift Habits</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Activate your blueprint daily</p>
-                </button>
-                <button onClick={() => navigate("/coach")}
-                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
-                  <Sparkles className="w-5 h-5 text-primary mb-2" />
-                  <p className="text-xs font-semibold text-foreground">AI Coach</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Get personalized guidance</p>
-                </button>
-                <button onClick={() => navigate("/progress")}
-                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
-                  <TrendingUp className="w-5 h-5 text-primary mb-2" />
-                  <p className="text-xs font-semibold text-foreground">Reality Match Score</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Track alignment progress</p>
-                </button>
-                <button onClick={() => navigate("/vision-vault")}
-                  className="glass-card border border-border rounded-2xl p-4 text-left hover:border-primary/30 transition-colors">
-                  <Eye className="w-5 h-5 text-primary mb-2" />
-                  <p className="text-xs font-semibold text-foreground">Living Vision Board</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Visual proof of your future</p>
-                </button>
-              </div>
             </div>
 
             {/* Activation Steps */}
             {analysis.action_plan && (
-              <div className="glass-card rounded-2xl p-5 mb-6">
+              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                className="glass-card rounded-2xl p-5 mb-8 border border-border">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-4">Your Activation Steps</p>
                 <div className="space-y-3">
                   {analysis.action_plan.slice(0, hasAccess ? 10 : 3).map((step, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}
+                    <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.05 }}
                       className="flex items-start gap-3">
                       <span className="text-xs font-bold text-primary shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-lg bg-primary/10">
                         {i + 1}
@@ -163,18 +132,38 @@ export default function Blueprint() {
                       <p className="text-sm text-foreground/80 leading-relaxed">{step}</p>
                     </motion.div>
                   ))}
-                  {!hasAccess && analysis.action_plan.length > 3 && (
-                    <div className="mt-4 pt-4 border-t border-border">
-                      <p className="text-xs text-muted-foreground mb-3">+{analysis.action_plan.length - 3} more activation steps</p>
-                      <button onClick={() => navigate("/pricing")}
-                        className="w-full py-2.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary font-semibold hover:bg-primary/15 transition-colors">
-                        Unlock Full Blueprint — Premium
-                      </button>
-                    </div>
-                  )}
+                </div>
+                {!hasAccess && analysis.action_plan.length > 3 && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                    className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-3">+{analysis.action_plan.length - 3} more activation steps</p>
+                    <button onClick={() => navigate("/pricing")}
+                      className="w-full py-2.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary font-semibold hover:bg-primary/15 transition-colors">
+                      Unlock Full Blueprint — Premium
+                    </button>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+
+            {/* AI Coaching Section */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+              className="glass-card glow-gold rounded-2xl p-5 border border-primary/25">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Guidance</p>
+                  <h3 className="font-playfair text-lg font-semibold text-foreground">Ask Your Future Self Coach</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Get personalized coaching based on your blueprint and alignment</p>
                 </div>
               </div>
-            )}
+              <button onClick={() => navigate("/coach")}
+                className="w-full py-3 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 hover:shadow-lg transition-all">
+                <Sparkles className="w-4 h-4" /> Start Coaching Session
+              </button>
+            </motion.div>
           </>
         )}
       </div>

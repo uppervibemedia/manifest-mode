@@ -12,12 +12,12 @@ import AdminPanel from './pages/AdminPanel';
 
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import Blueprint from './pages/Blueprint';
 import VisionVault from './pages/VisionVault';
 import Assessment from './pages/Assessment';
 import ScorePage from './pages/ScorePage';
 import ShiftPlan from './pages/ShiftPlan';
 import CheckIn from './pages/CheckIn';
-import Blueprint from './pages/Blueprint';
 import Journal from './pages/Journal';
 import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
@@ -55,12 +55,12 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/blueprint" element={<Blueprint />} />
       <Route path="/vision-vault" element={<VisionVault />} />
       <Route path="/assessment" element={<Assessment />} />
       <Route path="/score" element={<ScorePage />} />
       <Route path="/shift-plan" element={<ShiftPlan />} />
       <Route path="/checkin" element={<CheckIn />} />
-      <Route path="/blueprint" element={<Blueprint />} />
       <Route path="/journal" element={<Journal />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/pricing" element={<Pricing />} />

@@ -88,7 +88,12 @@ export default function Profile() {
   }, [testEmail, user?.email, profileLoading]);
 
   const handleLogout = async () => {
+    const { setTestEmail } = useTestProfile();
+    // Clear profile state
     clearProfile();
+    // Clear test mode if active
+    setTestEmail(null);
+    // Logout and redirect
     base44.auth.logout();
   };
 

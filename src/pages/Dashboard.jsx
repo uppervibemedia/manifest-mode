@@ -31,8 +31,13 @@ export default function Dashboard() {
     if (profileLoading) return;
     if (!user) {
       navigate("/");
+      return;
     }
-  }, [user, profileLoading, navigate]);
+    // Redirect new users to onboarding
+    if (profile && !profile.onboarding_completed) {
+      navigate("/onboarding");
+    }
+  }, [user, profile, profileLoading, navigate]);
 
   const [latestScore, setLatestScore] = useState(null);
   const [prevScore, setPrevScore] = useState(null);

@@ -111,8 +111,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = (shouldRedirect = true) => {
+    // Clear all auth state
     setUser(null);
     setIsAuthenticated(false);
+    setAuthError(null);
+    
+    // Clear app public settings to force re-check after login
+    setAppPublicSettings(null);
     
     if (shouldRedirect) {
       // Use the SDK's logout method which handles token cleanup and redirect

@@ -23,14 +23,42 @@ export function UserProfileProvider({ children }) {
         setLoading(false);
         return;
       }
-      // User changed (logout/login different account)
+      // User changed (logout/login different account) — clear old profile
       if (prevUserEmail && prevUserEmail !== u.email) {
         setProfile(null);
       }
       setUser(u);
       setPrevUserEmail(u.email);
+      
+      // Load or create profile for new user
       const profiles = await base44.entities.UserProfile.filter({ user_email: u.email });
-      setProfile(profiles[0] || null);
+      let userProfile = profiles[0];
+      
+      // Auto-create profile for new users
+      if (!userProfile) {
+        try {
+          userProfile = await base44.entities.UserProfile.create({
+            user_email: u.email,
+            onboarding_completed: false,
+            subscription_tier: "free",
+            billing_cycle: "monthly",
+            ai_credits: 0,
+            notifications_enabled: true,
+            streak_count: 0,
+            alignment_points: 0,
+            identity_level: 0,
+            total_habits_completed: 0,
+            total_checkins: 0,
+            total_journal_entries: 0,
+          });
+          console.log("Auto-created user profile for new user:", u.email);
+        } catch (createError) {
+          console.error("Failed to create user profile:", createError);
+          // Continue anyway — user can still use the app
+        }
+      }
+      
+      setProfile(userProfile || null);
     } catch (error) {
       console.error("Error loading user profile:", error);
     } finally {

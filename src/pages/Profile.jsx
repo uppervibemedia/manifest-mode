@@ -4,13 +4,10 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTestProfile } from "@/lib/testProfileContext";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame, FlaskConical } from "lucide-react";
+import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import IdentityLevelCard from "@/components/profile/IdentityLevelCard";
-import AchievementBadges from "@/components/profile/AchievementBadges";
-import PointsActivityFeed from "@/components/profile/PointsActivityFeed";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
-import { computeEarnedBadges } from "@/lib/identityEngine";
 
 const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400", premium: "text-primary" };
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
@@ -18,8 +15,6 @@ const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 export default function Profile() {
   const { testEmail, setTestEmail } = useTestProfile();
   const { user, profile, loading: profileLoading, updateProfile, clearProfile } = useUserProfile();
-  const [scores, setScores] = useState([]);
-  const [earnedBadges, setEarnedBadges] = useState([]);
   const [creditBalance, setCreditBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -37,46 +32,8 @@ export default function Profile() {
       if (profileLoading || !user) return;
       try {
         const activeEmail = testEmail || user.email;
-        setScores([]);
-        setEarnedBadges([]);
-        setCreditBalance(0);
-        const [s, credits, habitLogs, checkins, journals] = await Promise.all([
-          base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 10),
-          base44.entities.AICreditPack.filter({ user_email: activeEmail }),
-          base44.entities.HabitLog.filter({ user_email: activeEmail, completed: true }, "-log_date", 1000),
-          base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 200),
-          base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 500),
-        ]);
+        const credits = await base44.entities.AICreditPack.filter({ user_email: activeEmail });
         const prof = profile;
-
-        // Compute real counts from actual data (not stale profile counters)
-        const realHabitsCompleted = habitLogs.length;
-        const realCheckins = checkins.length;
-        const realJournals = journals.length;
-
-        // Build an accurate profile-like object for badge computation
-        const accurateProfile = prof ? {
-          ...prof,
-          total_habits_completed: realHabitsCompleted,
-          total_checkins: realCheckins,
-          total_journal_entries: realJournals,
-        } : null;
-
-        // Sync counts back to DB if they differ
-        if (prof && (
-          prof.total_habits_completed !== realHabitsCompleted ||
-          prof.total_checkins !== realCheckins ||
-          prof.total_journal_entries !== realJournals
-        )) {
-          base44.entities.UserProfile.update(prof.id, {
-            total_habits_completed: realHabitsCompleted,
-            total_checkins: realCheckins,
-            total_journal_entries: realJournals,
-          });
-        }
-
-        setScores(s);
-        if (accurateProfile) setEarnedBadges(computeEarnedBadges(accurateProfile, s));
         const packCredits = credits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0);
         setCreditBalance((prof?.ai_credits || 0) + packCredits);
       } catch (error) {
@@ -117,7 +74,7 @@ export default function Profile() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-6">
+      <div className="px-5 pt-12 pb-32 safe-area-inset-bottom">
         <div className="mb-5">
           <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Your Journey</p>
           <h1 className="font-playfair text-2xl font-semibold">Profile</h1>
@@ -147,27 +104,7 @@ export default function Profile() {
         {/* Identity Level */}
         <IdentityLevelCard points={points} streak={profile?.streak_count || 0} />
 
-        {/* Stats row */}
-        <div className="grid grid-cols-4 gap-2 mb-5">
-          {[
-            { label: "Habits", value: profile?.total_habits_completed || 0 },
-            { label: "Check-ins", value: profile?.total_checkins || 0 },
-            { label: "Journals", value: profile?.total_journal_entries || 0 },
-            { label: "Badges", value: earnedBadges.length },
-          ].map((s, i) => (
-            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="glass-card rounded-xl p-3 text-center">
-              <p className="font-playfair text-lg font-bold text-foreground">{s.value}</p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{s.label}</p>
-            </motion.div>
-          ))}
-        </div>
 
-        {/* Achievements */}
-        <AchievementBadges earnedIds={earnedBadges} />
-
-        {/* How to earn points */}
-        <PointsActivityFeed />
 
         {/* Subscription & AI Credits */}
         <SubscriptionCard
@@ -227,17 +164,7 @@ export default function Profile() {
           </div>
         )}
 
-        {user?.role === "admin" && (
-          <button onClick={() => navigate("/admin")}
-            className="w-full glass-card border border-amber-400/20 rounded-xl p-4 flex items-center gap-3 hover:border-amber-400/40 transition-colors mb-2">
-            <FlaskConical className="w-5 h-5 text-amber-400 shrink-0" />
-            <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-foreground">Test Profiles</p>
-              <p className="text-xs text-muted-foreground">Admin panel for testing</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-        )}
+
 
         <button onClick={handleLogout}
           className="w-full glass-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-destructive/30 transition-colors">

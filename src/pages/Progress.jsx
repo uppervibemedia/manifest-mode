@@ -7,7 +7,7 @@ import { TrendingUp, ArrowRight, RefreshCw, BarChart3, Flame, Crown, AlertCircle
 import AppLayout from "@/components/layout/AppLayout";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import HowToEarnPointsModal from "@/components/profile/HowToEarnPointsModal";
-import { computeEarnedBadges } from "@/lib/identityEngine";
+import { computeEarnedBadges, BADGES } from "@/lib/identityEngine";
 
 function RadialProgress({ pct, color, size = 64, stroke = 6 }) {
   const r = (size - stroke) / 2;
@@ -86,8 +86,9 @@ export default function Progress() {
         const prof = p[0];
         setProfile(prof);
         if (prof && s.length > 0) {
-          const badges = computeEarnedBadges(prof, s);
-          setEarnedBadges(badges);
+          const badgeIds = computeEarnedBadges(prof, s);
+          const badgeObjects = badgeIds.map(id => BADGES.find(b => b.id === id)).filter(Boolean);
+          setEarnedBadges(badgeObjects);
         }
         setLoading(false);
       } catch (error) {
@@ -480,7 +481,7 @@ export default function Progress() {
                       className="glass-card border border-primary/20 rounded-2xl p-3 flex flex-col items-center text-center hover:border-primary/40 transition-colors"
                     >
                       <span className="text-3xl mb-2">{badge.icon}</span>
-                      <p className="text-[10px] font-semibold text-foreground leading-tight">{badge.name}</p>
+                      <p className="text-[10px] font-semibold text-foreground leading-tight">{badge.title}</p>
                     </motion.div>
                   ))}
                 </div>

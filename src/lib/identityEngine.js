@@ -130,7 +130,8 @@ export function computeEarnedBadges(profile, scores) {
   const streak = profile.streak_count || 0;
   const ap = profile.alignment_points || 0;
   const latestScore = scores?.[0]?.overall_score || 0;
-  const prevScore = scores?.[1]?.overall_score;
+  // Check any prior score that was lower to award score_improved
+  const hasImprovedScore = scores?.length > 1 && scores.some((s, i) => i > 0 && latestScore > s.overall_score);
 
   if (tc >= 1) earned.push("first_habit");
   if (tc >= 100) earned.push("habits_100");
@@ -145,12 +146,14 @@ export function computeEarnedBadges(profile, scores) {
   if (je >= 10) earned.push("journal_10");
   if (je >= 30) earned.push("journal_30");
   if (scores?.length >= 1) earned.push("first_score");
-  if (prevScore && latestScore > prevScore) earned.push("score_improved");
+  if (hasImprovedScore) earned.push("score_improved");
   if (latestScore >= 75) earned.push("score_75");
   if (latestScore >= 90) earned.push("score_90");
   if (ap >= IDENTITY_LEVELS[1].pointsRequired) earned.push("level_1");
   if (ap >= IDENTITY_LEVELS[3].pointsRequired) earned.push("level_3");
   if (ap >= IDENTITY_LEVELS[5].pointsRequired) earned.push("level_5");
+  // weekly_perfect: awarded if profile has it stored (set by habit tracker when 7-day rate = 100%)
+  if (profile.earned_badge_ids?.includes("weekly_perfect")) earned.push("weekly_perfect");
 
   return earned;
 }

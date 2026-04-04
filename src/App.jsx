@@ -59,7 +59,7 @@ const AuthenticatedApp = () => {
       <Route path="/profile" element={<Profile />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/progress" element={<Progress />} />
-      <Route path="/tracker" element={<RealityShiftTracker />} />
+      <Route path="/tracker" element={<Progress />} />
       <Route path="/coach" element={<FutureSelfCoach />} />
       <Route path="/daily-shift" element={<HabitTracker />} />
       <Route path="*" element={<PageNotFound />} />

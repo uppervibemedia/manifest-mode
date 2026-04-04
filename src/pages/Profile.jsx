@@ -145,7 +145,7 @@ export default function Profile() {
             </button>
           </div>
 
-          <button onClick={() => navigate("/tracker")}
+          <button onClick={() => navigate("/progress")}
             className="w-full glass-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-primary/30 transition-colors">
             <Shield className="w-5 h-5 text-muted-foreground shrink-0" />
             <div className="flex-1 text-left">

@@ -51,20 +51,22 @@ export default function Progress() {
   const [checkins, setCheckins] = useState([]);
   const [habits, setHabits] = useState([]);
   const [habitLogs, setHabitLogs] = useState([]);
+  const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const user = await base44.auth.me();
-      const [s, v, c, h, hl] = await Promise.all([
+      const [s, v, c, h, hl, a] = await Promise.all([
         base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20),
         base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }),
         base44.entities.DailyCheckIn.filter({ user_email: user.email }, "-created_date", 30),
         base44.entities.Habit.filter({ user_email: user.email, is_active: true }, "-created_date", 50),
         base44.entities.HabitLog.filter({ user_email: user.email }, "-log_date", 200),
+        base44.entities.AIAnalysis.filter({ user_email: user.email }, "-created_date", 1),
       ]);
       setScores(s); setVisions(v); setCheckins(c);
-      setHabits(h); setHabitLogs(hl);
+      setHabits(h); setHabitLogs(hl); setAnalysis(a[0] || null);
       setLoading(false);
     })();
   }, []);
@@ -211,6 +213,86 @@ export default function Progress() {
                   <p className="text-sm font-semibold text-foreground">{weakest.label}</p>
                   <p className="font-playfair text-xl font-bold" style={{ color: weakest.color }}>{weakest.val}</p>
                 </motion.div>
+              </div>
+            )}
+
+            {/* ── CATEGORY BREAKDOWN ── */}
+            <div className="mb-5">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Category Breakdown</p>
+              <div className="grid grid-cols-2 gap-3">
+                {catScores.map((cat, i) => (
+                  <motion.div key={cat.key}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+                    className="glass-card rounded-xl p-4 flex items-center gap-3 border border-border">
+                    <span className="text-xl">{cat.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-foreground">{cat.label}</p>
+                        <span className="text-sm font-bold" style={{ color: cat.color }}>{cat.val}</span>
+                      </div>
+                      <div className="h-1.5 bg-border rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${cat.val}%` }}
+                          transition={{ delay: i * 0.06 + 0.2, duration: 0.7 }}
+                          className="h-full rounded-full" style={{ backgroundColor: cat.color }} />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── AI ANALYSIS ── */}
+            {analysis && (
+              <>
+                <div className="glass-card rounded-2xl p-4 mb-4 border border-emerald-500/20">
+                  <p className="text-xs uppercase tracking-widest text-emerald-400 font-medium mb-2">✦ Strengths</p>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{analysis.strengths_summary}</p>
+                </div>
+                <div className="glass-card rounded-2xl p-4 mb-4 border border-orange-500/20">
+                  <p className="text-xs uppercase tracking-widest text-orange-400 font-medium mb-2">⚠ Key Misalignments</p>
+                  <p className="text-sm text-foreground/80 leading-relaxed">{analysis.misalignment_summary}</p>
+                </div>
+                <div className="glass-card rounded-2xl p-4 mb-4">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Beliefs to Release</p>
+                  <div className="space-y-2">
+                    {analysis.limiting_beliefs?.map((b, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-orange-400 text-xs mt-0.5">✕</span>
+                        <p className="text-sm text-muted-foreground">{b}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="glass-card rounded-2xl p-4 mb-5">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Beliefs to Adopt</p>
+                  <div className="space-y-2">
+                    {analysis.replacement_beliefs?.map((b, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <span className="text-primary text-xs mt-0.5">✦</span>
+                        <p className="text-sm text-foreground/80">{b}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── SCORE HISTORY CARDS ── */}
+            {scores.length > 1 && (
+              <div className="mb-5">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Score History</p>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {scores.map((h) => (
+                    <div key={h.id} className="shrink-0 glass-card rounded-xl p-3 text-center min-w-[70px]">
+                      <p className={`text-lg font-bold font-playfair ${
+                        h.overall_score >= 75 ? "text-emerald-400" : h.overall_score >= 50 ? "text-yellow-400" : "text-orange-400"
+                      }`}>{h.overall_score}</p>
+                      <p className="text-[9px] text-muted-foreground mt-0.5">
+                        {new Date(h.created_date).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

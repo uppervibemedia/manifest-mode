@@ -130,7 +130,7 @@ export default function Dashboard() {
         {/* Reality Match Score card */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
           className="glass-card rounded-2xl p-5 mb-3 cursor-pointer glow-gold"
-          onClick={() => navigate("/score")}>
+          onClick={() => navigate("/progress")}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />

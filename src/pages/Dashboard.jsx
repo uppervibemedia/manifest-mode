@@ -144,7 +144,7 @@ export default function Dashboard() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
             onClick={() => navigate("/daily-shift")}
             className="glass-card rounded-xl p-3 text-center cursor-pointer hover:border-primary/30 transition-colors border border-border">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Habits</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-1">Daily Habit</p>
             <p className={`font-playfair text-2xl font-bold ${habitPct === 100 ? "text-emerald-400" : "text-foreground"}`}>
               {shiftPlan ? `${habitsDone}/${habitsTotal}` : "—"}
             </p>
@@ -225,7 +225,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-amber-400" />
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Shift</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Habit</p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
               {checkinDone
                 ? <Check className="w-4 h-4 text-emerald-400" />
                 : <TrendingUp className="w-4 h-4 text-blue-400" />}
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Check-in</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Habit</p>
             </div>
             {checkinDone && recentCheckin ? (
               <>

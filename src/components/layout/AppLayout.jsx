@@ -5,7 +5,7 @@ const NAV_ITEMS = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/vision-vault", icon: Image, label: "Vision Board" },
   { path: "/tracker", icon: TrendingUp, label: "Progress" },
-  { path: "/daily-shift", icon: Zap, label: "Daily Shift" },
+  { path: "/daily-shift", icon: Zap, label: "Daily Habit" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 

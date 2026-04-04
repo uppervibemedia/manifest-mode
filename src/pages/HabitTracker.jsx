@@ -8,7 +8,6 @@ import AppLayout from "@/components/layout/AppLayout";
 import HabitCard from "@/components/habits/HabitCard";
 import HabitCalendar from "@/components/habits/HabitCalendar";
 import AddHabitModal from "@/components/habits/AddHabitModal";
-import AlignmentSummary from "@/components/habits/AlignmentSummary";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -490,8 +489,6 @@ export default function HabitTracker() {
 
               {habits.length > 0 && (
                 <>
-                  <AlignmentSummary streak={bestStreak} completionPct={completionPct} habits={habits} todayLogs={todayLogs} weeklyRate={weeklyRate} userEmail={user?.email} />
-
                   {completionPct === 0 && (
                     <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                       className="glass-card border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">

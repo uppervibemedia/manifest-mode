@@ -228,22 +228,21 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
                               </span>
                             )}
                             {milestone.theme && (
-                              <span className={`text-[10px] font-medium italic truncate ${isLocked ? "text-muted-foreground/30" : "text-muted-foreground/70"}`}>
+                              <span className={`text-[10px] font-medium italic truncate ${isLocked ? "text-muted-foreground/50" : "text-muted-foreground/70"}`}>
                                 · {milestone.theme}
                               </span>
                             )}
                           </div>
 
-                          {/* Identity shift — visible for all states but blurred for locked */}
+                          {/* Identity shift — always readable, no blur */}
                           {milestone.identity_shift && (
                             <p className={`text-xs leading-snug ${
                               isLocked
-                                ? "text-muted-foreground/25 select-none"
+                                ? "text-muted-foreground/45"
                                 : isCompleted
                                 ? "text-muted-foreground/50 line-through"
                                 : "text-foreground/75"
-                            }`}
-                              style={isLocked ? { filter: "blur(3px)" } : {}}>
+                            }`}>
                               {milestone.identity_shift}
                             </p>
                           )}
@@ -251,7 +250,10 @@ Tone: direct, warm, visionary but grounded. Never generic. Always personalized t
 
                         {/* Right side indicator */}
                         {isLocked ? (
-                          <Lock className="w-3 h-3 text-muted-foreground/25 shrink-0" />
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Lock className="w-2.5 h-2.5 text-muted-foreground/40" />
+                            <span className="text-[9px] text-muted-foreground/40 font-medium">Locked</span>
+                          </div>
                         ) : isCompleted ? (
                           <Check className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
                         ) : (

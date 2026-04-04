@@ -16,7 +16,7 @@ const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400",
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 
 export default function Profile() {
-  const { testEmail } = useTestProfile();
+  const { testEmail, setTestEmail } = useTestProfile();
   const { user, profile, loading: profileLoading, updateProfile, clearProfile } = useUserProfile();
   const [scores, setScores] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
@@ -88,12 +88,8 @@ export default function Profile() {
   }, [testEmail, user?.email, profileLoading]);
 
   const handleLogout = async () => {
-    const { setTestEmail } = useTestProfile();
-    // Clear profile state
     clearProfile();
-    // Clear test mode if active
     setTestEmail(null);
-    // Logout and redirect
     base44.auth.logout();
   };
 

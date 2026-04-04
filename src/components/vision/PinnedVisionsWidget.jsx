@@ -99,8 +99,10 @@ export default function PinnedVisionsWidget() {
         {selected && (
           <VisionDetailModal
             vision={selected}
+            profile={null}
             onClose={() => setSelected(null)}
             onUpdate={handleUpdate}
+            onGenerateScene={() => {}}
           />
         )}
       </AnimatePresence>

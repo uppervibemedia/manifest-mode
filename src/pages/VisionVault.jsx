@@ -79,7 +79,7 @@ export default function VisionVault() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-4">
+      <div className="px-5 pt-12 pb-32">
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div>

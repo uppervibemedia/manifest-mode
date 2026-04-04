@@ -14,7 +14,7 @@ export default function AppLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto relative">
-      <main className="flex-1 overflow-y-auto pb-24">
+      <main className="flex-1 overflow-y-auto pb-32 safe-area-inset-bottom">
         {children}
       </main>
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 glass-card border-t border-border">

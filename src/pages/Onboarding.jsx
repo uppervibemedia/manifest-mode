@@ -53,7 +53,6 @@ export default function Onboarding() {
     if (existing.length > 0) {
       await base44.entities.UserProfile.update(existing[0].id, {
         goal_categories: selectedCategories,
-        onboarding_completed: false,
       });
     } else {
       await base44.entities.UserProfile.create({
@@ -64,11 +63,11 @@ export default function Onboarding() {
         streak_count: 0,
       });
     }
-    navigate("/vision-vault"); // Living Vision Board
+    navigate("/assessment"); // Proceed to assessment, not back to vision board
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-5 py-10 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-5 py-10 pb-32 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-0 w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />

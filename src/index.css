@@ -75,3 +75,8 @@
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 2px; }
+
+/* Safe area support for mobile */
+.safe-area-inset-bottom {
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}

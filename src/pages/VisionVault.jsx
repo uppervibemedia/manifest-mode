@@ -24,15 +24,20 @@ export default function VisionVault() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const u = await base44.auth.me();
-    setUser(u);
-    const [v, p] = await Promise.all([
-      base44.entities.VisionItem.filter({ user_email: u.email, is_active: true }, "-created_date"),
-      base44.entities.UserProfile.filter({ user_email: u.email }),
-    ]);
-    setVisions(v);
-    setProfile(p[0] || null);
-    setLoading(false);
+    try {
+      const u = await base44.auth.me();
+      setUser(u);
+      const [v, p] = await Promise.all([
+        base44.entities.VisionItem.filter({ user_email: u.email, is_active: true }, "-created_date"),
+        base44.entities.UserProfile.filter({ user_email: u.email }),
+      ]);
+      setVisions(v);
+      setProfile(p[0] || null);
+    } catch (error) {
+      console.error("VisionVault load error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id) => {

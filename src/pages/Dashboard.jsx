@@ -11,15 +11,7 @@ import { getLevelForPoints } from "@/lib/identityEngine";
 import { useTestProfile, getDisplayName } from "@/lib/testProfileContext";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { getLocalToday } from "@/lib/dateUtils";
-
-const MOTIVATIONS = [
-  "Your future responds to who you become daily.",
-  "Shift your identity, shift your life.",
-  "Align with your future — it's already waiting.",
-  "Your habits shape your reality. Choose wisely.",
-  "Become the version of you that matches the vision.",
-  "Every daily action is a vote for your future self.",
-];
+import { generateMotivation } from "@/lib/motivationEngine";
 
 export default function Dashboard() {
   const { testEmail } = useTestProfile();
@@ -46,29 +38,67 @@ export default function Dashboard() {
   const [visionCount, setVisionCount] = useState(0);
   const [journalCount, setJournalCount] = useState(0);
   const [recentCheckin, setRecentCheckin] = useState(null);
+  const [motivation, setMotivation] = useState("");
   const [loading, setLoading] = useState(true);
   const today = getLocalToday();
-  const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length];
 
   useEffect(() => { loadData(); }, [user?.email, profileLoading]);
 
   const loadData = async () => {
     if (!user || profileLoading) return;
     const activeEmail = testEmail || user.email;
-    const [scores, plans, checkins, visions, journals] = await Promise.all([
+    const [scores, plans, checkins, visions, journals, habits] = await Promise.all([
       base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 5),
       base44.entities.DailyShiftPlan.filter({ user_email: activeEmail, plan_date: today }),
       base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 2),
       base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),
       base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 1),
+      base44.entities.Habit.filter({ user_email: activeEmail, is_active: true }),
     ]);
     setLatestScore(scores[0] || null);
     setPrevScore(scores[1] || null);
     setShiftPlan(plans[0] || null);
-    setCheckinDone(checkins.some(c => c.checkin_date === today));
+    const todayCheckin = checkins.find(c => c.checkin_date === today);
+    setCheckinDone(!!todayCheckin);
     setRecentCheckin(checkins[0] || null);
     setVisionCount(visions.length);
     setJournalCount(journals.length);
+
+    // Calculate habit completion for today
+    const todayLogs = await base44.entities.HabitLog.filter({ user_email: activeEmail, log_date: today });
+    const habitCompletion = todayLogs.filter(l => l.completed).length;
+
+    // Calculate score trend
+    const scoreTrend = scores.length >= 2 ? (scores[0]?.overall_score || 0) - (scores[1]?.overall_score || 0) : 0;
+
+    // Find weakest category from latest score
+    let weakestArea = null;
+    if (scores[0]) {
+      const categories = [
+        { name: "mindset", score: scores[0].mindset_score },
+        { name: "discipline", score: scores[0].discipline_score },
+        { name: "financial", score: scores[0].financial_score },
+        { name: "health", score: scores[0].health_score },
+        { name: "confidence", score: scores[0].confidence_score },
+        { name: "environment", score: scores[0].environment_score },
+      ];
+      const sorted = [...categories].sort((a, b) => a.score - b.score);
+      weakestArea = sorted[0]?.name || null;
+    }
+
+    // Generate motivation based on current state
+    const msg = generateMotivation({
+      streak: profile?.streak_count || 0,
+      habitCompletion,
+      totalHabits: habits.length,
+      scoreTrend,
+      weakestArea,
+      focusCategories: profile?.goal_categories || [],
+      morningCheckinDone: !!todayCheckin,
+      identityLevel: profile?.identity_level || 0,
+      lastCheckinEnergy: todayCheckin?.energy || 5,
+    });
+    setMotivation(msg);
     setLoading(false);
   };
 

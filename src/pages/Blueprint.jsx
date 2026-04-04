@@ -116,8 +116,9 @@ export default function Blueprint() {
                   </motion.div>
                 );
               })}
+              </div>
 
-            {/* Blueprint Connections */}
+              {/* Blueprint Connections */}
             <div className="mb-6">
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Your Blueprint Is Connected To</p>
               <div className="grid grid-cols-2 gap-2.5">

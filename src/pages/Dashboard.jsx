@@ -37,6 +37,7 @@ export default function Dashboard() {
 
   const loadData = async () => {
     const u = await base44.auth.me();
+    if (!u) return;
     setUser(u);
     const [profiles, scores, plans, checkins, visions, journals] = await Promise.all([
       base44.entities.UserProfile.filter({ user_email: u.email }),

@@ -108,6 +108,7 @@ export default function AccountabilityBanner() {
   useEffect(() => {
     (async () => {
       const user = await base44.auth.me();
+      if (!user) return;
       const today = new Date().toISOString().split("T")[0];
       const [profiles, scores, plans, checkins] = await Promise.all([
         base44.entities.UserProfile.filter({ user_email: user.email }),

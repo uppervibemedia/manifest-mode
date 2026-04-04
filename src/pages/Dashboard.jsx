@@ -9,6 +9,7 @@ import PinnedVisionsWidget from "@/components/vision/PinnedVisionsWidget";
 import DashboardHabitWidget from "@/components/habits/DashboardHabitWidget";
 import { getLevelForPoints } from "@/lib/identityEngine";
 import { useTestProfile, getDisplayName } from "@/lib/testProfileContext";
+import { useUserProfile } from "@/lib/UserProfileContext";
 import { getLocalToday } from "@/lib/dateUtils";
 
 const MOTIVATIONS = [
@@ -22,8 +23,7 @@ const MOTIVATIONS = [
 
 export default function Dashboard() {
   const { testEmail } = useTestProfile();
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const { user, profile, loading: profileLoading } = useUserProfile();
   const [latestScore, setLatestScore] = useState(null);
   const [prevScore, setPrevScore] = useState(null);
   const [shiftPlan, setShiftPlan] = useState(null);
@@ -36,22 +36,18 @@ export default function Dashboard() {
   const today = getLocalToday();
   const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length];
 
-  useEffect(() => { loadData(); }, [user?.email]);
+  useEffect(() => { loadData(); }, [user?.email, profileLoading]);
 
   const loadData = async () => {
-    const u = await base44.auth.me();
-    if (!u) return;
-    setUser(u);
-    const activeEmail = testEmail || u.email;
-    const [profiles, scores, plans, checkins, visions, journals] = await Promise.all([
-      base44.entities.UserProfile.filter({ user_email: activeEmail }),
+    if (!user || profileLoading) return;
+    const activeEmail = testEmail || user.email;
+    const [scores, plans, checkins, visions, journals] = await Promise.all([
       base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 5),
       base44.entities.DailyShiftPlan.filter({ user_email: activeEmail, plan_date: today }),
       base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 2),
       base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),
       base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 1),
     ]);
-    setProfile(profiles[0] || null);
     setLatestScore(scores[0] || null);
     setPrevScore(scores[1] || null);
     setShiftPlan(plans[0] || null);
@@ -71,7 +67,7 @@ export default function Dashboard() {
 
   const scoreDelta = latestScore && prevScore ? latestScore.overall_score - prevScore.overall_score : null;
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <AppLayout>
         <div className="min-h-screen flex items-center justify-center">

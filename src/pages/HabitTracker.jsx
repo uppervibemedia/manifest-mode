@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { useTestProfile } from "@/lib/testProfileContext";
+import { useUserProfile } from "@/lib/UserProfileContext";
 import { Plus, Sparkles, BarChart3, Loader2, Trash2, Sun, Moon, Check } from "lucide-react";
 import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
@@ -252,9 +253,9 @@ function EveningReview({ userEmail, onSaved }) {
 export default function HabitTracker() {
   const navigate = useNavigate();
   const { testEmail } = useTestProfile();
+  const { user, loading: profileLoading } = useUserProfile();
   const today = getLocalToday();
 
-  const [user, setUser] = useState(null);
   const [habits, setHabits] = useState([]);
   const [todayLogs, setTodayLogs] = useState([]);
   const [historyLogs, setHistoryLogs] = useState([]);
@@ -268,12 +269,11 @@ export default function HabitTracker() {
   const [morningSaved, setMorningSaved] = useState(false);
   const [eveningSaved, setEveningSaved] = useState(false);
 
-  useEffect(() => { loadAll(); }, [testEmail, user?.email]);
+  useEffect(() => { loadAll(); }, [testEmail, user?.email, profileLoading]);
 
   const loadAll = async () => {
-    const u = await base44.auth.me();
-    setUser(u);
-    const activeEmail = testEmail || u.email;
+    if (!user || profileLoading) return;
+    const activeEmail = testEmail || user.email;
     const today = getLocalToday();
     const [h, tl, hl, ai, checkins, eveningEntries] = await Promise.all([
       base44.entities.Habit.filter({ user_email: activeEmail, is_active: true }, "-is_priority", 50),
@@ -397,7 +397,7 @@ export default function HabitTracker() {
     return (imp[a.alignment_impact] || 1) - (imp[b.alignment_impact] || 1);
   });
 
-  if (loading) return (
+  if (loading || profileLoading) return (
     <AppLayout>
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

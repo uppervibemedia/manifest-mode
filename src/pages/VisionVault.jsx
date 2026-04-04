@@ -7,13 +7,13 @@ import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionDetailModal from "@/components/vision/VisionDetailModal";
 import FutureSelfSceneModal from "@/components/vision/FutureSelfSceneModal";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
+import { useUserProfile } from "@/lib/UserProfileContext";
 
 const FILTER_CATS = [{ id: "all", label: "All", icon: "✦", color: "#fbbf24" }, ...CATEGORIES];
 
 export default function VisionVault() {
+  const { user, profile, loading: profileLoading } = useUserProfile();
   const [visions, setVisions] = useState([]);
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [showUpload, setShowUpload] = useState(false);
   const [editVision, setEditVision] = useState(null);
@@ -21,18 +21,13 @@ export default function VisionVault() {
   const [sceneVision, setSceneVision] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadData(); }, [user?.email]);
+  useEffect(() => { loadData(); }, [user?.email, profileLoading]);
 
   const loadData = async () => {
     try {
-      const u = await base44.auth.me();
-      setUser(u);
-      const [v, p] = await Promise.all([
-        base44.entities.VisionItem.filter({ user_email: u.email, is_active: true }, "-created_date"),
-        base44.entities.UserProfile.filter({ user_email: u.email }),
-      ]);
+      if (!user || profileLoading) return;
+      const v = await base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }, "-created_date");
       setVisions(v);
-      setProfile(p[0] || null);
     } catch (error) {
       console.error("VisionVault load error:", error);
     } finally {

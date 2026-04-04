@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTestProfile } from "@/lib/testProfileContext";
+import { useUserProfile } from "@/lib/UserProfileContext";
 import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame, FlaskConical } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import IdentityLevelCard from "@/components/profile/IdentityLevelCard";
@@ -16,8 +17,7 @@ const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 
 export default function Profile() {
   const { testEmail } = useTestProfile();
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const { user, profile, loading: profileLoading, updateProfile } = useUserProfile();
   const [scores, setScores] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
   const [creditBalance, setCreditBalance] = useState(0);
@@ -26,23 +26,20 @@ export default function Profile() {
 
   useEffect(() => {
     (async () => {
+      if (profileLoading || !user) return;
       try {
-        const u = await base44.auth.me();
-        setUser(u);
-        const activeEmail = testEmail || u.email;
-        setProfile(null);
+        const activeEmail = testEmail || user.email;
         setScores([]);
         setEarnedBadges([]);
         setCreditBalance(0);
-        const [p, s, credits, habitLogs, checkins, journals] = await Promise.all([
-          base44.entities.UserProfile.filter({ user_email: activeEmail }),
+        const [s, credits, habitLogs, checkins, journals] = await Promise.all([
           base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 10),
           base44.entities.AICreditPack.filter({ user_email: activeEmail }),
           base44.entities.HabitLog.filter({ user_email: activeEmail, completed: true }, "-log_date", 1000),
           base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 200),
           base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 500),
         ]);
-        const prof = p[0] || null;
+        const prof = profile;
 
         // Compute real counts from actual data (not stale profile counters)
         const realHabitsCompleted = habitLogs.length;
@@ -70,7 +67,6 @@ export default function Profile() {
           });
         }
 
-        setProfile(accurateProfile);
         setScores(s);
         if (accurateProfile) setEarnedBadges(computeEarnedBadges(accurateProfile, s));
         const packCredits = credits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0);
@@ -81,7 +77,7 @@ export default function Profile() {
         setLoading(false);
       }
     })();
-  }, [testEmail]);
+  }, [testEmail, user?.email, profileLoading]);
 
   const handleLogout = () => base44.auth.logout();
 
@@ -97,7 +93,7 @@ export default function Profile() {
     setProfile(prev => ({ ...prev, notifications_enabled: !prev.notifications_enabled }));
   };
 
-  if (loading) return (
+  if (loading || profileLoading) return (
     <AppLayout>
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

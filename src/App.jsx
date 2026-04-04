@@ -4,6 +4,7 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { UserProfileProvider } from '@/lib/UserProfileContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { TestProfileProvider } from '@/lib/testProfileContext';
 import TestModeBanner from '@/components/admin/TestModeBanner';
@@ -74,15 +75,17 @@ const AuthenticatedApp = () => {
 function App() {
   return (
     <AuthProvider>
-      <TestProfileProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <TestModeBanner />
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </TestProfileProvider>
+      <UserProfileProvider>
+        <TestProfileProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <TestModeBanner />
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </TestProfileProvider>
+      </UserProfileProvider>
     </AuthProvider>
   )
 }

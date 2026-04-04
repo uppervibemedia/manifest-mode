@@ -42,20 +42,7 @@ export function UserProfileProvider({ children }) {
     loadUserAndProfile();
   }, []);
 
-  // Refetch when user logs in/out
-  useEffect(() => {
-    const timer = setInterval(async () => {
-      const u = await base44.auth.me();
-      if (u && prevUserEmail && u.email !== prevUserEmail) {
-        // User changed, reload
-        loadUserAndProfile();
-      } else if (!u && user) {
-        // Logged out
-        clearProfile();
-      }
-    }, 500);
-    return () => clearInterval(timer);
-  }, [user, prevUserEmail]);
+
 
   const updateProfile = async (updates) => {
     if (!profile) return;

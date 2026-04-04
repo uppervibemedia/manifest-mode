@@ -58,7 +58,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
       onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 26, stiffness: 300 }}
-        className="w-full max-w-md bg-card rounded-t-3xl p-6 max-h-[92vh] overflow-y-auto">
+        className="w-full max-w-md bg-card rounded-t-3xl p-6 pb-28 max-h-[92vh] overflow-y-auto">
 
         <div className="flex items-center justify-between mb-5">
           <div>

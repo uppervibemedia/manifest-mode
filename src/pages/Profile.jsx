@@ -7,16 +7,18 @@ import AppLayout from "@/components/layout/AppLayout";
 import IdentityLevelCard from "@/components/profile/IdentityLevelCard";
 import AchievementBadges from "@/components/profile/AchievementBadges";
 import PointsActivityFeed from "@/components/profile/PointsActivityFeed";
+import SubscriptionCard from "@/components/profile/SubscriptionCard";
 import { computeEarnedBadges } from "@/lib/identityEngine";
 
 const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400", premium: "text-primary" };
-const TIER_LABELS = { free: "Free", supporter: "Supporter", premium: "Premium ✦" };
+const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [scores, setScores] = useState([]);
   const [earnedBadges, setEarnedBadges] = useState([]);
+  const [creditBalance, setCreditBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -24,14 +26,18 @@ export default function Profile() {
     (async () => {
       const u = await base44.auth.me();
       setUser(u);
-      const [p, s] = await Promise.all([
+      const [p, s, credits] = await Promise.all([
         base44.entities.UserProfile.filter({ user_email: u.email }),
         base44.entities.ScoreHistory.filter({ user_email: u.email }, "-created_date", 5),
+        base44.entities.AICreditPack.filter({ user_email: u.email }),
       ]);
       const prof = p[0] || null;
       setProfile(prof);
       setScores(s);
       if (prof) setEarnedBadges(computeEarnedBadges(prof, s));
+      // Sum remaining credits across all packs + profile base credits
+      const packCredits = credits.reduce((sum, c) => sum + (c.credits_remaining || 0), 0);
+      setCreditBalance((prof?.ai_credits || 0) + packCredits);
       setLoading(false);
     })();
   }, []);
@@ -115,17 +121,15 @@ export default function Profile() {
         {/* How to earn points */}
         <PointsActivityFeed />
 
+        {/* Subscription & AI Credits */}
+        <SubscriptionCard
+          profile={profile}
+          creditBalance={creditBalance}
+          onBuyCredits={(pack) => navigate("/pricing")}
+        />
+
         {/* Menu items */}
         <div className="space-y-2 mb-5">
-          <button onClick={() => navigate("/pricing")}
-            className="w-full glass-card border border-primary/20 rounded-xl p-4 flex items-center gap-3 hover:border-primary/40 transition-colors">
-            <Crown className="w-5 h-5 text-primary shrink-0" />
-            <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-foreground">Subscription & Plans</p>
-              <p className="text-xs text-muted-foreground">Currently on {TIER_LABELS[tier]}</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
 
           <div className="glass-card border border-border rounded-xl p-4 flex items-center gap-3">
             <Bell className="w-5 h-5 text-muted-foreground shrink-0" />

@@ -1,0 +1,53 @@
+{
+  "name": "AICreditPack",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "pack_type": {
+      "type": "string",
+      "enum": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "default": "small"
+    },
+    "credits_purchased": {
+      "type": "number"
+    },
+    "credits_remaining": {
+      "type": "number"
+    },
+    "purchase_date": {
+      "type": "string"
+    },
+    "expiration_date": {
+      "type": "string"
+    },
+    "usage_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "credits_used": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "user_email",
+    "pack_type",
+    "credits_purchased",
+    "credits_remaining"
+  ]
+}

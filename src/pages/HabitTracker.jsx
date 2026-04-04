@@ -74,7 +74,7 @@ function getSections(habits) {
 
 // ─── Morning Check-In ─────────────────────────────────────────────────────────
 
-function MorningCheckIn({ userEmail, onSaved }) {
+function MorningCheckIn({ userEmail, onSaved, today }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ gratitude: "", reflectedBeforeScrolling: null, todayGoal: "" });
@@ -459,7 +459,7 @@ export default function HabitTracker() {
                   </div>
                 </motion.div>
               ) : !morningSaved ? (
-                <MorningCheckIn userEmail={activeEmail} onSaved={() => setMorningSaved(true)} />
+                <MorningCheckIn userEmail={activeEmail} onSaved={() => setMorningSaved(true)} today={today} />
               ) : null}
 
               {/* Divider */}

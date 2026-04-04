@@ -203,7 +203,7 @@ export default function Dashboard() {
               {checkinDone
                 ? <Check className="w-4 h-4 text-emerald-400" />
                 : <TrendingUp className="w-4 h-4 text-blue-400" />}
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Habit</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Daily Habits</p>
             </div>
             {checkinDone && recentCheckin ? (
               <>

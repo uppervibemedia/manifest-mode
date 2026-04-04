@@ -3,23 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ChevronRight, Sparkles, Eye, Brain, BarChart3, Zap, Star } from "lucide-react";
-
-const CATEGORIES = [
-  { id: "wealth", label: "Wealth", icon: "💰", desc: "Financial freedom & abundance" },
-  { id: "body", label: "Body", icon: "💪", desc: "Health, fitness & vitality" },
-  { id: "love", label: "Love", icon: "❤️", desc: "Relationships & connection" },
-  { id: "business", label: "Business", icon: "🚀", desc: "Career & entrepreneurship" },
-  { id: "home", label: "Home", icon: "🏡", desc: "Dream living environment" },
-  { id: "lifestyle", label: "Lifestyle", icon: "✨", desc: "Freedom & luxury living" },
-  { id: "spiritual", label: "Spiritual", icon: "🌙", desc: "Inner peace & purpose" },
-];
+import { CATEGORIES } from "@/lib/categories";
 
 const SLIDES = [
   {
     icon: <Eye className="w-10 h-10" />,
-    title: "Upload Your Vision",
-    subtitle: "Build your future reality",
-    desc: "Upload images of the life you want to live. Your dream home, body, relationships, and lifestyle all in one place.",
+    title: "Living Vision Board",
+    subtitle: "Your future, made visual",
+    desc: "Upload images of the life you intend to live — wealth, body, love, home, business, lifestyle, and spiritual growth — all in one intelligent, premium space.",
   },
   {
     icon: <Brain className="w-10 h-10" />,
@@ -73,7 +64,7 @@ export default function Onboarding() {
         streak_count: 0,
       });
     }
-    navigate("/vision-vault");
+    navigate("/vision-vault"); // Living Vision Board
   };
 
   return (
@@ -177,7 +168,7 @@ export default function Onboarding() {
                   }`}>
                   <span className="text-2xl block mb-2">{cat.icon}</span>
                   <p className="text-sm font-semibold text-foreground">{cat.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{cat.desc}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{cat.meaning}</p>
                   {selectedCategories.includes(cat.id) && (
                     <Star className="w-3 h-3 text-primary absolute top-3 right-3 fill-primary" />
                   )}
@@ -192,7 +183,7 @@ export default function Onboarding() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
               ) : (
-                <>Continue to Vision Vault <ChevronRight className="w-4 h-4" /></>
+                <>Continue to Living Vision Board <ChevronRight className="w-4 h-4" /></>
               )}
             </button>
           </motion.div>

@@ -23,7 +23,24 @@
         "spiritual"
       ]
     },
+    "secondary_category": {
+      "type": "string",
+      "enum": [
+        "wealth",
+        "body",
+        "love",
+        "business",
+        "home",
+        "lifestyle",
+        "spiritual",
+        "none"
+      ],
+      "default": "none"
+    },
     "emotional_goal": {
+      "type": "string"
+    },
+    "why_i_want_this": {
       "type": "string"
     },
     "desired_timeline": {
@@ -33,6 +50,12 @@
       "type": "string"
     },
     "action_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "proof_images": {
       "type": "array",
       "items": {
         "type": "string"
@@ -53,6 +76,15 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "ai_insight": {
+      "type": "string"
+    },
+    "daily_action": {
+      "type": "string"
+    },
+    "ai_insight_generated_date": {
+      "type": "string"
     }
   },
   "required": [

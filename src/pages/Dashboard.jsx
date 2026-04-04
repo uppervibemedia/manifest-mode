@@ -263,10 +263,10 @@ export default function Dashboard() {
             className="glass-card rounded-xl p-4 cursor-pointer hover:border-primary/30 transition-colors border border-border">
             <div className="flex items-center gap-2 mb-2">
               <Eye className="w-4 h-4 text-purple-400" />
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Vision</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Vision Board</p>
             </div>
             <p className="font-playfair text-2xl font-bold text-foreground">{visionCount}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">active visions</p>
+            <p className="text-xs text-muted-foreground mt-0.5">living visions</p>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.21 }}

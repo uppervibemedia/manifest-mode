@@ -1,17 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Upload, Loader2 } from "lucide-react";
-
-const CATEGORIES = [
-  { id: "wealth", label: "💰 Wealth" },
-  { id: "body", label: "💪 Body" },
-  { id: "love", label: "❤️ Love" },
-  { id: "business", label: "🚀 Business" },
-  { id: "home", label: "🏡 Home" },
-  { id: "lifestyle", label: "✨ Lifestyle" },
-  { id: "spiritual", label: "🌙 Spiritual" },
-];
+import { X, Upload, Loader2, Star } from "lucide-react";
+import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 
@@ -19,10 +10,13 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   const [form, setForm] = useState({
     title: vision?.title || "",
     category: vision?.category || "wealth",
+    secondary_category: vision?.secondary_category || "none",
     emotional_goal: vision?.emotional_goal || "",
+    why_i_want_this: vision?.why_i_want_this || "",
     desired_timeline: vision?.desired_timeline || "1 year",
     notes: vision?.notes || "",
     image_url: vision?.image_url || "",
+    is_priority: vision?.is_priority || false,
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -39,68 +33,126 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   const handleSave = async () => {
     if (!form.title) return;
     setSaving(true);
+    const data = { ...form, secondary_category: form.secondary_category || "none" };
     let saved;
     if (vision) {
-      saved = await base44.entities.VisionItem.update(vision.id, form);
+      saved = await base44.entities.VisionItem.update(vision.id, data);
     } else {
-      saved = await base44.entities.VisionItem.create({ ...form, user_email: userEmail, is_active: true, is_priority: false });
+      saved = await base44.entities.VisionItem.create({
+        ...data,
+        user_email: userEmail,
+        is_active: true,
+        progress: 0,
+        action_steps: [],
+        proof_images: [],
+      });
     }
     onSave(saved);
   };
 
+  const primaryMeta = getCategoryMeta(form.category);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="w-full max-w-md bg-card rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+        transition={{ type: "spring", damping: 26, stiffness: 300 }}
+        className="w-full max-w-md bg-card rounded-t-3xl p-6 max-h-[92vh] overflow-y-auto">
 
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-playfair text-lg font-semibold">{vision ? "Edit Vision" : "Add Vision"}</h2>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="font-playfair text-lg font-semibold">{vision ? "Edit Vision" : "Add to Living Vision Board"}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Bring your future into focus</p>
+          </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-border flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Image Upload */}
-        <label className="block mb-4 cursor-pointer">
-          <div className={`aspect-video rounded-xl overflow-hidden border-2 border-dashed transition-colors ${
+        <label className="block mb-5 cursor-pointer">
+          <div className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
             form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
           }`}>
             {form.image_url ? (
-              <img src={form.image_url} alt="Vision" className="w-full h-full object-cover" />
+              <div className="relative w-full h-full">
+                <img src={form.image_url} alt="Vision" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <p className="absolute bottom-2 left-3 text-[10px] text-white/70">Tap to change</p>
+              </div>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/30">
-                {uploading ? <Loader2 className="w-6 h-6 animate-spin text-primary" /> : (
-                  <><Upload className="w-6 h-6" /><p className="text-xs">Tap to upload image</p></>
-                )}
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/20 min-h-[140px]">
+                {uploading
+                  ? <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  : <><Upload className="w-6 h-6" /><p className="text-xs">Upload your vision image</p><p className="text-[10px] text-muted-foreground/50">The clearer the image, the stronger the intention</p></>
+                }
               </div>
             )}
           </div>
           <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
         </label>
 
+        {/* Priority toggle */}
+        <div className="flex items-center justify-between glass-card border border-border rounded-xl px-4 py-3 mb-5">
+          <div className="flex items-center gap-2">
+            <Star className={`w-4 h-4 ${form.is_priority ? "text-primary fill-primary" : "text-muted-foreground"}`} />
+            <div>
+              <p className="text-sm font-medium text-foreground">Priority Vision</p>
+              <p className="text-[10px] text-muted-foreground">Pin this to your daily focus</p>
+            </div>
+          </div>
+          <button onClick={() => setForm(p => ({ ...p, is_priority: !p.is_priority }))}
+            className={`w-11 h-6 rounded-full transition-all relative ${form.is_priority ? "bg-primary" : "bg-border"}`}>
+            <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${form.is_priority ? "left-5" : "left-0.5"}`} />
+          </button>
+        </div>
+
         {/* Title */}
         <div className="mb-4">
           <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Vision Title *</label>
           <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-            placeholder="e.g. Dream Penthouse in NYC"
-            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50" />
+            placeholder="e.g. Dream Penthouse in Manhattan"
+            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50" />
         </div>
 
-        {/* Category */}
+        {/* Primary Category */}
         <div className="mb-4">
-          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Category</label>
-          <div className="grid grid-cols-4 gap-2">
+          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Primary Category</label>
+          <div className="grid grid-cols-2 gap-2">
             {CATEGORIES.map(cat => (
               <button key={cat.id} onClick={() => setForm(p => ({ ...p, category: cat.id }))}
-                className={`py-2 rounded-xl text-xs font-medium transition-all ${
+                className={`py-2.5 px-3 rounded-xl text-left transition-all border ${
                   form.category === cat.id
-                    ? "bg-primary/20 border border-primary text-primary"
-                    : "bg-background border border-border text-muted-foreground"
+                    ? "border-primary bg-primary/10"
+                    : "bg-background border-border"
                 }`}>
-                {cat.label}
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm">{cat.icon}</span>
+                  <span className={`text-xs font-semibold ${form.category === cat.id ? "text-primary" : "text-foreground"}`}>{cat.label}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-tight pl-6">{cat.meaning}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Secondary Category */}
+        <div className="mb-4">
+          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Secondary Category <span className="text-muted-foreground/50 normal-case">(optional)</span></label>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <button onClick={() => setForm(p => ({ ...p, secondary_category: "none" }))}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                form.secondary_category === "none" ? "bg-primary/10 border-primary text-primary" : "bg-background border-border text-muted-foreground"
+              }`}>
+              None
+            </button>
+            {CATEGORIES.filter(c => c.id !== form.category).map(cat => (
+              <button key={cat.id} onClick={() => setForm(p => ({ ...p, secondary_category: cat.id }))}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  form.secondary_category === cat.id ? "bg-primary/10 border-primary text-primary" : "bg-background border-border text-muted-foreground"
+                }`}>
+                {cat.icon} {cat.label}
               </button>
             ))}
           </div>
@@ -108,22 +160,29 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
 
         {/* Emotional Goal */}
         <div className="mb-4">
-          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">How will you feel?</label>
+          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">How will you feel when you have this?</label>
           <input value={form.emotional_goal} onChange={e => setForm(p => ({ ...p, emotional_goal: e.target.value }))}
-            placeholder="e.g. Free, powerful, proud, at peace"
-            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50" />
+            placeholder={primaryMeta.prompt}
+            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50" />
+        </div>
+
+        {/* Why I want this */}
+        <div className="mb-4">
+          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Why I Want This</label>
+          <textarea value={form.why_i_want_this} onChange={e => setForm(p => ({ ...p, why_i_want_this: e.target.value }))}
+            placeholder="What deeper purpose or meaning is behind this vision? Be honest."
+            rows={3}
+            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 resize-none" />
         </div>
 
         {/* Timeline */}
-        <div className="mb-4">
+        <div className="mb-5">
           <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Desired Timeline</label>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {TIMELINES.map(t => (
               <button key={t} onClick={() => setForm(p => ({ ...p, desired_timeline: t }))}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  form.desired_timeline === t
-                    ? "bg-primary text-background"
-                    : "bg-background border border-border text-muted-foreground"
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  form.desired_timeline === t ? "bg-primary text-background border-primary" : "bg-background border-border text-muted-foreground"
                 }`}>
                 {t}
               </button>
@@ -131,18 +190,9 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </div>
         </div>
 
-        {/* Notes */}
-        <div className="mb-6">
-          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Why do you want this?</label>
-          <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-            placeholder="Describe what this vision means to you..."
-            rows={3}
-            className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50 resize-none" />
-        </div>
-
-        <button onClick={handleSave} disabled={saving || !form.title}
+        <button onClick={handleSave} disabled={saving || !form.title || uploading}
           className="w-full py-4 gold-gradient text-background font-semibold rounded-xl disabled:opacity-40 flex items-center justify-center gap-2">
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (vision ? "Save Changes" : "Add to Vision Vault")}
+          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (vision ? "Save Vision" : "Add to Living Vision Board ✦")}
         </button>
       </motion.div>
     </motion.div>

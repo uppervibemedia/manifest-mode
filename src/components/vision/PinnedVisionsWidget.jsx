@@ -2,18 +2,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Pin, Image, ChevronRight } from "lucide-react";
+import { Pin, ChevronRight } from "lucide-react";
 import VisionDetailModal from "@/components/vision/VisionDetailModal";
-
-const CATEGORY_META = {
-  wealth:    { icon: "💰", color: "#fbbf24" },
-  body:      { icon: "💪", color: "#34d399" },
-  love:      { icon: "❤️", color: "#f87171" },
-  business:  { icon: "🚀", color: "#60a5fa" },
-  home:      { icon: "🏡", color: "#a78bfa" },
-  lifestyle: { icon: "✨", color: "#f9a8d4" },
-  spiritual: { icon: "🌙", color: "#818cf8" },
-};
+import { getCategoryMeta } from "@/lib/categories";
 
 export default function PinnedVisionsWidget() {
   const [pinned, setPinned] = useState([]);
@@ -46,7 +37,7 @@ export default function PinnedVisionsWidget() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Pin className="w-3.5 h-3.5 text-primary" />
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Pinned Visions</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Living Vision Board</p>
           </div>
           <button onClick={() => navigate("/vision-vault")}
             className="flex items-center gap-0.5 text-[10px] text-primary font-medium">
@@ -56,7 +47,7 @@ export default function PinnedVisionsWidget() {
 
         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
           {pinned.map((vision, i) => {
-            const meta = CATEGORY_META[vision.category] || { icon: "✦", color: "#fbbf24" };
+            const meta = getCategoryMeta(vision.category);
             const progress = vision.progress || 0;
             return (
               <motion.button key={vision.id}

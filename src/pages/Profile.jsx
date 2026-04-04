@@ -79,7 +79,7 @@ export default function Profile() {
     })();
   }, [testEmail]);
 
-  const handleLogout = () => base44.auth.logout("/");
+  const handleLogout = () => base44.auth.logout();
 
   const handleResetAssessment = async () => {
     if (!confirm("This will reset your assessment data. Are you sure?")) return;

@@ -296,26 +296,7 @@ export default function Progress() {
               </div>
             )}
 
-            {/* ── CATEGORY ALIGNMENT RINGS ── */}
-            <div className="mb-5">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-3">Category Alignment</p>
-              <div className="grid grid-cols-3 gap-3">
-                {catScores.map((cat, i) => (
-                  <motion.div key={cat.key}
-                    initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.07 }}
-                    className="glass-card rounded-xl p-3 flex flex-col items-center">
-                    <div className="relative mb-1.5">
-                      <RadialProgress pct={cat.val} color={cat.color} size={56} stroke={5} />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs font-bold" style={{ color: cat.color }}>{cat.val}</span>
-                      </div>
-                    </div>
-                    <span className="text-sm mb-0.5">{cat.icon}</span>
-                    <p className="text-[10px] text-muted-foreground text-center">{cat.label}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+
 
             {/* ── SCORE HISTORY CHART ── */}
             {chartData.length > 1 && (

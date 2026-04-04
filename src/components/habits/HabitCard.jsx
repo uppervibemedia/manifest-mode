@@ -31,28 +31,52 @@ function getIdentityLabel(habit) {
   return { label: "Daily Habit", color: "hsl(220 10% 50%)" };
 }
 
-// What score/dimension does this habit support
+// Emotionally intelligent "why" — specific to habit title keywords or category
 function getAlignmentImpact(habit) {
+  const title = (habit.title || "").toLowerCase();
   const cat = habit.category;
-  const impact = habit.alignment_impact;
-  if (cat === "discipline" || (cat === "mindset" && impact === "high")) return "Boosts discipline alignment";
-  if (cat === "body") return "Supports body category";
-  if (cat === "wealth" || cat === "business") return "Strengthens wealth alignment";
-  if (cat === "spiritual" || cat === "mindset") return "Improves confidence score";
-  if (cat === "love" || cat === "lifestyle") return "Raises emotional alignment";
-  if (cat === "home") return "Strengthens environment score";
-  if (impact === "high") return "Shifts Reality Match Score";
-  return "Builds momentum";
+  const src = habit.source;
+
+  // Title-keyword based (most specific)
+  if (title.includes("morning") || title.includes("screen")) return "Protects your focus before outside noise enters your day";
+  if (title.includes("movement") || title.includes("workout") || title.includes("exercise")) return "Trains your body to match the energy of your future self";
+  if (title.includes("journal") || title.includes("letter") || title.includes("future self")) return "Deepens your connection to who you are becoming";
+  if (title.includes("top 3") || title.includes("before noon") || title.includes("non-negotiable")) return "Builds trust in your own follow-through every day";
+  if (title.includes("financ") || title.includes("budget") || title.includes("money") || title.includes("invest")) return "Strengthens your financial awareness and control";
+  if (title.includes("meditat") || title.includes("breath") || title.includes("prayer")) return "Grounds your identity before the world shapes your mood";
+  if (title.includes("read") || title.includes("learn") || title.includes("study")) return "Expands the thinking patterns that create your future";
+  if (title.includes("sleep") || title.includes("rest") || title.includes("wind down")) return "Restores the energy needed to execute at your highest level";
+  if (title.includes("gratitude")) return "Rewires your brain to notice evidence of your progress";
+  if (title.includes("cold") || title.includes("plunge")) return "Builds mental resilience one uncomfortable choice at a time";
+  if (title.includes("social") || title.includes("network") || title.includes("connect")) return "Positions you in rooms aligned with your next level";
+
+  // Category fallback
+  if (cat === "discipline") return "Builds the self-trust that separates who you are from who you want to be";
+  if (cat === "body") return "Signals to your subconscious that you take your physical self seriously";
+  if (cat === "wealth" || cat === "business") return "Creates daily alignment between your actions and financial freedom";
+  if (cat === "mindset") return "Closes the gap between your current beliefs and your future identity";
+  if (cat === "spiritual") return "Anchors you in your values before the noise of the day takes over";
+  if (cat === "love" || cat === "lifestyle") return "Nurtures the emotional energy that sustains long-term momentum";
+  if (cat === "home") return "Reflects the standards of the person you are becoming";
+  if (src === "blueprint") return "Directly addresses a gap identified in your Future Self Blueprint";
+  return "Compounds daily into the version of you that matches your vision";
 }
 
-// Short minimum version
+// Short minimum version — low-energy day fallback
 function getMinVersion(habit) {
-  if (habit.blueprint_area === "finance" || habit.category === "wealth") return "Min: 5 min financial review";
-  if (habit.category === "body") return "Min: 10 min movement";
-  if (habit.category === "mindset" || habit.category === "spiritual") return "Min: 5 min practice";
-  if (habit.category === "discipline") return "Min: Start it — 2 mins";
-  if (habit.category === "business") return "Min: 1 focused task";
-  return "Min: Show up once";
+  const title = (habit.title || "").toLowerCase();
+  const cat = habit.category;
+  if (title.includes("morning") || title.includes("routine")) return "5 mins of stillness, no screens";
+  if (title.includes("movement") || title.includes("workout") || title.includes("exercise")) return "10 min walk counts — just move";
+  if (title.includes("journal") || title.includes("letter")) return "Write one sentence from your future self";
+  if (title.includes("financ") || title.includes("budget") || title.includes("money")) return "Open your banking app and review";
+  if (title.includes("meditat") || title.includes("breath")) return "3 deep breaths with intention";
+  if (title.includes("read")) return "One page is enough";
+  if (cat === "body") return "10 min of intentional movement";
+  if (cat === "discipline") return "Start the task — even 2 minutes";
+  if (cat === "mindset" || cat === "spiritual") return "5 min of quiet practice";
+  if (cat === "wealth" || cat === "business") return "One conscious financial action";
+  return "Show up — the identity matters more than the duration";
 }
 
 // Completion feedback message
@@ -163,25 +187,22 @@ export default function HabitCard({ habit, completed, onToggle, index = 0 }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-3.5 pt-0.5 space-y-2 border-t border-border/40">
-              {/* Minimum version */}
-              <div className="flex items-start gap-2 pt-2">
-                <span className="text-[9px] uppercase tracking-widest font-semibold text-muted-foreground shrink-0 mt-0.5 w-10">Min</span>
+            <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/40">
+              {/* Why it matters */}
+              <div className="pt-2">
+                <p className="text-[9px] uppercase tracking-widest font-semibold mb-1" style={{ color: meta.color }}>Why this matters</p>
+                <p className="text-[11px] text-foreground/80 leading-relaxed">{alignmentImpact}</p>
+              </div>
+
+              {/* Low-energy minimum */}
+              <div className="rounded-xl px-3 py-2" style={{ backgroundColor: meta.color + "10", border: `1px solid ${meta.color}20` }}>
+                <p className="text-[9px] uppercase tracking-widest font-semibold text-muted-foreground mb-0.5">Low-energy day minimum</p>
                 <p className="text-[11px] text-muted-foreground/80">{minVersion}</p>
               </div>
 
-              {/* Alignment impact */}
-              <div className="flex items-start gap-2">
-                <span className="text-[9px] uppercase tracking-widest font-semibold shrink-0 mt-0.5 w-10" style={{ color: meta.color }}>Why</span>
-                <p className="text-[11px] font-medium" style={{ color: meta.color }}>{alignmentImpact}</p>
-              </div>
-
-              {/* Source */}
+              {/* Source label */}
               {habit.description && (
-                <div className="flex items-start gap-2">
-                  <span className="text-[9px] uppercase tracking-widest font-semibold text-muted-foreground shrink-0 mt-0.5 w-10">From</span>
-                  <p className="text-[11px] text-muted-foreground/70 leading-relaxed">{habit.description}</p>
-                </div>
+                <p className="text-[10px] text-muted-foreground/50 italic">{habit.description}</p>
               )}
             </div>
           </motion.div>

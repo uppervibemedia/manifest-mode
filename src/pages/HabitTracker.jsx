@@ -24,20 +24,55 @@ const CATEGORY_META = {
 
 const TABS = ["Today", "Stats", "All Habits"];
 
+// Shorten verbose AI-generated habit titles to mobile-friendly names
+function shortenTitle(title) {
+  const t = title.trim();
+  const map = [
+    [/morning routine|before any screen/i, "Screen-Free Morning Routine"],
+    [/move.*body.*intentional|30 minute.*movement|exercise.*5 day/i, "Intentional Movement"],
+    [/letter.*future self|future self.*letter/i, "Future Self Letter"],
+    [/top 3.*non-negotiable|non-negotiable.*habit.*before noon|execute.*before noon/i, "Top 3 Before Noon"],
+    [/review.*financ.*sunday|track.*financ.*weekly|financ.*review.*weekly/i, "Weekly Finance Review"],
+    [/cold.*shower|cold.*plunge/i, "Cold Shower"],
+    [/visuali.*future self|future self.*visuali/i, "Future Self Visualization"],
+    [/read.*30 min|30 min.*read|daily reading/i, "Daily Reading"],
+    [/journal.*reflect|reflect.*journal|daily journal/i, "Daily Journaling"],
+    [/meditat|breathwork|breath practice/i, "Mindfulness Practice"],
+    [/gratitude.*practice|practice.*gratitude|gratitude.*journal/i, "Gratitude Practice"],
+    [/affirmation|positive declar/i, "Daily Affirmations"],
+    [/network|connect.*professional|build.*relationship/i, "Strategic Networking"],
+    [/sleep.*routine|wind.*down.*routine|bedtime/i, "Evening Wind-Down"],
+    [/learn.*skill|skill.*develop|online course/i, "Skill Development"],
+  ];
+  for (const [pattern, short] of map) {
+    if (pattern.test(t)) return short;
+  }
+  // Generic truncation: take first meaningful chunk before comma/dash/—
+  const cut = t.split(/[,\-—]/)[0].trim();
+  return cut.length <= 40 ? cut : cut.slice(0, 38).trim() + "…";
+}
+
+// Detect habits that are weekly rituals by title keywords
+function isWeeklyRitual(habit) {
+  const t = (habit.title || "").toLowerCase();
+  const d = (habit.description || "").toLowerCase();
+  const weeklyKeywords = ["sunday", "weekly", "every week", "once a week", "per week", "monthly", "review", "finance review", "check in with", "weekly ritual"];
+  return weeklyKeywords.some(kw => t.includes(kw) || d.includes(kw));
+}
+
+// Detect identity activation habits
+function isIdentityHabit(habit) {
+  const t = (habit.title || "").toLowerCase();
+  const identityKeywords = ["future self", "letter", "journal", "meditat", "visuali", "affirmation", "breath", "gratitude", "prayer", "reflect"];
+  return habit.source === "ai" || habit.category === "spiritual" || identityKeywords.some(kw => t.includes(kw));
+}
+
 // Categorize habits into sections
 function getSections(habits) {
   const top3 = habits.filter(h => h.is_priority).slice(0, 3);
-  const weekly = habits.filter(h =>
-    h.blueprint_area === "finance" ||
-    h.category === "wealth" && h.alignment_impact === "low"
-  );
-  const identity = habits.filter(h =>
-    (h.source === "ai" || h.category === "spiritual") &&
-    !top3.includes(h) && !weekly.includes(h)
-  );
-  const daily = habits.filter(h =>
-    !top3.includes(h) && !weekly.includes(h) && !identity.includes(h)
-  );
+  const weekly = habits.filter(h => !top3.includes(h) && isWeeklyRitual(h));
+  const identity = habits.filter(h => !top3.includes(h) && !weekly.includes(h) && isIdentityHabit(h));
+  const daily = habits.filter(h => !top3.includes(h) && !weekly.includes(h) && !identity.includes(h));
   return { top3, daily, identity, weekly };
 }
 
@@ -79,7 +114,7 @@ export default function HabitTracker() {
     setGenerating(true);
     const blueprintHabits = [
       ...(analysis.habit_upgrades || []).map((title, i) => ({
-        title,
+        title: shortenTitle(title),
         category: i === 0 ? "discipline" : i === 1 ? "body" : "mindset",
         description: "From your Future Self Blueprint",
         source: "blueprint",
@@ -87,7 +122,7 @@ export default function HabitTracker() {
         is_priority: i === 0,
       })),
       ...(analysis.action_plan || []).slice(0, 2).map((title) => ({
-        title: title.replace(/^[0-9]+\.\s*/, "").slice(0, 80),
+        title: shortenTitle(title.replace(/^[0-9]+\.\s*/, "")),
         category: "mindset",
         description: "Identity activation step",
         source: "ai",
@@ -311,6 +346,22 @@ export default function HabitTracker() {
                     todayLogs={todayLogs}
                     weeklyRate={weeklyRate}
                   />
+
+                  {/* 0% guidance nudge */}
+                  {completionPct === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="glass-card border border-primary/20 rounded-xl px-4 py-3 mb-4 flex items-center gap-3"
+                    >
+                      <span className="text-base shrink-0">✦</span>
+                      <p className="text-xs text-foreground/70 leading-relaxed">
+                        {bestStreak > 0
+                          ? `Your ${bestStreak}-day streak is on the line — complete one habit to protect it.`
+                          : "Start with one habit to activate today's alignment. Momentum starts here."}
+                      </p>
+                    </motion.div>
+                  )}
 
                   {(() => {
                     const { top3, daily, identity, weekly } = getSections(sortedHabits);

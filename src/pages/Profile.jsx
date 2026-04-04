@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useTestProfile } from "@/lib/testProfileContext";
 import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame, FlaskConical } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import IdentityLevelCard from "@/components/profile/IdentityLevelCard";
@@ -14,6 +15,7 @@ const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400",
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 
 export default function Profile() {
+  const { testEmail } = useTestProfile();
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [scores, setScores] = useState([]);
@@ -26,13 +28,14 @@ export default function Profile() {
     (async () => {
       const u = await base44.auth.me();
       setUser(u);
+      const activeEmail = testEmail || u.email;
       const [p, s, credits, habitLogs, checkins, journals] = await Promise.all([
-        base44.entities.UserProfile.filter({ user_email: u.email }),
-        base44.entities.ScoreHistory.filter({ user_email: u.email }, "-created_date", 10),
-        base44.entities.AICreditPack.filter({ user_email: u.email }),
-        base44.entities.HabitLog.filter({ user_email: u.email, completed: true }, "-log_date", 1000),
-        base44.entities.DailyCheckIn.filter({ user_email: u.email }, "-created_date", 200),
-        base44.entities.JournalEntry.filter({ user_email: u.email }, "-created_date", 500),
+        base44.entities.UserProfile.filter({ user_email: activeEmail }),
+        base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 10),
+        base44.entities.AICreditPack.filter({ user_email: activeEmail }),
+        base44.entities.HabitLog.filter({ user_email: activeEmail, completed: true }, "-log_date", 1000),
+        base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 200),
+        base44.entities.JournalEntry.filter({ user_email: activeEmail }, "-created_date", 500),
       ]);
       const prof = p[0] || null;
 
@@ -69,7 +72,7 @@ export default function Profile() {
       setCreditBalance((prof?.ai_credits || 0) + packCredits);
       setLoading(false);
     })();
-  }, []);
+  }, [testEmail]);
 
   const handleLogout = () => base44.auth.logout("/");
 

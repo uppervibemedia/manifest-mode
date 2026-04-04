@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
+import { useTestProfile } from "@/lib/testProfileContext";
 import { TrendingUp, ArrowRight, RefreshCw, BarChart3, Flame, Crown, AlertCircle } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
@@ -46,6 +47,7 @@ const CATEGORY_META = {
 
 export default function Progress() {
   const navigate = useNavigate();
+  const { testEmail } = useTestProfile();
   const [scores, setScores] = useState([]);
   const [visions, setVisions] = useState([]);
   const [checkins, setCheckins] = useState([]);
@@ -57,19 +59,20 @@ export default function Progress() {
   useEffect(() => {
     (async () => {
       const user = await base44.auth.me();
+      const activeEmail = testEmail || user.email;
       const [s, v, c, h, hl, a] = await Promise.all([
-        base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20),
-        base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }),
-        base44.entities.DailyCheckIn.filter({ user_email: user.email }, "-created_date", 30),
-        base44.entities.Habit.filter({ user_email: user.email, is_active: true }, "-created_date", 50),
-        base44.entities.HabitLog.filter({ user_email: user.email }, "-log_date", 200),
-        base44.entities.AIAnalysis.filter({ user_email: user.email }, "-created_date", 1),
+        base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 20),
+        base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),
+        base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 30),
+        base44.entities.Habit.filter({ user_email: activeEmail, is_active: true }, "-created_date", 50),
+        base44.entities.HabitLog.filter({ user_email: activeEmail }, "-log_date", 200),
+        base44.entities.AIAnalysis.filter({ user_email: activeEmail }, "-created_date", 1),
       ]);
       setScores(s); setVisions(v); setCheckins(c);
       setHabits(h); setHabitLogs(hl); setAnalysis(a[0] || null);
       setLoading(false);
     })();
-  }, []);
+  }, [testEmail]);
 
   const latest = scores[0];
   const prev = scores[1];

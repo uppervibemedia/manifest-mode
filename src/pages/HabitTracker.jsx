@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Plus, Sparkles, BarChart3, Loader2, Trash2, Star, Brain, Sun, Moon, Check } from "lucide-react";
+import { Plus, Sparkles, BarChart3, Loader2, Trash2, Sun, Moon, Check } from "lucide-react";
 import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
 import HabitCard from "@/components/habits/HabitCard";
@@ -489,52 +489,7 @@ export default function HabitTracker() {
 
               {habits.length > 0 && (
                 <>
-                  {completionPct === 0 && (
-                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                      className="glass-card border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">
-                      <span className="text-base shrink-0">✦</span>
-                      <p className="text-xs text-foreground/70 leading-relaxed">
-                        {bestStreak > 0 ? `Your ${bestStreak}-day streak is on the line — complete one habit to protect it.` : "Start with one habit to activate today's alignment. Momentum starts here."}
-                      </p>
-                    </motion.div>
-                  )}
 
-                  {(() => {
-                    const { top3, daily, identity } = getSections(sortedHabits);
-                    return (
-                      <div className="space-y-5">
-                        {top3.length > 0 && (
-                          <div>
-                            <SectionHeader icon={Star} title="Today's Top 3 Alignment Habits" color="hsl(45 80% 60%)" />
-                            <div className="space-y-2">{top3.map((habit, i) => <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />)}</div>
-                          </div>
-                        )}
-                        {daily.length > 0 && (
-                          <div>
-                            <SectionHeader icon={Sparkles} title="Daily Habits" color="#60a5fa" />
-                            <div className="space-y-2">{daily.map((habit, i) => <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />)}</div>
-                          </div>
-                        )}
-                        {identity.length > 0 && (
-                          <div>
-                            <SectionHeader icon={Brain} title="Identity Align" color="#c084fc" />
-                            <div className="space-y-2">{identity.map((habit, i) => <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />)}</div>
-                          </div>
-                        )}
-                        {top3.length === 0 && daily.length === 0 && identity.length === 0 && sortedHabits.filter(h => !isWeeklyRitual(h)).map((habit, i) => (
-                          <HabitCard key={habit.id} habit={habit} completed={isCompleted(habit.id)} onToggle={toggleHabit} index={i} />
-                        ))}
-                      </div>
-                    );
-                  })()}
-
-                  {analysis && (
-                    <button onClick={generateFromBlueprint} disabled={generating}
-                      className="w-full glass-card border border-primary/20 rounded-xl py-3 flex items-center justify-center gap-2 text-xs text-primary hover:border-primary/40 transition-colors disabled:opacity-40">
-                      {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                      {generating ? "Generating..." : "Add Blueprint Habits"}
-                    </button>
-                  )}
                 </>
               )}
 

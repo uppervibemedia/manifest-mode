@@ -59,14 +59,15 @@ export default function Progress() {
 
   useEffect(() => {
     (async () => {
-      const u = await base44.auth.me();
-      if (!u) {
-        navigate("/");
-        return;
-      }
-      setUser(u);
-      const activeEmail = testEmail || u.email;
-      const [s, v, c, h, hl, a] = await Promise.all([
+      try {
+        const u = await base44.auth.me();
+        if (!u) {
+          navigate("/");
+          return;
+        }
+        setUser(u);
+        const activeEmail = testEmail || u.email;
+        const [s, v, c, h, hl, a] = await Promise.all([
         base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 20),
         base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),
         base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 30),
@@ -74,11 +75,15 @@ export default function Progress() {
         base44.entities.HabitLog.filter({ user_email: activeEmail }, "-log_date", 200),
         base44.entities.AIAnalysis.filter({ user_email: activeEmail }, "-created_date", 1),
       ]);
-      setScores(s); setVisions(v); setCheckins(c);
-      setHabits(h); setHabitLogs(hl); setAnalysis(a[0] || null);
-      setLoading(false);
+        setScores(s); setVisions(v); setCheckins(c);
+        setHabits(h); setHabitLogs(hl); setAnalysis(a[0] || null);
+        setLoading(false);
+      } catch (error) {
+        console.error("Progress page error:", error);
+        setLoading(false);
+      }
     })();
-  }, [testEmail]);
+  }, [testEmail, navigate]);
 
   const latest = scores[0];
   const prev = scores[1];

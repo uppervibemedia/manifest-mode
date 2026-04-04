@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { useTestProfile } from "@/lib/testProfileContext";
-import { TrendingUp, ArrowRight, RefreshCw, BarChart3, Flame, Crown, AlertCircle } from "lucide-react";
+import { TrendingUp, ArrowRight, RefreshCw, BarChart3, Flame, Crown, AlertCircle, Award } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import HowToEarnPointsModal from "@/components/profile/HowToEarnPointsModal";
+import { computeEarnedBadges } from "@/lib/identityEngine";
 
 function RadialProgress({ pct, color, size = 64, stroke = 6 }) {
   const r = (size - stroke) / 2;
@@ -49,13 +51,16 @@ export default function Progress() {
   const navigate = useNavigate();
   const { testEmail } = useTestProfile();
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [scores, setScores] = useState([]);
   const [visions, setVisions] = useState([]);
   const [checkins, setCheckins] = useState([]);
   const [habits, setHabits] = useState([]);
   const [habitLogs, setHabitLogs] = useState([]);
   const [analysis, setAnalysis] = useState(null);
+  const [earnedBadges, setEarnedBadges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPointsGuide, setShowPointsGuide] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -67,16 +72,23 @@ export default function Progress() {
         }
         setUser(u);
         const activeEmail = testEmail || u.email;
-        const [s, v, c, h, hl, a] = await Promise.all([
+        const [s, v, c, h, hl, a, p] = await Promise.all([
         base44.entities.ScoreHistory.filter({ user_email: activeEmail }, "-created_date", 20),
         base44.entities.VisionItem.filter({ user_email: activeEmail, is_active: true }),
         base44.entities.DailyCheckIn.filter({ user_email: activeEmail }, "-created_date", 30),
         base44.entities.Habit.filter({ user_email: activeEmail, is_active: true }, "-created_date", 50),
         base44.entities.HabitLog.filter({ user_email: activeEmail }, "-log_date", 200),
         base44.entities.AIAnalysis.filter({ user_email: activeEmail }, "-created_date", 1),
+        base44.entities.UserProfile.filter({ user_email: activeEmail }),
       ]);
         setScores(s); setVisions(v); setCheckins(c);
         setHabits(h); setHabitLogs(hl); setAnalysis(a[0] || null);
+        const prof = p[0];
+        setProfile(prof);
+        if (prof && s.length > 0) {
+          const badges = computeEarnedBadges(prof, s);
+          setEarnedBadges(badges);
+        }
         setLoading(false);
       } catch (error) {
         console.error("Progress page error:", error);
@@ -439,7 +451,7 @@ export default function Progress() {
             )}
 
             {/* ── PROGRESS NARRATIVE ── */}
-            <div className="glass-card border border-primary/15 rounded-2xl p-4 mb-2">
+            <div className="glass-card border border-primary/15 rounded-2xl p-4 mb-5">
               <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-2">Growth Narrative</p>
               <p className="text-sm text-foreground/80 leading-relaxed">
                 {latest.overall_score >= 75
@@ -450,9 +462,42 @@ export default function Progress() {
                 }
               </p>
             </div>
+
+            {/* ── ACHIEVEMENTS ── */}
+            {earnedBadges.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <Award className="w-4 h-4 text-primary" />
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Achievements Unlocked</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {earnedBadges.slice(0, 9).map((badge, i) => (
+                    <motion.div
+                      key={badge.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.06 }}
+                      className="glass-card border border-primary/20 rounded-2xl p-3 flex flex-col items-center text-center hover:border-primary/40 transition-colors"
+                    >
+                      <span className="text-3xl mb-2">{badge.icon}</span>
+                      <p className="text-[10px] font-semibold text-foreground leading-tight">{badge.name}</p>
+                    </motion.div>
+                  ))}
+                </div>
+                {earnedBadges.length > 9 && (
+                  <p className="text-[10px] text-muted-foreground/60 mt-2 text-center">
+                    +{earnedBadges.length - 9} more achievements
+                  </p>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        <HowToEarnPointsModal isOpen={showPointsGuide} onClose={() => setShowPointsGuide(false)} />
+      </AnimatePresence>
     </AppLayout>
   );
 }

@@ -5,9 +5,11 @@ import { useNavigate } from "react-router-dom";
 import { useTestProfile } from "@/lib/testProfileContext";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { Bell, Crown, RotateCcw, LogOut, ChevronRight, Shield, Flame } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import AppLayout from "@/components/layout/AppLayout";
 import IdentityLevelCard from "@/components/profile/IdentityLevelCard";
 import SubscriptionCard from "@/components/profile/SubscriptionCard";
+import HowToEarnPointsModal from "@/components/profile/HowToEarnPointsModal";
 
 const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400", premium: "text-primary" };
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
@@ -17,6 +19,7 @@ export default function Profile() {
   const { user, profile, loading: profileLoading, updateProfile, clearProfile } = useUserProfile();
   const [creditBalance, setCreditBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showPointsGuide, setShowPointsGuide] = useState(false);
   const navigate = useNavigate();
 
   // Auth guard
@@ -102,7 +105,11 @@ export default function Profile() {
         </div>
 
         {/* Identity Level */}
-        <IdentityLevelCard points={points} streak={profile?.streak_count || 0} />
+        <IdentityLevelCard
+          points={points}
+          streak={profile?.streak_count || 0}
+          onShowPointsGuide={() => setShowPointsGuide(true)}
+        />
 
 
 
@@ -172,6 +179,10 @@ export default function Profile() {
           <p className="text-sm font-medium text-destructive/80">Log Out</p>
         </button>
       </div>
+
+      <AnimatePresence>
+        <HowToEarnPointsModal isOpen={showPointsGuide} onClose={() => setShowPointsGuide(false)} />
+      </AnimatePresence>
     </AppLayout>
   );
 }

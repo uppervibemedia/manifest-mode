@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { getLevelForPoints, getProgressToNextLevel, getPointsToNextLevel, IDENTITY_LEVELS } from "@/lib/identityEngine";
 
-export default function IdentityLevelCard({ points = 0, streak = 0 }) {
+export default function IdentityLevelCard({ points = 0, streak = 0, onShowPointsGuide }) {
   const level = getLevelForPoints(points);
   const progressPct = getProgressToNextLevel(points);
   const toNext = getPointsToNextLevel(points);
@@ -34,6 +34,14 @@ export default function IdentityLevelCard({ points = 0, streak = 0 }) {
           <p className="text-xs text-muted-foreground mt-1 max-w-[200px] leading-relaxed">
             {level.subtitle}
           </p>
+          {onShowPointsGuide && (
+            <button
+              onClick={onShowPointsGuide}
+              className="text-[10px] font-semibold text-primary hover:text-primary/80 mt-2 transition-colors"
+            >
+              How to earn AP →
+            </button>
+          )}
         </div>
         {/* Points badge */}
         <div className="shrink-0 text-right">

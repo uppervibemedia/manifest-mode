@@ -183,11 +183,11 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden"
+        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col"
         style={{ maxHeight: "92vh" }}
       >
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between">
+        <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between shrink-0">
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -201,7 +201,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           </button>
         </div>
 
-        <div className="overflow-y-auto" style={{ maxHeight: "calc(92vh - 80px)" }}>
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
           <AnimatePresence mode="wait">
 
             {/* STEP 1 — Setup */}
@@ -262,27 +262,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                   ))}
                 </div>
 
-                {/* Generate button */}
-                <button
-                  onClick={handleGenerate}
-                  disabled={!canGenerate || generating}
-                  className="w-full py-4 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-30 text-sm"
-                >
-                  {generating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating your vision…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Generate — See Me In This Vision
-                    </>
-                  )}
-                </button>
-                {generating && (
-                  <p className="text-[10px] text-muted-foreground/60 text-center mt-2">This takes about 10–15 seconds</p>
-                )}
+
               </motion.div>
             )}
 
@@ -299,49 +279,76 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
 
                 {/* Reference row */}
                 <div className="flex gap-2 mb-5">
-                  {visionPreview && (
-                    <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
-                      <img src={visionPreview} alt="Vision" className="w-full h-full object-cover opacity-60" />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center text-muted-foreground text-lg">+</div>
-                  {selfPreview && (
-                    <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
-                      <img src={selfPreview} alt="You" className="w-full h-full object-cover opacity-60" />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center text-muted-foreground text-lg">→</div>
-                  <div className="flex-1 rounded-xl overflow-hidden border border-primary/30" style={{ aspectRatio: "1/1" }}>
-                    <img src={result} alt="Result" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="space-y-2">
-                  {saved ? (
-                    <div className="w-full py-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-2">
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span className="text-sm font-semibold text-emerald-400">Saved to Vision Vault ✦</span>
-                    </div>
-                  ) : (
-                    <button onClick={handleSave} disabled={saving}
-                      className="w-full py-3.5 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
-                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
-                      {saving ? "Saving…" : "Save to Vision Vault"}
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => { setStep(1); setResult(null); setSaved(false); }}
-                    className="w-full py-3.5 rounded-xl border border-border text-muted-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/30 transition-colors text-sm">
-                    <RefreshCw className="w-4 h-4" /> Regenerate
-                  </button>
+                 {visionPreview && (
+                   <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
+                     <img src={visionPreview} alt="Vision" className="w-full h-full object-cover opacity-60" />
+                   </div>
+                 )}
+                 <div className="flex items-center justify-center text-muted-foreground text-lg">+</div>
+                 {selfPreview && (
+                   <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
+                     <img src={selfPreview} alt="You" className="w-full h-full object-cover opacity-60" />
+                   </div>
+                 )}
+                 <div className="flex items-center justify-center text-muted-foreground text-lg">→</div>
+                 <div className="flex-1 rounded-xl overflow-hidden border border-primary/30" style={{ aspectRatio: "1/1" }}>
+                   <img src={result} alt="Result" className="w-full h-full object-cover" />
+                 </div>
                 </div>
               </motion.div>
             )}
 
           </AnimatePresence>
         </div>
+
+        {/* Action buttons footer — fixed above tab bar */}
+        {step === 1 && (
+          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2">
+            <button
+              onClick={handleGenerate}
+              disabled={!canGenerate || generating}
+              className="w-full py-4 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-30 text-sm"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating your vision…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Generate — See Me In This Vision
+                </>
+              )}
+            </button>
+            {generating && (
+              <p className="text-[10px] text-muted-foreground/60 text-center">This takes about 10–15 seconds</p>
+            )}
+          </div>
+        )}
+
+        {step === 2 && result && (
+          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2">
+            {saved ? (
+              <div className="w-full py-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-semibold text-emerald-400">Saved to Vision Vault ✦</span>
+              </div>
+            ) : (
+              <button onClick={handleSave} disabled={saving}
+                className="w-full py-3.5 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
+                {saving ? "Saving…" : "Save to Vision Vault"}
+              </button>
+            )}
+
+            <button
+              onClick={() => { setStep(1); setResult(null); setSaved(false); }}
+              className="w-full py-3.5 rounded-xl border border-border text-muted-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/30 transition-colors text-sm">
+              <RefreshCw className="w-4 h-4" /> Regenerate
+            </button>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );

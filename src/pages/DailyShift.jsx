@@ -143,7 +143,6 @@ function DailyPlan({ plan, loading }) {
   const dynamicSections = [
     { label: "Mindset Focus", value: plan.mindset_focus || "—" },
     { label: "Today's Affirmation", value: plan.affirmation || "—" },
-    { label: "Action Challenge", value: plan.action_challenge || "—" },
     { label: "Visualization", value: plan.visualization_prompt || "—" },
   ];
 

@@ -57,8 +57,7 @@
         "google",
         "none"
       ],
-      "default": "none",
-      "description": "Which billing platform manages this subscription"
+      "default": "none"
     },
     "stripe_customer_id": {
       "type": "string"
@@ -84,6 +83,22 @@
     "notifications_enabled": {
       "type": "boolean",
       "default": true
+    },
+    "morning_reminder_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "morning_reminder_time": {
+      "type": "string",
+      "default": "07:00"
+    },
+    "evening_reminder_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "evening_reminder_time": {
+      "type": "string",
+      "default": "20:00"
     },
     "streak_count": {
       "type": "number",

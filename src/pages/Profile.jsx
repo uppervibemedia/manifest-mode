@@ -5,13 +5,14 @@ import { base44 } from "@/api/base44Client";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { LogOut, Crown, ChevronRight, Zap, ExternalLink, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import ReminderSettings from "@/components/profile/ReminderSettings";
 
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400", premium: "text-primary" };
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, profile, loading: profileLoading, clearProfile } = useUserProfile();
+  const { user, profile, loading: profileLoading, clearProfile, updateProfile } = useUserProfile();
   useEffect(() => {
     if (profileLoading) return;
     if (!user) navigate("/");
@@ -96,6 +97,9 @@ export default function Profile() {
             )}
           </button>
         </motion.div>
+
+        {/* Reminder Settings */}
+        <ReminderSettings profile={profile} onUpdate={updateProfile} />
 
         {/* View All Plans link */}
         {tier !== "premium" && (

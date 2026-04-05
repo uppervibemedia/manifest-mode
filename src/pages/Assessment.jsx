@@ -33,6 +33,7 @@ const STEPS = [
 
 export default function Assessment() {
   const navigate = useNavigate();
+  const isOnboarding = new URLSearchParams(window.location.search).get("onboarding") === "1";
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -140,7 +141,7 @@ export default function Assessment() {
       });
     }
 
-    navigate("/score");
+    navigate(isOnboarding ? "/score?onboarding=1" : "/score");
   };
 
   const currentStepData = STEPS[step];

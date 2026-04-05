@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { RefreshCw, TrendingUp, ArrowRight } from "lucide-react";
+import { RefreshCw, ArrowRight, ChevronRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import ScoreRing from "@/components/score/ScoreRing";
 import CategoryScoreCard from "@/components/score/CategoryScoreCard";
@@ -13,6 +13,7 @@ export default function ScorePage() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const isOnboarding = new URLSearchParams(window.location.search).get("onboarding") === "1";
 
   useEffect(() => {
     loadData();
@@ -37,6 +38,56 @@ export default function ScorePage() {
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       </AppLayout>
+    );
+  }
+
+  // ── Onboarding streamlined score reveal ──
+  if (isOnboarding && score) {
+    const strengthInsight = analysis?.strengths_summary || null;
+    const gapInsight = analysis?.misalignment_summary || null;
+    return (
+      <div className="min-h-screen bg-background flex flex-col px-5 py-10 max-w-md mx-auto relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+
+        {/* Progress */}
+        <div className="flex items-center gap-2 mb-8">
+          {[1, 2, 3, 4].map(n => (
+            <div key={n} className={`flex-1 h-1 rounded-full ${n <= 1 ? "bg-primary" : "bg-border"}`} />
+          ))}
+        </div>
+
+        <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Step 1 of 4</p>
+        <h1 className="font-playfair text-2xl font-semibold mb-1">Your Reality Match Score</h1>
+        <p className="text-sm text-muted-foreground mb-8">This is where you are today. Let's close the gap.</p>
+
+        <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center mb-8">
+          <ScoreRing score={score.overall_score} />
+          <p className="text-sm text-muted-foreground mt-3 text-center max-w-xs">{score.insight_summary}</p>
+        </motion.div>
+
+        {strengthInsight && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="glass-card rounded-xl p-4 border border-emerald-500/20 mb-3">
+            <p className="text-xs uppercase tracking-widest text-emerald-400 font-medium mb-1.5">✦ What's working</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{strengthInsight}</p>
+          </motion.div>
+        )}
+
+        {gapInsight && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="glass-card rounded-xl p-4 border border-orange-500/20 mb-8">
+            <p className="text-xs uppercase tracking-widest text-orange-400 font-medium mb-1.5">⚡ Biggest gap</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{gapInsight}</p>
+          </motion.div>
+        )}
+
+        <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          onClick={() => navigate("/onboarding/future-self")}
+          className="w-full py-4 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2">
+          Now let's build your Future Self <ChevronRight className="w-4 h-4" />
+        </motion.button>
+      </div>
     );
   }
 

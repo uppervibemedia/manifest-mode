@@ -1,10 +1,10 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { UserProfileProvider } from '@/lib/UserProfileContext';
+import { UserProfileProvider, useUserProfile } from '@/lib/UserProfileContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
 import DailyShift from './pages/DailyShift';
@@ -17,6 +17,8 @@ import Assessment from './pages/Assessment';
 import ScorePage from './pages/ScorePage';
 import VisionVault from './pages/VisionVault';
 import Pricing from './pages/Pricing';
+import FutureSelfSetup from './pages/onboarding/FutureSelfSetup';
+import FirstVision from './pages/onboarding/FirstVision';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -46,7 +48,10 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/onboarding/future-self" element={<FutureSelfSetup />} />
+      <Route path="/onboarding/first-vision" element={<FirstVision />} />
       <Route path="/assessment" element={<Assessment />} />
+      <Route path="/" element={<NewUserGate />} />
       <Route path="/score" element={<ScorePage />} />
       <Route path="/daily-shift" element={<DailyShift />} />
       <Route path="/vision" element={<Vision />} />
@@ -56,11 +61,20 @@ const AuthenticatedApp = () => {
       <Route path="/future-self" element={<FutureSelf />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/pricing" element={<Pricing />} />
-      <Route path="/" element={<DailyShift />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };
+
+// Redirects new users (onboarding not complete) to assessment, otherwise to daily-shift
+function NewUserGate() {
+  const { profile, loading } = useUserProfile();
+  if (loading) return null;
+  if (profile && !profile.onboarding_completed) {
+    return <Navigate to="/assessment?onboarding=1" replace />;
+  }
+  return <DailyShift />;
+}
 
 function App() {
   return (

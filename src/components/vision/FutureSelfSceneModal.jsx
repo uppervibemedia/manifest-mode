@@ -112,7 +112,7 @@ Generate a photorealistic, aspirational image of the user in their desired futur
           </button>
         </div>
 
-        <div className="p-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 max-h-[75vh] overflow-y-auto pb-32 md:pb-6" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))' }}>
           {/* Vision context */}
           <div className="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/10">
             <p className="text-xs uppercase tracking-widest text-primary/70 font-semibold mb-1">
@@ -220,45 +220,47 @@ Generate a photorealistic, aspirational image of the user in their desired futur
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setStep("upload");
-                    setGeneratedImage(null);
-                    setPersonalPhoto(null);
-                  }}
-                  className="flex-1 py-3 bg-muted text-foreground font-semibold rounded-xl hover:bg-muted/80 transition-colors"
-                >
-                  Generate Again
-                </button>
-                <a
-                  href={generatedImage}
-                  download="future-self-scene.jpg"
-                  className="flex-1 py-3 border border-primary/30 text-primary font-semibold rounded-xl hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </a>
-              </div>
+              {/* Actions — sticky on mobile to stay above tab bar */}
+              <div className="sticky bottom-0 left-0 right-0 -mx-6 -mb-6 px-6 py-4 bg-gradient-to-t from-card via-card to-transparent space-y-3 md:static md:bg-transparent md:m-0 md:p-0">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setStep("upload");
+                      setGeneratedImage(null);
+                      setPersonalPhoto(null);
+                    }}
+                    className="flex-1 py-3 bg-muted text-foreground font-semibold rounded-xl hover:bg-muted/80 transition-colors"
+                  >
+                    Generate Again
+                  </button>
+                  <a
+                    href={generatedImage}
+                    download="future-self-scene.jpg"
+                    className="flex-1 py-3 border border-primary/30 text-primary font-semibold rounded-xl hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
+                </div>
 
-              <button
-                onClick={handleSaveToVision}
-                disabled={generating}
-                className="w-full py-3 gold-gradient text-background font-semibold rounded-xl disabled:opacity-40 flex items-center justify-center gap-2"
-              >
-                {generating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Save to Vision Board
-                  </>
-                )}
-              </button>
+                <button
+                  onClick={handleSaveToVision}
+                  disabled={generating}
+                  className="w-full py-3 gold-gradient text-background font-semibold rounded-xl disabled:opacity-40 flex items-center justify-center gap-2 min-h-11"
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Save to Vision Board
+                    </>
+                  )}
+                </button>
+              </div>
             </motion.div>
           )}
         </div>

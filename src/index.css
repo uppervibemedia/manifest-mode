@@ -30,6 +30,29 @@
     --gold-dim: 45 60% 45%;
     --glow: 45 80% 60%;
   }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --background: 220 15% 95%;
+      --foreground: 220 20% 10%;
+      --card: 220 10% 90%;
+      --card-foreground: 220 20% 10%;
+      --popover: 220 10% 90%;
+      --popover-foreground: 220 20% 10%;
+      --primary: 45 80% 50%;
+      --primary-foreground: 220 15% 95%;
+      --secondary: 220 10% 85%;
+      --secondary-foreground: 220 20% 15%;
+      --muted: 220 10% 80%;
+      --muted-foreground: 220 10% 40%;
+      --accent: 280 60% 55%;
+      --accent-foreground: 0 0% 100%;
+      --destructive: 0 84% 60%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 220 10% 80%;
+      --input: 220 10% 85%;
+    }
+  }
 }
 
 @layer base {
@@ -39,6 +62,10 @@
   body {
     @apply bg-background text-foreground font-inter;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  button, nav, [role="button"], .glass-card {
+    @apply select-none;
   }
 }
 

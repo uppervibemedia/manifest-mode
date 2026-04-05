@@ -9,6 +9,7 @@ import VisionDetailModal from "@/components/vision/VisionDetailModal";
 import FutureSelfSceneModal from "@/components/vision/FutureSelfSceneModal";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useUserProfile } from "@/lib/UserProfileContext";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
 
 const FILTER_CATS = [{ id: "all", label: "All", icon: "✦", color: "#fbbf24" }, ...CATEGORIES];
 
@@ -22,6 +23,11 @@ export default function VisionVault() {
   const [sceneVision, setSceneVision] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const { containerRef, isRefreshing, setIsRefreshing } = usePullToRefresh(async () => {
+    await loadData();
+    setIsRefreshing(false);
+  });
 
   // Auth guard
   useEffect(() => {
@@ -79,7 +85,7 @@ export default function VisionVault() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-32 safe-area-inset-bottom">
+      <div ref={containerRef} className="px-5 pt-12 pb-32 safe-area-inset-bottom" style={{ overflowY: 'auto' }}>
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div>

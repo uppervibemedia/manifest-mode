@@ -8,6 +8,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
 import MicroActionSuggester from "@/components/daily/MicroActionSuggester";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
 
 
 // ─── Morning Check-In ──────────────────────────────────────────────────────────
@@ -294,26 +295,33 @@ export default function DailyShift() {
   const [eveningSaved, setEveningSaved] = useState(false);
   const [reflectionPrompt, setReflectionPrompt] = useState(null);
 
+  const { containerRef, isRefreshing, setIsRefreshing } = usePullToRefresh(async () => {
+    await loadData();
+    setIsRefreshing(false);
+  });
+
+  const loadData = async () => {
+    if (!user || profileLoading) return;
+    const [todayPlan, checkins, eveningEntries] = await Promise.all([
+      getTodaysShift(user.email, today),
+      base44.entities.DailyCheckIn.filter({ user_email: user.email, checkin_date: today }),
+      base44.entities.JournalEntry.filter({ user_email: user.email }, "-created_date", 10),
+    ]);
+    setPlan(todayPlan || null);
+    setReflectionPrompt(todayPlan?.reflection_prompt || null);
+    setMorningDone(checkins.length > 0);
+    const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
+    setEveningDone(todayEvening.length > 0);
+    setPlanLoading(false);
+  };
+
   useEffect(() => {
     if (profileLoading) return;
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
 
   useEffect(() => {
-    (async () => {
-      if (!user || profileLoading) return;
-      const [todayPlan, checkins, eveningEntries] = await Promise.all([
-        getTodaysShift(user.email, today),
-        base44.entities.DailyCheckIn.filter({ user_email: user.email, checkin_date: today }),
-        base44.entities.JournalEntry.filter({ user_email: user.email }, "-created_date", 10),
-      ]);
-      setPlan(todayPlan || null);
-      setReflectionPrompt(todayPlan?.reflection_prompt || null);
-      setMorningDone(checkins.length > 0);
-      const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
-      setEveningDone(todayEvening.length > 0);
-      setPlanLoading(false);
-    })();
+    loadData();
   }, [user?.email, profileLoading]);
 
   if (profileLoading || planLoading) {
@@ -328,7 +336,7 @@ export default function DailyShift() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-6 pb-6">
+      <div ref={containerRef} className="px-5 pt-6 pb-6" style={{ overflowY: 'auto' }}>
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">
           {new Date().toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}
         </p>

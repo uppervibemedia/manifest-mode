@@ -3,9 +3,18 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { LogOut, Crown, ChevronRight, Zap, ExternalLink, Loader2 } from "lucide-react";
+import { LogOut, Crown, ChevronRight, Zap, ExternalLink, Loader2, AlertTriangle } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import ReminderSettings from "@/components/profile/ReminderSettings";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
 const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400", premium: "text-primary" };
@@ -13,6 +22,9 @@ const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400",
 export default function Profile() {
   const navigate = useNavigate();
   const { user, profile, loading: profileLoading, clearProfile, updateProfile } = useUserProfile();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  
   useEffect(() => {
     if (profileLoading) return;
     if (!user) navigate("/");
@@ -32,6 +44,48 @@ export default function Profile() {
   const handleLogout = async () => {
     clearProfile();
     base44.auth.logout();
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      // Delete all user data
+      const [visions, habits, scores, analyses, entries, plans, affirmations] = await Promise.all([
+        base44.entities.VisionItem.filter({ user_email: user.email }),
+        base44.entities.Habit.filter({ user_email: user.email }),
+        base44.entities.ScoreHistory.filter({ user_email: user.email }),
+        base44.entities.AIAnalysis.filter({ user_email: user.email }),
+        base44.entities.JournalEntry.filter({ user_email: user.email }),
+        base44.entities.DailyShiftPlan.filter({ user_email: user.email }),
+        base44.entities.Affirmation.filter({ user_email: user.email }),
+      ]);
+
+      const deletePromises = [
+        ...visions.map(v => base44.entities.VisionItem.delete(v.id)),
+        ...habits.map(h => base44.entities.Habit.delete(h.id)),
+        ...scores.map(s => base44.entities.ScoreHistory.delete(s.id)),
+        ...analyses.map(a => base44.entities.AIAnalysis.delete(a.id)),
+        ...entries.map(e => base44.entities.JournalEntry.delete(e.id)),
+        ...plans.map(p => base44.entities.DailyShiftPlan.delete(p.id)),
+        ...affirmations.map(a => base44.entities.Affirmation.delete(a.id)),
+      ];
+
+      await Promise.all(deletePromises);
+
+      // Delete user profile
+      const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
+      if (profiles[0]) {
+        await base44.entities.UserProfile.delete(profiles[0].id);
+      }
+
+      clearProfile();
+      base44.auth.logout();
+    } catch (error) {
+      console.error("Delete account error:", error);
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   if (profileLoading) {
@@ -119,6 +173,44 @@ export default function Profile() {
           <LogOut className="w-5 h-5 text-destructive/70 shrink-0" />
           <p className="text-sm font-medium text-destructive/80">Log Out</p>
         </motion.button>
+
+        {/* Delete Account */}
+        <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          onClick={() => setShowDeleteDialog(true)}
+          className="w-full glass-card rounded-2xl p-5 flex items-center gap-4 border border-destructive/40 bg-destructive/5 hover:bg-destructive/10 transition-colors">
+          <AlertTriangle className="w-5 h-5 text-destructive/80 shrink-0" />
+          <p className="text-sm font-medium text-destructive/90">Delete Account</p>
+        </motion.button>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive">Delete Account</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                This action cannot be undone. All your data will be permanently deleted:
+                <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
+                  <li>Vision board and images</li>
+                  <li>Habits and habit logs</li>
+                  <li>Reality Match Scores</li>
+                  <li>Journal entries</li>
+                  <li>Future Self Blueprint</li>
+                  <li>All personal data</li>
+                </ul>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex gap-3 justify-end">
+              <AlertDialogCancel>Keep Account</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? "Deleting..." : "Delete Forever"}
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );

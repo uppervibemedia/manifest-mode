@@ -63,6 +63,7 @@
     @apply bg-background text-foreground font-inter;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
+    padding-top: env(safe-area-inset-top);
   }
   button, nav, [role="button"], .glass-card {
     @apply select-none;

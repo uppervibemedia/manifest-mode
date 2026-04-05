@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useRef, useEffect, useState } from "react";
 import { Zap, Image, TrendingUp, User, Sparkles } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -9,13 +10,62 @@ const NAV_ITEMS = [
   { path: "/profile", icon: User, label: "Profile", id: "profile" },
 ];
 
-// nav bar height ~72px + safe area. We give pages enough room so CTAs are never blocked.
+const tabStates = {
+  shift: { scrollY: 0 },
+  vision: { scrollY: 0 },
+  progress: { scrollY: 0 },
+  future: { scrollY: 0 },
+  profile: { scrollY: 0 },
+};
+
+function getTabId(pathname) {
+  const map = {
+    '/daily-shift': 'shift',
+    '/vision': 'vision',
+    '/progress': 'progress',
+    '/future-self': 'future',
+    '/profile': 'profile',
+  };
+  return map[pathname] || (pathname === '/' ? 'shift' : null);
+}
+
 export default function AppLayout({ children }) {
   const location = useLocation();
+  const containerRef = useRef(null);
+  const lastTabRef = useRef(getTabId(location.pathname));
+  const [, setRerender] = useState(0);
+
+  // Save scroll position before tab switch
+  useEffect(() => {
+    return () => {
+      const tabId = lastTabRef.current;
+      if (containerRef.current && tabId) {
+        tabStates[tabId].scrollY = containerRef.current.scrollTop;
+      }
+    };
+  }, [location.pathname]);
+
+  // Restore scroll position on tab switch
+  useEffect(() => {
+    const tabId = getTabId(location.pathname);
+    if (tabId) {
+      lastTabRef.current = tabId;
+      // Restore scroll on next tick
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = tabStates[tabId].scrollY;
+        }
+      });
+    }
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto relative">
-      <main className="flex-1 overflow-y-auto" style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}>
+      <main 
+        ref={containerRef}
+        className="flex-1 overflow-y-auto" 
+        style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         {children}
       </main>
 

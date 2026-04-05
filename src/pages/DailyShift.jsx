@@ -6,6 +6,7 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import { Sun, Moon, Check, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { getLocalToday } from "@/lib/dateUtils";
+import { getTodaysShift } from "@/lib/shiftEngine";
 
 const today = getLocalToday();
 
@@ -135,16 +136,21 @@ function MorningCheckIn({ userEmail, onSaved }) {
 // ─── Today's Shift Plan ────────────────────────────────────────────────────────
 
 function DailyPlan({ plan, loading }) {
-  if (loading) return <div className="h-32 bg-muted rounded-2xl animate-pulse" />;
+  if (loading) return <div className="h-32 bg-muted rounded-2xl animate-pulse mb-8" />;
   if (!plan) return null;
 
-  const sections = [
-    { label: "Today's Key Habits", value: plan.habits?.slice(0, 3).join(" • ") || "—" },
+  const stableSections = [
+    { label: "Today's Key Habits", value: plan.habits?.slice(0, 3).join(" • ") || "—", stable: true },
+  ];
+
+  const dynamicSections = [
     { label: "Mindset Focus", value: plan.mindset_focus || "—" },
     { label: "Today's Affirmation", value: plan.affirmation || "—" },
     { label: "Action Challenge", value: plan.action_challenge || "—" },
     { label: "Visualization", value: plan.visualization_prompt || "—" },
   ];
+
+  const sections = [...stableSections, ...dynamicSections];
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -152,8 +158,11 @@ function DailyPlan({ plan, loading }) {
       <div className="space-y-3">
         {sections.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-            className="glass-card border border-border rounded-xl p-4">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">{s.label}</p>
+            className={`glass-card rounded-xl p-4 border ${s.stable ? "border-primary/20" : "border-border"}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{s.label}</p>
+              {s.stable && <span className="text-[8px] uppercase tracking-widest text-primary/50 font-semibold">stable</span>}
+            </div>
             <p className="text-sm text-foreground leading-relaxed">{s.value}</p>
           </motion.div>
         ))}
@@ -164,7 +173,7 @@ function DailyPlan({ plan, loading }) {
 
 // ─── Evening Review ────────────────────────────────────────────────────────────
 
-function EveningReview({ userEmail, onSaved }) {
+function EveningReview({ userEmail, onSaved, reflectionPrompt }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [scores, setScores] = useState({ action: null, identity: null, emotional: null });
@@ -222,6 +231,13 @@ function EveningReview({ userEmail, onSaved }) {
         <h2 className="font-playfair text-lg font-semibold">Evening Review</h2>
       </div>
 
+      {reflectionPrompt && (
+        <div className="glass-card border border-purple-400/20 rounded-xl p-4 mb-4">
+          <p className="text-[10px] uppercase tracking-widest text-purple-400/70 font-semibold mb-1">Tonight's Reflection</p>
+          <p className="text-sm text-foreground/80 leading-relaxed italic">"{reflectionPrompt}"</p>
+        </div>
+      )}
+
       <div className="space-y-3 mb-4">
         {PROMPTS.map((p, idx) => (
           <motion.div key={p.key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
@@ -269,6 +285,7 @@ export default function DailyShift() {
   const [eveningDone, setEveningDone] = useState(false);
   const [morningSaved, setMorningSaved] = useState(false);
   const [eveningSaved, setEveningSaved] = useState(false);
+  const [reflectionPrompt, setReflectionPrompt] = useState(null);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -278,12 +295,13 @@ export default function DailyShift() {
   useEffect(() => {
     (async () => {
       if (!user || profileLoading) return;
-      const [plans, checkins, eveningEntries] = await Promise.all([
-        base44.entities.DailyShiftPlan.filter({ user_email: user.email, plan_date: today }),
+      const [todayPlan, checkins, eveningEntries] = await Promise.all([
+        getTodaysShift(user.email, today),
         base44.entities.DailyCheckIn.filter({ user_email: user.email, checkin_date: today }),
         base44.entities.JournalEntry.filter({ user_email: user.email }, "-created_date", 10),
       ]);
-      setPlan(plans[0] || null);
+      setPlan(todayPlan || null);
+      setReflectionPrompt(todayPlan?.reflection_prompt || null);
       setMorningDone(checkins.length > 0);
       const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
       setEveningDone(todayEvening.length > 0);
@@ -345,7 +363,7 @@ export default function DailyShift() {
               </div>
             </motion.div>
           ) : !eveningSaved ? (
-            <EveningReview key="evening" userEmail={user?.email} onSaved={() => setEveningSaved(true)} />
+            <EveningReview key="evening" userEmail={user?.email} reflectionPrompt={reflectionPrompt} onSaved={() => setEveningSaved(true)} />
           ) : null}
         </AnimatePresence>
 

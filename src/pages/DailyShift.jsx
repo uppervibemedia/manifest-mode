@@ -8,6 +8,8 @@ import AppLayout from "@/components/layout/AppLayout";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
 import MicroActionSuggester from "@/components/daily/MicroActionSuggester";
+import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";
+import { loadShiftStats } from "@/lib/shiftGamification";
 
 // ─── Morning Check-In ──────────────────────────────────────────────────────────
 
@@ -292,6 +294,7 @@ export default function DailyShift() {
   const [morningSaved, setMorningSaved] = useState(false);
   const [eveningSaved, setEveningSaved] = useState(false);
   const [reflectionPrompt, setReflectionPrompt] = useState(null);
+  const [shiftStats, setShiftStats] = useState(null);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -312,6 +315,8 @@ export default function DailyShift() {
       const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
       setEveningDone(todayEvening.length > 0);
       setPlanLoading(false);
+      const stats = await loadShiftStats(user.email);
+      setShiftStats(stats);
     })();
   }, [user?.email, profileLoading]);
 
@@ -344,9 +349,11 @@ export default function DailyShift() {
               </div>
             </motion.div>
           ) : !morningSaved ? (
-            <MorningCheckIn key="morning" userEmail={user?.email} today={today} onSaved={() => setMorningSaved(true)} />
+            <MorningCheckIn key="morning" userEmail={user?.email} today={today} onSaved={async () => { setMorningSaved(true); const s = await loadShiftStats(user.email); setShiftStats(s); }} />
           ) : null}
         </AnimatePresence>
+
+        <ShiftGamificationPanel stats={shiftStats} />
 
         <DailyPlan plan={plan} loading={planLoading} />
 
@@ -371,7 +378,7 @@ export default function DailyShift() {
               </div>
             </motion.div>
           ) : !eveningSaved ? (
-            <EveningReview key="evening" userEmail={user?.email} reflectionPrompt={reflectionPrompt} today={today} onSaved={() => setEveningSaved(true)} />
+            <EveningReview key="evening" userEmail={user?.email} reflectionPrompt={reflectionPrompt} today={today} onSaved={async () => { setEveningSaved(true); const s = await loadShiftStats(user.email); setShiftStats(s); }} />
           ) : null}
         </AnimatePresence>
 

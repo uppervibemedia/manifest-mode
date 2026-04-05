@@ -49,6 +49,23 @@
       ],
       "default": "monthly"
     },
+    "billing_platform": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "apple",
+        "google",
+        "none"
+      ],
+      "default": "none",
+      "description": "Which billing platform manages this subscription"
+    },
+    "stripe_customer_id": {
+      "type": "string"
+    },
+    "stripe_subscription_id": {
+      "type": "string"
+    },
     "renewal_date": {
       "type": "string"
     },

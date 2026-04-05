@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { LogOut, Crown, ChevronRight, Zap } from "lucide-react";
+import { LogOut, Crown, ChevronRight, Zap, ExternalLink, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
@@ -16,6 +17,17 @@ export default function Profile() {
     if (profileLoading) return;
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
+
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    const res = await base44.functions.invoke("stripePortal", {
+      return_url: `${window.location.origin}/profile`,
+    });
+    if (res.data?.url) window.location.href = res.data.url;
+    setPortalLoading(false);
+  };
 
   const handleLogout = async () => {
     clearProfile();
@@ -71,7 +83,7 @@ export default function Profile() {
               : "You have full access to all Premium features. ✦"}
           </p>
           <button
-            onClick={() => navigate("/pricing")}
+            onClick={() => tier === "premium" && profile?.billing_platform === "stripe" ? handleManageBilling() : navigate("/pricing")}
             className={`w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
               tier === "premium"
                 ? "bg-card border border-border text-muted-foreground hover:border-primary/20"
@@ -79,7 +91,7 @@ export default function Profile() {
             }`}
           >
             {tier === "premium" ? (
-              <><ChevronRight className="w-4 h-4" /> Manage Subscription</>
+              portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ExternalLink className="w-4 h-4" /> Manage Subscription</>
             ) : (
               <><Zap className="w-4 h-4" /> {tier === "free" ? "View Plans & Upgrade" : "Upgrade to Premium"}</>
             )}

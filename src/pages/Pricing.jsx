@@ -2,8 +2,10 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { Check, Lock, Crown, Sparkles, ChevronLeft } from "lucide-react";
+import { Check, Lock, Crown, Sparkles, ChevronLeft, Loader2, ExternalLink } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import { base44 } from "@/api/base44Client";
+import { PLAN_LABELS } from "@/lib/subscriptionEngine";
 
 const PLANS = [
   {
@@ -93,15 +95,68 @@ const PLANS = [
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const { profile, loading: profileLoading } = useUserProfile();
+  const { profile, loading: profileLoading, refetch } = useUserProfile();
   const [billing, setBilling] = useState("annual");
+  const [loadingPlan, setLoadingPlan] = useState(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Handle success/cancel redirect from Stripe
+  const params = new URLSearchParams(window.location.search);
+  const justSucceeded = params.get("success") === "1";
+  const justCanceled = params.get("canceled") === "1";
 
   const currentTier = profile?.subscription_tier || "free";
+  const hasPaidPlan = currentTier !== "free";
+  const billingPlatform = profile?.billing_platform || "none";
 
   const getDisplayPrice = (plan) => {
     if (!plan.monthlyPrice) return { main: "$0", sub: "forever free" };
     if (billing === "annual") return { main: `$${plan.annualPrice}`, sub: "per year", badge: plan.annualSavings };
     return { main: `$${plan.monthlyPrice}`, sub: "per month" };
+  };
+
+  const handleSubscribe = async (plan) => {
+    if (!plan.monthlyPrice) return; // free plan
+    setError(null);
+    const key = `${plan.id}_${billing}`;
+    setLoadingPlan(key);
+    try {
+      const res = await base44.functions.invoke("stripeCreateCheckout", {
+        plan_id: plan.id,
+        billing_cycle: billing,
+        success_url: `${window.location.origin}/pricing?success=1`,
+        cancel_url: `${window.location.origin}/pricing?canceled=1`,
+      });
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      } else {
+        setError(res.data?.error || "Could not start checkout. Please try again.");
+      }
+    } catch (e) {
+      setError(e.message || "Checkout failed.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const handleManage = async () => {
+    setError(null);
+    setPortalLoading(true);
+    try {
+      const res = await base44.functions.invoke("stripePortal", {
+        return_url: `${window.location.origin}/pricing`,
+      });
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      } else {
+        setError(res.data?.error || "Could not open billing portal.");
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   if (profileLoading) {
@@ -124,6 +179,53 @@ export default function Pricing() {
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Subscription</p>
         <h1 className="font-playfair text-2xl font-semibold mb-2">Choose Your Plan</h1>
         <p className="text-sm text-muted-foreground mb-7">Invest in the version of yourself you're becoming.</p>
+
+        {/* Post-checkout banners */}
+        {justSucceeded && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            className="glass-card border border-emerald-500/30 rounded-xl p-4 mb-5 flex items-center gap-3">
+            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Subscription activated ✦</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Your plan is now active. Features will unlock shortly.</p>
+            </div>
+          </motion.div>
+        )}
+        {justCanceled && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            className="glass-card border border-border rounded-xl p-4 mb-5">
+            <p className="text-sm text-muted-foreground">Checkout was canceled. No charge was made.</p>
+          </motion.div>
+        )}
+
+        {/* Error banner */}
+        {error && (
+          <div className="glass-card border border-destructive/30 rounded-xl p-4 mb-5">
+            <p className="text-sm text-destructive/80">{error}</p>
+          </div>
+        )}
+
+        {/* Manage subscription (paid users) */}
+        {hasPaidPlan && billingPlatform === "stripe" && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="glass-card border border-primary/20 rounded-xl p-4 mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {PLAN_LABELS[currentTier]} · {profile?.billing_cycle === "annual" ? "Annual" : "Monthly"}
+              </p>
+              {profile?.renewal_date && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Renews {new Date(profile.renewal_date).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}
+                </p>
+              )}
+            </div>
+            <button onClick={handleManage} disabled={portalLoading}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/10 transition-colors disabled:opacity-50">
+              {portalLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+              Manage
+            </button>
+          </motion.div>
+        )}
 
         {/* Billing Toggle */}
         <div className="flex items-center justify-center mb-7">
@@ -159,6 +261,8 @@ export default function Pricing() {
             const price = getDisplayPrice(plan);
             const isPremium = plan.id === "premium";
             const isPlus = plan.id === "supporter";
+            const planKey = `${plan.id}_${billing}`;
+            const isLoading = loadingPlan === planKey;
 
             return (
               <motion.div
@@ -248,9 +352,10 @@ export default function Pricing() {
 
                   {/* CTA */}
                   <button
-                    disabled={isCurrent}
-                    className={`w-full py-3 rounded-xl font-semibold text-sm transition-all ${
-                      isCurrent
+                    onClick={() => !isCurrent && handleSubscribe(plan)}
+                    disabled={isCurrent || isLoading || !plan.monthlyPrice}
+                    className={`w-full py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                      isCurrent || !plan.monthlyPrice
                         ? "bg-border/40 text-muted-foreground cursor-default"
                         : isPremium
                         ? "gold-gradient text-background"
@@ -259,7 +364,11 @@ export default function Pricing() {
                         : "bg-card border border-border text-muted-foreground hover:border-primary/20"
                     }`}
                   >
-                    {isCurrent ? "Current Plan" : plan.cta}
+                    {isLoading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting...</>
+                    ) : (
+                      isCurrent ? "Current Plan" : plan.cta
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -269,7 +378,7 @@ export default function Pricing() {
 
         <div className="text-center space-y-1.5">
           <p className="text-[11px] text-muted-foreground">Cancel anytime · No hidden fees</p>
-          <p className="text-[11px] text-muted-foreground">Annual plans billed once per year</p>
+          <p className="text-[11px] text-muted-foreground">Annual plans billed once per year · Powered by Stripe</p>
         </div>
       </div>
     </AppLayout>

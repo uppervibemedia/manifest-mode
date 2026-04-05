@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Lock, ChevronLeft, Sparkles, MessageCircle, ArrowRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import FutureSelfJournal from "@/components/blueprint/FutureSelfJournal";
 
 const BLUEPRINT_SECTIONS = [
   { key: "identity", label: "Your Future Self Is", icon: "🧬", premium: false },
@@ -31,11 +32,13 @@ export default function Blueprint() {
   const [profile, setProfile] = useState(null);
   const [latestScore, setLatestScore] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
       const user = await base44.auth.me();
+      setUserEmail(user.email);
       const [analyses, profiles, scores] = await Promise.all([
         base44.entities.AIAnalysis.filter({ user_email: user.email }, "-created_date", 1),
         base44.entities.UserProfile.filter({ user_email: user.email }),
@@ -145,6 +148,9 @@ export default function Blueprint() {
                 )}
               </motion.div>
             )}
+
+            {/* Future Self Journal */}
+            <FutureSelfJournal userEmail={userEmail} />
 
             {/* AI Coaching Section */}
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}

@@ -39,7 +39,7 @@ function MorningCheckIn({ userEmail, onSaved, today }) {
       }),
       base44.entities.DailyCheckIn.create({
         user_email: userEmail,
-        checkin_date: today ?? getLocalToday(),
+        checkin_date: today,
         gratitude: form.gratitude.trim(),
         progress_made: form.goal.trim(),
         plan_completed: form.reflection,

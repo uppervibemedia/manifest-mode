@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Plus, Lock, Sparkles, Image } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useUserProfile } from "@/lib/UserProfileContext";
+import SeeMeModal from "@/components/vision/SeeMeModal";
 
 const CATEGORIES = [
   { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
@@ -21,6 +22,8 @@ export default function Vision() {
   const { user, profile, loading: profileLoading } = useUserProfile();
   const [visions, setVisions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showSeeMe, setShowSeeMe] = useState(false);
+  const [seeMeVision, setSeeMeVision] = useState(null);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -69,6 +72,24 @@ export default function Vision() {
           </button>
         </div>
 
+        {/* See Me In This Vision — Premium Feature */}
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onClick={() => { setSeeMeVision(null); setShowSeeMe(true); }}
+          className="w-full mb-5 glass-card glow-gold border border-primary/25 rounded-2xl p-4 flex items-center gap-4 text-left hover:border-primary/50 transition-colors"
+        >
+          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">🪞</div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
+              <span className="text-[9px] uppercase tracking-widest font-bold text-background bg-primary rounded-full px-1.5 py-0.5">Premium</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Place yourself inside your dream life with AI</p>
+          </div>
+          <Sparkles className="w-4 h-4 text-primary shrink-0" />
+        </motion.button>
+
         {!canUpload && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             className="glass-card border border-primary/20 rounded-xl p-4 mb-5 flex items-center gap-3">
@@ -105,6 +126,7 @@ export default function Vision() {
                     exit={{ opacity: 0, scale: 0.92 }}
                     transition={{ delay: i * 0.04 }}
                     className="relative rounded-2xl overflow-hidden group cursor-pointer"
+                    onClick={() => { setSeeMeVision(vision); setShowSeeMe(true); }}
                     style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
 
                     {vision.image_url ? (
@@ -146,6 +168,25 @@ export default function Vision() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showSeeMe && (
+          <SeeMeModal
+            vision={seeMeVision}
+            userEmail={user?.email}
+            onClose={() => { setShowSeeMe(false); setSeeMeVision(null); }}
+            onSave={(updated) => {
+              if (updated?.id && visions.find(v => v.id === updated.id)) {
+                setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
+              } else if (updated?.id) {
+                setVisions(prev => [updated, ...prev]);
+              }
+              setShowSeeMe(false);
+              setSeeMeVision(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </AppLayout>
   );
 }

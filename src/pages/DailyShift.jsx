@@ -138,7 +138,7 @@ function DailyPlan({ plan, loading }) {
   if (!plan) return null;
 
   const stableSections = [
-    { label: "Today's Key Habits", value: plan.habits?.slice(0, 3).join(" • ") || "—", stable: true },
+    { label: "Identity Intention", value: plan.habits?.slice(0, 3).map((h, i) => `${i + 1}. ${h}`).join("\n") || "—", stable: true, multiline: true },
   ];
 
   const dynamicSections = [
@@ -159,9 +159,17 @@ function DailyPlan({ plan, loading }) {
             className={`glass-card rounded-xl p-4 border ${s.stable ? "border-primary/20" : "border-border"}`}>
             <div className="flex items-center gap-2 mb-1">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{s.label}</p>
-              {s.stable && <span className="text-[8px] uppercase tracking-widest text-primary/50 font-semibold">stable</span>}
+              {s.stable && <span className="text-[8px] uppercase tracking-widest text-primary/50 font-semibold">focus areas</span>}
             </div>
-            <p className="text-sm text-foreground leading-relaxed">{s.value}</p>
+            {s.multiline ? (
+              <div className="space-y-1">
+                {s.value.split("\n").map((line, i) => (
+                  <p key={i} className="text-sm text-foreground leading-relaxed">{line}</p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-foreground leading-relaxed">{s.value}</p>
+            )}
           </motion.div>
         ))}
       </div>

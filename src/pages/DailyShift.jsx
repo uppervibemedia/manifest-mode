@@ -138,9 +138,7 @@ function DailyPlan({ plan, loading }) {
   if (loading) return <div className="h-32 bg-muted rounded-2xl animate-pulse mb-8" />;
   if (!plan) return null;
 
-  const stableSections = [
-    { label: "Identity Intention", value: plan.habits?.slice(0, 3).map((h, i) => `${i + 1}. ${h}`).join("\n") || "—", stable: true, multiline: true },
-  ];
+  const stableSections = [];
 
   const dynamicSections = [
     { label: "Mindset Focus", value: plan.mindset_focus || "—" },

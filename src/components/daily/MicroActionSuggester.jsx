@@ -35,13 +35,13 @@ export default function MicroActionSuggester({ userEmail }) {
       setMisalignment(analysis.misalignment_summary);
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a personal growth coach. Based on this user's key misalignment from their self-assessment, suggest exactly 2 micro-actions they can do TODAY to start bridging the gap to their Future Self.
+        prompt: `You are a personal growth coach. Based on this user's key misalignment from their self-assessment, suggest exactly 1 micro-action they can do TODAY to start bridging the gap to their Future Self.
 
 Key Misalignment: "${analysis.misalignment_summary}"
 Future Self Identity: "${analysis.future_self_statement || "their highest potential"}"
 
 Rules:
-- Each action must take 5–15 minutes max
+- Must take 5–15 minutes max
 - Be ultra-specific and actionable (not vague advice)
 - Start with a strong action verb
 - Make it feel achievable today, not overwhelming
@@ -50,7 +50,6 @@ Rules:
 Return ONLY a JSON object with this exact structure:
 {
   "actions": [
-    { "action": "...", "why": "one short sentence on how this closes the gap" },
     { "action": "...", "why": "one short sentence on how this closes the gap" }
   ]
 }`,

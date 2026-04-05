@@ -7,6 +7,7 @@ import { Sun, Moon, Check, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
+import MicroActionSuggester from "@/components/daily/MicroActionSuggester";
 
 // ─── Morning Check-In ──────────────────────────────────────────────────────────
 
@@ -351,6 +352,8 @@ export default function DailyShift() {
         </AnimatePresence>
 
         <DailyPlan plan={plan} loading={planLoading} />
+
+        <MicroActionSuggester userEmail={user?.email} />
 
         {!eveningDone && !eveningSaved && (
           <div className="flex items-center gap-3 my-8">

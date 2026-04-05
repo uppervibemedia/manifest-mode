@@ -16,6 +16,7 @@ import Onboarding from './pages/Onboarding';
 import Assessment from './pages/Assessment';
 import ScorePage from './pages/ScorePage';
 import VisionVault from './pages/VisionVault';
+import Pricing from './pages/Pricing';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -54,6 +55,7 @@ const AuthenticatedApp = () => {
       <Route path="/progress" element={<Progress />} />
       <Route path="/future-self" element={<FutureSelf />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="/" element={<DailyShift />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

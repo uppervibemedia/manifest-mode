@@ -176,9 +176,9 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
                       <Lock className="w-8 h-8 text-muted-foreground mb-3" />
                       <h3 className="font-playfair text-lg font-semibold mb-2">Coach Access</h3>
                       <p className="text-sm text-muted-foreground mb-6 max-w-xs">AI coaching is available on Premium and Supporter plans</p>
-                      <button onClick={() => navigate("/profile")}
+                      <button onClick={() => navigate("/pricing")}
                         className="px-6 py-2 gold-gradient text-background font-semibold rounded-xl">
-                        Upgrade Plan
+                        View Plans
                       </button>
                     </div>
                   ) : (

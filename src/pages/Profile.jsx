@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { LogOut, Crown } from "lucide-react";
+import { LogOut, Crown, ChevronRight, Zap } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
@@ -58,23 +58,44 @@ export default function Profile() {
 
         {/* Plan Info */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="glass-card rounded-2xl p-5 mb-6 border border-border">
+          className="glass-card rounded-2xl p-5 mb-3 border border-border">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold text-foreground">Current Plan</p>
-            <button onClick={() => navigate("/profile")}
-              className="text-[10px] font-semibold text-primary border border-primary/30 rounded-full px-2.5 py-1">
-              {tier === "free" ? "Upgrade" : "Manage"}
-            </button>
+            <span className={`text-xs font-bold ${TIER_COLORS[tier]}`}>{TIER_LABELS[tier]}</span>
           </div>
-          <p className={`text-sm font-bold ${TIER_COLORS[tier]}`}>{TIER_LABELS[tier]}</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mb-4">
             {tier === "free"
-              ? "Get started with Manifest Mode"
+              ? "You're on the Free plan. Upgrade to unlock AI coaching, more visions, and full blueprint access."
               : tier === "supporter"
-              ? "Monthly billing"
-              : "Premium features unlocked"}
+              ? "You're on Plus. Upgrade to Premium for unlimited visions and AI scene generation."
+              : "You have full access to all Premium features. ✦"}
           </p>
+          <button
+            onClick={() => navigate("/pricing")}
+            className={`w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+              tier === "premium"
+                ? "bg-card border border-border text-muted-foreground hover:border-primary/20"
+                : "gold-gradient text-background"
+            }`}
+          >
+            {tier === "premium" ? (
+              <><ChevronRight className="w-4 h-4" /> Manage Subscription</>
+            ) : (
+              <><Zap className="w-4 h-4" /> {tier === "free" ? "View Plans & Upgrade" : "Upgrade to Premium"}</>
+            )}
+          </button>
         </motion.div>
+
+        {/* View All Plans link */}
+        {tier !== "premium" && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
+            onClick={() => navigate("/pricing")}
+            className="w-full flex items-center justify-between px-5 py-3.5 mb-4 glass-card rounded-xl border border-border hover:border-primary/20 transition-colors">
+            <span className="text-sm text-foreground/80">View All Plans</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </motion.button>
+        )}
 
         {/* Logout */}
         <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

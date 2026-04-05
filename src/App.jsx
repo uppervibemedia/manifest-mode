@@ -6,25 +6,13 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { UserProfileProvider } from '@/lib/UserProfileContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import { TestProfileProvider } from '@/lib/testProfileContext';
-import TestModeBanner from '@/components/admin/TestModeBanner';
-import AdminPanel from './pages/AdminPanel';
 
-import Onboarding from './pages/Onboarding';
-import Dashboard from './pages/Dashboard';
-import Blueprint from './pages/Blueprint';
-import VisionVault from './pages/VisionVault';
-import Assessment from './pages/Assessment';
-import ScorePage from './pages/ScorePage';
-import ShiftPlan from './pages/ShiftPlan';
-import CheckIn from './pages/CheckIn';
-import Journal from './pages/Journal';
-import Profile from './pages/Profile';
-import Pricing from './pages/Pricing';
+import DailyShift from './pages/DailyShift';
+import Vision from './pages/Vision';
 import Progress from './pages/Progress';
-import RealityShiftTracker from './pages/RealityShiftTracker';
-import FutureSelfCoach from './pages/FutureSelfCoach';
-import HabitTracker from './pages/HabitTracker';
+import FutureSelf from './pages/FutureSelf';
+import Profile from './pages/Profile';
+import Onboarding from './pages/Onboarding';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -34,7 +22,7 @@ const AuthenticatedApp = () => {
       <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-xs text-muted-foreground tracking-widest uppercase">Manifest Mode</p>
+          <p className="text-xs text-muted-foreground tracking-widest uppercase">Loading...</p>
         </div>
       </div>
     );
@@ -53,22 +41,13 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
       <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/blueprint" element={<Blueprint />} />
-      <Route path="/vision-vault" element={<VisionVault />} />
-      <Route path="/assessment" element={<Assessment />} />
-      <Route path="/score" element={<ScorePage />} />
-      <Route path="/shift-plan" element={<ShiftPlan />} />
-      <Route path="/checkin" element={<CheckIn />} />
-      <Route path="/journal" element={<Journal />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/daily-shift" element={<DailyShift />} />
+      <Route path="/vision" element={<Vision />} />
       <Route path="/progress" element={<Progress />} />
-      <Route path="/tracker" element={<Progress />} />
-      <Route path="/coach" element={<FutureSelfCoach />} />
-      <Route path="/daily-shift" element={<HabitTracker />} />
-      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/future-self" element={<FutureSelf />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/" element={<DailyShift />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -78,15 +57,12 @@ function App() {
   return (
     <AuthProvider>
       <UserProfileProvider>
-        <TestProfileProvider>
-          <QueryClientProvider client={queryClientInstance}>
-            <Router>
-              <TestModeBanner />
-              <AuthenticatedApp />
-            </Router>
-            <Toaster />
-          </QueryClientProvider>
-        </TestProfileProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
       </UserProfileProvider>
     </AuthProvider>
   )

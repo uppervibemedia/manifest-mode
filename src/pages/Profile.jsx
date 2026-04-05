@@ -34,11 +34,14 @@ export default function Profile() {
 
   const handleManageBilling = async () => {
     setPortalLoading(true);
-    const res = await base44.functions.invoke("stripePortal", {
-      return_url: `${window.location.origin}/profile`,
-    });
-    if (res.data?.url) window.location.href = res.data.url;
-    setPortalLoading(false);
+    try {
+      const res = await base44.functions.invoke("stripePortal", {
+        return_url: `${window.location.origin}/profile`,
+      });
+      if (res.data?.url) window.location.href = res.data.url;
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   const handleLogout = async () => {

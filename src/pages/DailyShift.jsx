@@ -285,7 +285,6 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
 export default function DailyShift() {
   const navigate = useNavigate();
   const { user, loading: profileLoading } = useUserProfile();
-  // Compute once per mount — stable ref won't re-trigger effects on re-render
   const [today] = useState(() => getLocalToday());
   const [plan, setPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
@@ -302,17 +301,21 @@ export default function DailyShift() {
 
   const loadData = async () => {
     if (!user || profileLoading) return;
-    const [todayPlan, checkins, eveningEntries] = await Promise.all([
-      getTodaysShift(user.email, today),
-      base44.entities.DailyCheckIn.filter({ user_email: user.email, checkin_date: today }),
-      base44.entities.JournalEntry.filter({ user_email: user.email }, "-created_date", 10),
-    ]);
-    setPlan(todayPlan || null);
-    setReflectionPrompt(todayPlan?.reflection_prompt || null);
-    setMorningDone(checkins.length > 0);
-    const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
-    setEveningDone(todayEvening.length > 0);
-    setPlanLoading(false);
+    setPlanLoading(true);
+    try {
+      const [todayPlan, checkins, eveningEntries] = await Promise.all([
+        getTodaysShift(user.email, today),
+        base44.entities.DailyCheckIn.filter({ user_email: user.email, checkin_date: today }),
+        base44.entities.JournalEntry.filter({ user_email: user.email }, "-created_date", 10),
+      ]);
+      setPlan(todayPlan || null);
+      setReflectionPrompt(todayPlan?.reflection_prompt || null);
+      setMorningDone(checkins.length > 0);
+      const todayEvening = eveningEntries.filter(e => e.entry_type === "checkin" && e.category === "action" && e.created_date?.startsWith(today));
+      setEveningDone(todayEvening.length > 0);
+    } finally {
+      setPlanLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -322,7 +325,7 @@ export default function DailyShift() {
 
   useEffect(() => {
     loadData();
-  }, [user?.email, profileLoading]);
+  }, [user?.email, profileLoading, today]);
 
   if (profileLoading || planLoading) {
     return (

@@ -1,25 +1,37 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { UserProfileProvider, useUserProfile } from '@/lib/UserProfileContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import MobileHeader from '@/components/mobile/MobileHeader';
+import AppLayout from '@/components/layout/AppLayout';
 
-import DailyShift from './pages/DailyShift';
-import Vision from './pages/Vision';
-import Progress from './pages/Progress';
-import FutureSelf from './pages/FutureSelf';
-import Profile from './pages/Profile';
-import Onboarding from './pages/Onboarding';
-import Assessment from './pages/Assessment';
-import ScorePage from './pages/ScorePage';
-import VisionVault from './pages/VisionVault';
-import Pricing from './pages/Pricing';
-import FutureSelfSetup from './pages/onboarding/FutureSelfSetup';
-import FirstVision from './pages/onboarding/FirstVision';
-import Blueprint from './pages/Blueprint';
+// Lazy load pages for code splitting
+const DailyShift = lazy(() => import('./pages/DailyShift'));
+const Vision = lazy(() => import('./pages/Vision'));
+const Progress = lazy(() => import('./pages/Progress'));
+const FutureSelf = lazy(() => import('./pages/FutureSelf'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const Assessment = lazy(() => import('./pages/Assessment'));
+const ScorePage = lazy(() => import('./pages/ScorePage'));
+const VisionVault = lazy(() => import('./pages/VisionVault'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const FutureSelfSetup = lazy(() => import('./pages/onboarding/FutureSelfSetup'));
+const FirstVision = lazy(() => import('./pages/onboarding/FirstVision'));
+const Blueprint = lazy(() => import('./pages/Blueprint'));
+
+const LoadingFallback = () => (
+  <AppLayout>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+    </div>
+  </AppLayout>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,24 +59,31 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/onboarding/future-self" element={<FutureSelfSetup />} />
-      <Route path="/onboarding/first-vision" element={<FirstVision />} />
-      <Route path="/assessment" element={<Assessment />} />
-      <Route path="/" element={<NewUserGate />} />
-      <Route path="/score" element={<ScorePage />} />
-      <Route path="/daily-shift" element={<DailyShift />} />
-      <Route path="/vision" element={<Vision />} />
-      <Route path="/vision-vault" element={<VisionVault />} />
-      <Route path="/vision/add" element={<Vision />} />
-      <Route path="/progress" element={<Progress />} />
-      <Route path="/future-self" element={<FutureSelf />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/blueprint" element={<Blueprint />} />
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <>
+      <MobileHeader />
+      <div className="pt-14">
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/onboarding/future-self" element={<FutureSelfSetup />} />
+            <Route path="/onboarding/first-vision" element={<FirstVision />} />
+            <Route path="/assessment" element={<Assessment />} />
+            <Route path="/" element={<NewUserGate />} />
+            <Route path="/score" element={<ScorePage />} />
+            <Route path="/daily-shift" element={<DailyShift />} />
+            <Route path="/vision" element={<Vision />} />
+            <Route path="/vision-vault" element={<VisionVault />} />
+            <Route path="/vision/add" element={<Vision />} />
+            <Route path="/progress" element={<Progress />} />
+            <Route path="/future-self" element={<FutureSelf />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/blueprint" element={<Blueprint />} />
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+        </Suspense>
+      </div>
+    </>
   );
 };
 

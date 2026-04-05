@@ -67,6 +67,14 @@
   button, nav, [role="button"], .glass-card {
     @apply select-none;
   }
+  /* Ensure all interactive elements meet 44x44px minimum touch target */
+  button, a[role="button"], input[type="checkbox"], input[type="radio"], [role="tab"] {
+    @apply min-h-11 min-w-11;
+  }
+  /* Improve text readability on mobile */
+  body {
+    @apply text-sm;
+  }
 }
 
 @layer utilities {

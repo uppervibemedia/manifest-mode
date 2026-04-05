@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useRef, useEffect, useState } from "react";
 import { Zap, Image, TrendingUp, User, Sparkles } from "lucide-react";
+import { useModalState } from "@/lib/ModalContext";
 
 const NAV_ITEMS = [
   { path: "/daily-shift", icon: Zap, label: "Daily Shift", id: "shift" },
@@ -34,6 +35,8 @@ export default function AppLayout({ children }) {
   const containerRef = useRef(null);
   const lastTabRef = useRef(getTabId(location.pathname));
   const [, setRerender] = useState(0);
+  const { activeFullscreenModal } = useModalState();
+  const hideNav = !!activeFullscreenModal;
 
   // Save scroll position before tab switch
   useEffect(() => {
@@ -69,6 +72,7 @@ export default function AppLayout({ children }) {
         {children}
       </main>
 
+      {!hideNav && (
       <nav
         className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 glass-card border-t border-border"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -89,6 +93,7 @@ export default function AppLayout({ children }) {
           })}
         </div>
       </nav>
+      )}
     </div>
   );
 }

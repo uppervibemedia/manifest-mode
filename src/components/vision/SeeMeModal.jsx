@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useModalState } from "@/lib/ModalContext";
 
 const SCENE_OPTIONS = [
   { id: "standing_front", label: "Standing in front", icon: "🧍" },
@@ -83,6 +84,7 @@ function UploadZone({ label, hint, onFile, preview, icon }) {
 }
 
 export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
+  const { setActiveFullscreenModal } = useModalState();
   const [visionFile, setVisionFile] = useState(null);
   const [selfFile, setSelfFile] = useState(null);
   const [visionPreview, setVisionPreview] = useState(vision?.image_url || null);
@@ -93,6 +95,12 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [step, setStep] = useState(1); // 1=setup, 2=result
+
+  // Hide bottom nav when modal opens
+  useEffect(() => {
+    setActiveFullscreenModal("see-me-vision");
+    return () => setActiveFullscreenModal(null);
+  }, [setActiveFullscreenModal]);
 
   const handleVisionFile = (file) => {
     setVisionFile(file);
@@ -175,7 +183,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end justify-center"
+      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-end justify-center"
     >
       <motion.div
         initial={{ y: "100%" }}
@@ -183,8 +191,8 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col"
-        style={{ maxHeight: "92vh" }}
+        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col h-screen md:h-auto md:rounded-2xl"
+        style={{ maxHeight: "100vh" }}
       >
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between shrink-0">
@@ -201,7 +209,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
 
             {/* STEP 1 — Setup */}

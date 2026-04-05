@@ -6,6 +6,7 @@ import { lazy, Suspense } from 'react';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { UserProfileProvider, useUserProfile } from '@/lib/UserProfileContext';
+import { ModalProvider, useModalState } from '@/lib/ModalContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import AppLayout from '@/components/layout/AppLayout';
@@ -110,12 +111,14 @@ function App() {
   return (
     <AuthProvider>
       <UserProfileProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
+        <ModalProvider>
+          <QueryClientProvider client={queryClientInstance}>
+            <Router>
+              <AuthenticatedApp />
+            </Router>
+            <Toaster />
+          </QueryClientProvider>
+        </ModalProvider>
       </UserProfileProvider>
     </AuthProvider>
   )

@@ -89,11 +89,20 @@ const AuthenticatedApp = () => {
 
 // Redirects new users (onboarding not complete) to assessment, otherwise to daily-shift
 function NewUserGate() {
-  const { profile, loading } = useUserProfile();
+  const { user, profile, loading } = useUserProfile();
+  
   if (loading) return null;
+  
+  // Public visitor — show onboarding
+  if (!user) {
+    return <Navigate to="/onboarding" replace />;
+  }
+  
+  // Authenticated user — check onboarding status
   if (profile && !profile.onboarding_completed) {
     return <Navigate to="/assessment?onboarding=1" replace />;
   }
+  
   return <DailyShift />;
 }
 

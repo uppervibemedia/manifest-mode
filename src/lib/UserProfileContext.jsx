@@ -17,7 +17,16 @@ export function UserProfileProvider({ children }) {
 
   const loadUserAndProfile = async () => {
     try {
-      const u = await base44.auth.me();
+      let u;
+      try {
+        u = await base44.auth.me();
+      } catch (authError) {
+        // Not authenticated (public user or expired token)
+        clearProfile();
+        setLoading(false);
+        return;
+      }
+      
       if (!u) {
         clearProfile();
         setLoading(false);

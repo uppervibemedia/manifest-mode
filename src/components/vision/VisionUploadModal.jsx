@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { X, Upload, Loader2, Star } from "lucide-react";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
+import { useModalState } from "@/lib/ModalContext";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 
 export default function VisionUploadModal({ vision, userEmail, onClose, onSave }) {
+  const { setActiveFullscreenModal } = useModalState();
   const [form, setForm] = useState({
     title: vision?.title || "",
     category: vision?.category || "wealth",
@@ -20,6 +22,12 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Hide bottom nav when modal opens
+  useEffect(() => {
+    setActiveFullscreenModal("vision-upload");
+    return () => setActiveFullscreenModal(null);
+  }, [setActiveFullscreenModal]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -58,7 +66,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
       onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 26, stiffness: 300 }}
-        className="w-full max-w-md bg-card rounded-t-3xl p-6 pb-8 max-h-[92vh] overflow-y-auto">
+        className="w-full max-w-md bg-card rounded-t-3xl p-6 pb-8 max-h-screen md:max-h-[92vh] overflow-y-auto flex flex-col md:rounded-2xl"
+        style={{ maxHeight: "100vh" }}>
 
         <div className="flex items-center justify-between mb-5">
           <div>

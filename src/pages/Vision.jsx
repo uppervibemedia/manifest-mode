@@ -6,6 +6,7 @@ import { Plus, Lock, Sparkles, Image } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import SeeMeModal from "@/components/vision/SeeMeModal";
+import VisionUploadModal from "@/components/vision/VisionUploadModal";
 
 const CATEGORIES = [
   { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
@@ -24,6 +25,7 @@ export default function Vision() {
   const [loading, setLoading] = useState(true);
   const [showSeeMe, setShowSeeMe] = useState(false);
   const [seeMeVision, setSeeMeVision] = useState(null);
+  const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -63,7 +65,7 @@ export default function Vision() {
             <p className="text-xs text-muted-foreground mt-1">{visions.length} vision{visions.length !== 1 ? "s" : ""}</p>
           </div>
           <button
-            onClick={() => navigate("/vision/add")}
+            onClick={() => canUpload && setShowUpload(true)}
             disabled={!canUpload}
             className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
               canUpload ? "gold-gradient text-background" : "bg-border text-muted-foreground"
@@ -109,7 +111,7 @@ export default function Vision() {
             </div>
             <p className="text-sm font-semibold text-foreground mb-1">Your Living Vision Board is empty</p>
             <p className="text-xs text-muted-foreground mb-6 max-w-xs leading-relaxed">Upload images of the life you intend to live. Make it real.</p>
-            <button onClick={() => navigate("/vision/add")}
+            <button onClick={() => setShowUpload(true)}
               className="px-6 py-2.5 gold-gradient text-background text-sm font-semibold rounded-xl flex items-center gap-2">
               <Plus className="w-4 h-4" /> Add Your First Vision
             </button>
@@ -183,6 +185,20 @@ export default function Vision() {
               }
               setShowSeeMe(false);
               setSeeMeVision(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showUpload && (
+          <VisionUploadModal
+            vision={null}
+            userEmail={user?.email}
+            onClose={() => setShowUpload(false)}
+            onSave={(v) => {
+              setVisions(prev => [v, ...prev]);
+              setShowUpload(false);
             }}
           />
         )}

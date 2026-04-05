@@ -96,7 +96,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
             </div>
             <h2 className="font-playfair text-lg font-semibold mb-2">Blueprint Not Ready</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">Complete your assessment to unlock your Future Self Blueprint and AI Coach</p>
-            <button onClick={() => navigate("/onboarding")}
+            <button onClick={() => navigate("/assessment")}
               className="px-6 py-2.5 gold-gradient text-background font-semibold rounded-xl flex items-center gap-2">
               Get Started <ArrowRight className="w-4 h-4" />
             </button>

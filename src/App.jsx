@@ -13,6 +13,9 @@ import Progress from './pages/Progress';
 import FutureSelf from './pages/FutureSelf';
 import Profile from './pages/Profile';
 import Onboarding from './pages/Onboarding';
+import Assessment from './pages/Assessment';
+import ScorePage from './pages/ScorePage';
+import VisionVault from './pages/VisionVault';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,8 +45,12 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/assessment" element={<Assessment />} />
+      <Route path="/score" element={<ScorePage />} />
       <Route path="/daily-shift" element={<DailyShift />} />
       <Route path="/vision" element={<Vision />} />
+      <Route path="/vision-vault" element={<VisionVault />} />
+      <Route path="/vision/add" element={<Vision />} />
       <Route path="/progress" element={<Progress />} />
       <Route path="/future-self" element={<FutureSelf />} />
       <Route path="/profile" element={<Profile />} />

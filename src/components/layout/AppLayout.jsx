@@ -9,19 +9,23 @@ const NAV_ITEMS = [
   { path: "/profile", icon: User, label: "Profile" },
 ];
 
+// nav bar height ~72px + safe area. We give pages enough room so CTAs are never blocked.
 export default function AppLayout({ children }) {
   const location = useLocation();
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto relative">
-      <main className="flex-1 overflow-y-auto pb-28 safe-area-inset-bottom">
+      <main className="flex-1 overflow-y-auto" style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}>
         {children}
       </main>
-      
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 glass-card border-t border-border">
+
+      <nav
+        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 glass-card border-t border-border"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      >
         <div className="flex items-center justify-around px-2 py-3">
           {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
-            const active = location.pathname === path;
+            const active = location.pathname === path || (path === "/daily-shift" && location.pathname === "/");
             return (
               <Link key={path} to={path}
                 className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all duration-200 ${

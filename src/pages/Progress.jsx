@@ -75,7 +75,7 @@ export default function Progress() {
             </div>
             <h2 className="font-playfair text-lg font-semibold mb-2">No Score Yet</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">Complete your Reality Assessment to see your alignment score</p>
-            <button onClick={() => navigate("/onboarding")}
+            <button onClick={() => navigate("/assessment")}
               className="px-6 py-2.5 gold-gradient text-background font-semibold rounded-xl flex items-center gap-2">
               Get Started <ArrowRight className="w-4 h-4" />
             </button>
@@ -87,7 +87,7 @@ export default function Progress() {
               className="glass-card glow-gold rounded-2xl p-6 mb-6 border border-primary/20">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">Overall Alignment</p>
-                <button onClick={() => navigate("/onboarding")}
+                <button onClick={() => navigate("/assessment")}
                   className="text-[10px] font-semibold text-primary border border-primary/30 rounded-full px-2.5 py-1">
                   Retake
                 </button>

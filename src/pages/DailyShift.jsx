@@ -8,11 +8,9 @@ import AppLayout from "@/components/layout/AppLayout";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
 
-const today = getLocalToday();
-
 // ─── Morning Check-In ──────────────────────────────────────────────────────────
 
-function MorningCheckIn({ userEmail, onSaved }) {
+function MorningCheckIn({ userEmail, onSaved, today }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ gratitude: "", reflection: null, goal: "" });
@@ -41,7 +39,7 @@ function MorningCheckIn({ userEmail, onSaved }) {
       }),
       base44.entities.DailyCheckIn.create({
         user_email: userEmail,
-        checkin_date: today,
+        checkin_date: today ?? getLocalToday(),
         gratitude: form.gratitude.trim(),
         progress_made: form.goal.trim(),
         plan_completed: form.reflection,
@@ -173,7 +171,7 @@ function DailyPlan({ plan, loading }) {
 
 // ─── Evening Review ────────────────────────────────────────────────────────────
 
-function EveningReview({ userEmail, onSaved, reflectionPrompt }) {
+function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [scores, setScores] = useState({ action: null, identity: null, emotional: null });
@@ -279,6 +277,8 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt }) {
 export default function DailyShift() {
   const navigate = useNavigate();
   const { user, loading: profileLoading } = useUserProfile();
+  // Compute once per mount — stable ref won't re-trigger effects on re-render
+  const [today] = useState(() => getLocalToday());
   const [plan, setPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
   const [morningDone, setMorningDone] = useState(false);
@@ -338,7 +338,7 @@ export default function DailyShift() {
               </div>
             </motion.div>
           ) : !morningSaved ? (
-            <MorningCheckIn key="morning" userEmail={user?.email} onSaved={() => setMorningSaved(true)} />
+            <MorningCheckIn key="morning" userEmail={user?.email} today={today} onSaved={() => setMorningSaved(true)} />
           ) : null}
         </AnimatePresence>
 
@@ -363,7 +363,7 @@ export default function DailyShift() {
               </div>
             </motion.div>
           ) : !eveningSaved ? (
-            <EveningReview key="evening" userEmail={user?.email} reflectionPrompt={reflectionPrompt} onSaved={() => setEveningSaved(true)} />
+            <EveningReview key="evening" userEmail={user?.email} reflectionPrompt={reflectionPrompt} today={today} onSaved={() => setEveningSaved(true)} />
           ) : null}
         </AnimatePresence>
 

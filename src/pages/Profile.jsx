@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { LogOut, Crown, Edit2 } from "lucide-react";
+import { LogOut, Crown } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 
 const TIER_LABELS = { free: "Free", supporter: "Plus", premium: "Premium ✦" };
@@ -12,13 +12,9 @@ const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400",
 export default function Profile() {
   const navigate = useNavigate();
   const { user, profile, loading: profileLoading, clearProfile } = useUserProfile();
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "" });
-
   useEffect(() => {
     if (profileLoading) return;
     if (!user) navigate("/");
-    setForm({ full_name: user?.full_name || "", email: user?.email || "" });
   }, [user, profileLoading, navigate]);
 
   const handleLogout = async () => {
@@ -65,7 +61,7 @@ export default function Profile() {
           className="glass-card rounded-2xl p-5 mb-6 border border-border">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-semibold text-foreground">Current Plan</p>
-            <button onClick={() => navigate("/pricing")}
+            <button onClick={() => navigate("/profile")}
               className="text-[10px] font-semibold text-primary border border-primary/30 rounded-full px-2.5 py-1">
               {tier === "free" ? "Upgrade" : "Manage"}
             </button>

@@ -160,7 +160,7 @@ export default function Onboarding() {
             <div className="grid grid-cols-2 gap-3 mb-8">
               {CATEGORIES.map(cat => (
                 <button key={cat.id} onClick={() => toggleCategory(cat.id)}
-                  className={`p-4 rounded-xl border text-left transition-all duration-200 ${
+                  className={`relative p-4 rounded-xl border text-left transition-all duration-200 ${
                     selectedCategories.includes(cat.id)
                       ? "border-primary bg-primary/10 glow-gold"
                       : "border-border bg-card hover:border-primary/40"
@@ -182,7 +182,7 @@ export default function Onboarding() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
               ) : (
-                <>Continue to Living Vision Board <ChevronRight className="w-4 h-4" /></>
+                <>Continue to Assessment <ChevronRight className="w-4 h-4" /></>
               )}
             </button>
           </motion.div>

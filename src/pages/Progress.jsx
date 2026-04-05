@@ -6,6 +6,8 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import { TrendingUp, ArrowRight, RefreshCw } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";
+import { loadShiftStats } from "@/lib/shiftGamification";
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ export default function Progress() {
   const [scores, setScores] = useState([]);
   const [latest, setLatest] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [shiftStats, setShiftStats] = useState(null);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -22,9 +25,13 @@ export default function Progress() {
   useEffect(() => {
     (async () => {
       if (!user || profileLoading) return;
-      const data = await base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20);
+      const [data, stats] = await Promise.all([
+        base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20),
+        loadShiftStats(user.email),
+      ]);
       setScores(data);
       setLatest(data[0] || null);
+      setShiftStats(stats);
       setLoading(false);
     })();
   }, [user?.email, profileLoading]);
@@ -168,6 +175,11 @@ export default function Progress() {
                 </div>
               </div>
             )}
+
+            <div className="mt-8">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium mb-4">Daily Momentum</p>
+              <ShiftGamificationPanel stats={shiftStats} />
+            </div>
           </>
         )}
       </div>

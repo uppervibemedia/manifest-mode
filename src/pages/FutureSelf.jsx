@@ -2,16 +2,17 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, MessageCircle, Lock, ArrowRight, Loader2, Send } from "lucide-react";
+import { Sparkles, MessageCircle, Lock, ArrowRight, Loader2, Send, BookOpen } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import ReactMarkdown from "react-markdown";
+import FutureSelfJournal from "@/components/blueprint/FutureSelfJournal";
 
 export default function FutureSelf() {
   const navigate = useNavigate();
   const { user, profile, loading: profileLoading } = useUserProfile();
   const [analysis, setAnalysis] = useState(null);
-  const [activeTab, setActiveTab] = useState("blueprint"); // "blueprint" or "coach"
+  const [activeTab, setActiveTab] = useState("blueprint"); // "blueprint", "journal", or "coach"
   const [loading, setLoading] = useState(true);
 
   // Coach state
@@ -115,6 +116,15 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
                 Blueprint
               </button>
               <button
+                onClick={() => setActiveTab("journal")}
+                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "journal"
+                    ? "bg-card text-foreground border border-primary/30"
+                    : "bg-background text-muted-foreground border border-border"
+                }`}>
+                <BookOpen className="w-3.5 h-3.5" /> Journal
+              </button>
+              <button
                 onClick={() => setActiveTab("coach")}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                   activeTab === "coach"
@@ -165,6 +175,13 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
                       </div>
                     </motion.div>
                   )}
+                </motion.div>
+              )}
+
+              {/* Journal Tab */}
+              {activeTab === "journal" && (
+                <motion.div key="journal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <FutureSelfJournal userEmail={user?.email} />
                 </motion.div>
               )}
 

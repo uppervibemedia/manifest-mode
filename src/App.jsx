@@ -19,6 +19,7 @@ import VisionVault from './pages/VisionVault';
 import Pricing from './pages/Pricing';
 import FutureSelfSetup from './pages/onboarding/FutureSelfSetup';
 import FirstVision from './pages/onboarding/FirstVision';
+import Blueprint from './pages/Blueprint';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -61,6 +62,7 @@ const AuthenticatedApp = () => {
       <Route path="/future-self" element={<FutureSelf />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/blueprint" element={<Blueprint />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

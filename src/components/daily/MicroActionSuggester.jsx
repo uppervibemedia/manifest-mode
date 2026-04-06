@@ -5,12 +5,60 @@ import { Heart, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { getLocalToday } from "@/lib/dateUtils";
 
 const CACHE_KEY_PREFIX = "emotion-alignment-";
+const COMPLETION_KEY_PREFIX = "emotion-completed-";
+
+// Time windows in local hours (24h)
+// Morning: 3:00 – 11:59
+// Midday:  12:00 – 16:59
+// Evening: 17:00 – 23:59 AND 0:00 – 2:59 (wraps past midnight)
+function getStepWindowForHour(hour) {
+  if (hour >= 3 && hour < 12) return "morning_intention";
+  if (hour >= 12 && hour < 17) return "midday_reset";
+  if (hour >= 17 || hour < 3) return "evening_reflection";
+  return null;
+}
+
+function isStepAvailable(key, hour) {
+  const activeWindow = getStepWindowForHour(hour);
+  if (key === "morning_intention") return hour >= 3 && hour < 12;
+  if (key === "midday_reset") return hour >= 12 && hour < 17;
+  if (key === "evening_reflection") return hour >= 17 || hour < 3;
+  return false;
+}
+
+function loadCompletions(today) {
+  try {
+    const raw = localStorage.getItem(`${COMPLETION_KEY_PREFIX}${today}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCompletions(today, completions) {
+  try {
+    localStorage.setItem(`${COMPLETION_KEY_PREFIX}${today}`, JSON.stringify(completions));
+  } catch {}
+}
 
 export default function MicroActionSuggester({ userEmail }) {
   const [alignment, setAlignment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState({});
   const [collapsed, setCollapsed] = useState(false);
+  const [localHour, setLocalHour] = useState(() => new Date().getHours());
+  const today = getLocalToday();
+
+  // Refresh local hour every minute
+  useEffect(() => {
+    const interval = setInterval(() => setLocalHour(new Date().getHours()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load persisted completions for today
+  useEffect(() => {
+    setCompleted(loadCompletions(today));
+  }, [today]);
 
   useEffect(() => {
     if (userEmail) loadAlignment();
@@ -19,10 +67,7 @@ export default function MicroActionSuggester({ userEmail }) {
   const loadAlignment = async () => {
     setLoading(true);
     try {
-      const today = getLocalToday();
       const cacheKey = `${CACHE_KEY_PREFIX}${today}`;
-
-      // Return cached result for today — no manual refresh allowed
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
         setAlignment(JSON.parse(cached));
@@ -113,8 +158,11 @@ Return ONLY valid JSON:
     }
   };
 
-  const toggleComplete = (key) =>
-    setCompleted((prev) => ({ ...prev, [key]: !prev[key] }));
+  const markComplete = (key) => {
+    const updated = { ...completed, [key]: true };
+    setCompleted(updated);
+    saveCompletions(today, updated);
+  };
 
   if (loading) {
     return (
@@ -129,13 +177,16 @@ Return ONLY valid JSON:
 
   if (!alignment) return null;
 
-  const steps = [
-    { key: "morning_intention", label: "Morning Intention", value: alignment.morning_intention, icon: "🌅" },
-    { key: "midday_reset", label: "Midday Reset", value: alignment.midday_reset, icon: "🔄" },
-    { key: "evening_reflection", label: "Evening Reflection", value: alignment.evening_reflection, icon: "🌙" },
+  const allSteps = [
+    { key: "morning_intention", label: "Morning Intention", value: alignment.morning_intention, icon: "🌅", window: "3:00 AM – 11:59 AM" },
+    { key: "midday_reset", label: "Midday Reset", value: alignment.midday_reset, icon: "🔄", window: "12:00 PM – 4:59 PM" },
+    { key: "evening_reflection", label: "Evening Reflection", value: alignment.evening_reflection, icon: "🌙", window: "5:00 PM – 2:59 AM" },
   ];
 
-  const completedCount = Object.values(completed).filter(Boolean).length;
+  // Show step if: available in current window OR already completed today
+  const visibleSteps = allSteps.filter(s => isStepAvailable(s.key, localHour) || completed[s.key]);
+
+  const completedCount = visibleSteps.filter(s => completed[s.key]).length;
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
@@ -152,7 +203,7 @@ Return ONLY valid JSON:
         <div className="flex items-center gap-2">
           {completedCount > 0 && (
             <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-              {completedCount}/{steps.length}
+              {completedCount}/{visibleSteps.length}
             </span>
           )}
           <button
@@ -180,43 +231,64 @@ Return ONLY valid JSON:
             exit={{ opacity: 0, height: 0 }}
             className="space-y-3 overflow-hidden"
           >
-            {steps.map((item, i) => (
-              <motion.div
-                key={item.key}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07 }}
-                className={`glass-card rounded-xl p-4 border transition-all duration-300 ${
-                  completed[item.key]
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-border hover:border-pink-400/20"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <button
-                    onClick={() => toggleComplete(item.key)}
-                    className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                      completed[item.key]
-                        ? "bg-emerald-500 border-emerald-500"
-                        : "border-muted-foreground/30 hover:border-pink-400/50"
-                    }`}
-                  >
-                    {completed[item.key] && <Check className="w-3 h-3 text-white" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs">{item.icon}</span>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{item.label}</p>
+            {visibleSteps.length === 0 && (
+              <div className="glass-card border border-border rounded-xl p-4 text-center">
+                <p className="text-xs text-muted-foreground">No sections available right now. Check back during morning, midday, or evening.</p>
+              </div>
+            )}
+
+            {visibleSteps.map((item, i) => {
+              const isDone = !!completed[item.key];
+              const isAvailable = isStepAvailable(item.key, localHour);
+
+              return (
+                <motion.div
+                  key={item.key}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.07 }}
+                  className={`glass-card rounded-xl p-4 border transition-all duration-300 ${
+                    isDone
+                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      : "border-border hover:border-pink-400/20"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Completion circle — only clickable if available and not done */}
+                    <button
+                      onClick={() => !isDone && isAvailable && markComplete(item.key)}
+                      disabled={isDone || !isAvailable}
+                      className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                        isDone
+                          ? "bg-emerald-500 border-emerald-500 cursor-default"
+                          : "border-muted-foreground/30 hover:border-pink-400/50"
+                      }`}
+                    >
+                      {isDone && <Check className="w-3 h-3 text-white" />}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs">{item.icon}</span>
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{item.label}</p>
+                        </div>
+                        {isDone && (
+                          <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-1.5 py-0.5">
+                            Completed ✓
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-sm leading-relaxed transition-all ${
+                        isDone ? "line-through text-muted-foreground" : "text-foreground"
+                      }`}>
+                        {item.value}
+                      </p>
                     </div>
-                    <p className={`text-sm leading-relaxed transition-all ${
-                      completed[item.key] ? "line-through text-muted-foreground" : "text-foreground"
-                    }`}>
-                      {item.value}
-                    </p>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

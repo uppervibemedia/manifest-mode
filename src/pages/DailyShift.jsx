@@ -302,6 +302,7 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
 export default function DailyShift() {
   const navigate = useNavigate();
   const { user, profile, loading: profileLoading } = useUserProfile();
+  const scrollContainer = useScrollContainer();
   const [today] = useState(() => getLocalToday());
   const [plan, setPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
@@ -334,7 +335,6 @@ export default function DailyShift() {
   };
 
   useEffect(() => {
-    const scrollContainer = useScrollContainer();
     if (!scrollContainer?.current) return;
     
     const { cleanupPullToRefresh } = usePullToRefresh(
@@ -345,7 +345,7 @@ export default function DailyShift() {
       }
     );
     return cleanupPullToRefresh;
-  }, [loadData]);
+  }, [loadData, scrollContainer]);
 
   useEffect(() => {
     if (profileLoading) return;

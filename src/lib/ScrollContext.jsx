@@ -12,8 +12,5 @@ export function ScrollProvider({ children, containerRef }) {
 
 export function useScrollContainer() {
   const context = useContext(ScrollContext);
-  if (!context) {
-    throw new Error('useScrollContainer must be used within ScrollProvider');
-  }
-  return context.containerRef;
+  return context?.containerRef || null;
 }

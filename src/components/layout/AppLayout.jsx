@@ -43,6 +43,7 @@ export default function AppLayout({ children }) {
   const { activeFullscreenModal } = useModalState();
 
   const currentTabId = getTabId(location.pathname);
+  const isOnboarding = location.pathname.startsWith('/onboarding');
   
   // Hide nav for fullscreen modals
   const hiddenModals = ["see-me-vision", "vision-upload"];
@@ -98,7 +99,7 @@ export default function AppLayout({ children }) {
           ref={containerRef}
           className="flex-1 overflow-y-auto"
           style={{
-            paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+            paddingTop: isOnboarding ? "env(safe-area-inset-top, 0px)" : "calc(3.5rem + env(safe-area-inset-top, 0px))",
             paddingBottom: hideNav ? "0px" : "calc(6rem + env(safe-area-inset-bottom, 0px))",
           }}
         >

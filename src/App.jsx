@@ -52,6 +52,7 @@ function useSystemColorScheme() {
 const AuthenticatedApp = () => {
   useSystemColorScheme();
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const location = useLocation();
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -74,8 +75,6 @@ const AuthenticatedApp = () => {
       console.error('Auth error:', authError);
     }
   }
-
-  const location = useLocation();
 
   return (
     <>

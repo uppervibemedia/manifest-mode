@@ -11,7 +11,7 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
   const [expandedAI, setExpandedAI] = useState(false);
 
   const isPremium = tier === "premium";
-  const isPlus = tier === "supporter" || tier === "premium" || !tier; // Show for free tier during testing
+  const isPlus = true; // Always show weekly pattern for all users
 
   // Generate weekly summary from scores
   useEffect(() => {
@@ -140,10 +140,7 @@ Return ONLY valid JSON:
     }
   };
 
-  // Show for Plus and Premium users (or for all users if tier is undefined)
-  if (!isPlus) {
-    return null;
-  }
+
 
   // Use calculated summary data or provide default if still calculating
   const displayData = summaryData || {

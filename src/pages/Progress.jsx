@@ -8,6 +8,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import RefreshSpinner from "@/components/mobile/RefreshSpinner";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";
+import WeeklyPatternPanel from "@/components/progress/WeeklyPatternPanel";
 import { useScrollContainer } from "@/lib/ScrollContext";
 import { loadShiftStats } from "@/lib/shiftGamification";
 
@@ -160,6 +161,9 @@ export default function Progress() {
                 ))}
               </div>
             </div>
+
+            {/* Weekly Pattern Panel */}
+            <WeeklyPatternPanel userEmail={user?.email} scores={scores} tier={profile?.subscription_tier} />
 
             {/* Score Trend */}
             {chartData.length > 1 && (

@@ -7,7 +7,7 @@ import { Sun, Moon, Check, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
-import MicroActionSuggester from "@/components/daily/MicroActionSuggester";
+import MicroActionSuggester from "@/components/daily/MicroActionSuggester.jsx";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
 
 

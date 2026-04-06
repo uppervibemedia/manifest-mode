@@ -22,6 +22,18 @@ export default function MicroActionSuggester({ userEmail }) {
 
     try {
       const today = getLocalToday();
+
+      // Return cached result for today unless refreshing
+      if (!isRefresh) {
+        const cached = sessionStorage.getItem(`alignment-action-${today}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setFocusLabel(parsed.focus_label || "");
+          setActions(parsed.actions || []);
+          setLoading(false);
+          return;
+        }
+      }
       const dayOfYear = Math.floor(
         (new Date(today) - new Date(new Date(today).getFullYear(), 0, 0)) / 86400000
       );
@@ -74,7 +86,7 @@ export default function MicroActionSuggester({ userEmail }) {
       const dailySeed = `DAY-${dayOfYear}-FOCUS-${rotatedFocus?.name || "growth"}`;
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an elite personal growth strategist. Generate 3 highly specific, intelligent daily alignment actions for this user.
+        prompt: `You are an elite personal growth strategist. Generate 1 highly specific, intelligent daily alignment action for this user.
 
 === USER PROFILE ===
 Future Self Identity: "${identityStatement}"
@@ -92,20 +104,16 @@ Recent Journal Themes: "${recentJournalThemes || "no recent entries"}"
 Daily Seed for Variety: ${dailySeed}
 
 === REQUIREMENTS ===
-- Generate EXACTLY 3 actions, each targeting a DIFFERENT life area
-- Each action must take 5–20 minutes max
+- Generate EXACTLY 1 action
+- It must take 5–20 minutes max
 - Be ultra-specific — name exact techniques, numbers, or durations
-- At least 1 action should connect to today's morning goal if one was set
-- At least 1 action should target the user's lowest alignment area (${rotatedFocus?.name || "growth"})
-- Vary the types: mix mental, physical, financial, relational, or environmental actions
-- Each "why" should reference something specific from their profile
+- Connect to today's morning goal if one was set, otherwise target the user's lowest alignment area (${rotatedFocus?.name || "growth"})
+- The "why" should reference something specific from their profile
 
 Return ONLY valid JSON:
 {
-  "focus_label": "short 2-3 word theme for today's actions",
+  "focus_label": "short 2-3 word theme for today",
   "actions": [
-    { "action": "...", "why": "..." },
-    { "action": "...", "why": "..." },
     { "action": "...", "why": "..." }
   ]
 }`,
@@ -127,8 +135,11 @@ Return ONLY valid JSON:
         },
       });
 
-      if (result?.focus_label) setFocusLabel(result.focus_label);
-      setActions(result?.actions || []);
+      const data = { focus_label: result?.focus_label || "", actions: result?.actions || [] };
+      sessionStorage.setItem(`alignment-action-${today}`, JSON.stringify(data));
+
+      if (data.focus_label) setFocusLabel(data.focus_label);
+      setActions(data.actions);
       setCompleted({});
     } catch (e) {
       console.error("MicroActionSuggester error:", e);

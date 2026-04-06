@@ -72,21 +72,25 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
       onClick={(e) => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 26, stiffness: 300 }}
-        className="w-full max-w-md bg-card rounded-t-3xl p-6 max-h-screen md:max-h-[92vh] overflow-y-auto flex flex-col md:rounded-2xl"
-        style={{ maxHeight: "100dvh", paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))" }}>
+        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col md:rounded-2xl"
+        style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
-        <div className="flex items-center justify-between mb-5">
+        {/* Header */}
+        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0"
+          style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
           <div>
             <h2 className="font-playfair text-lg font-semibold">{vision ? "Edit Vision" : "Add to Living Vision Board"}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Bring your future into focus</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-border flex items-center justify-center">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-border flex items-center justify-center shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Image Upload */}
-        <label className="block mb-5 cursor-pointer">
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+
+          {/* Image Upload */}
+          <label className="block mb-5 cursor-pointer">
           <div className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
             form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
           }`}>
@@ -108,8 +112,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
         </label>
 
-        {/* Priority toggle */}
-        <div className="flex items-center justify-between glass-card border border-border rounded-xl px-4 py-3 mb-5">
+          {/* Priority toggle */}
+          <div className="flex items-center justify-between glass-card border border-border rounded-xl px-4 py-3 mb-5">
           <div className="flex items-center gap-2">
             <Star className={`w-4 h-4 ${form.is_priority ? "text-primary fill-primary" : "text-muted-foreground"}`} />
             <div>
@@ -123,16 +127,16 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </button>
         </div>
 
-        {/* Title */}
-        <div className="mb-4">
-          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Vision Title *</label>
+          {/* Title */}
+          <div className="mb-4">
+            <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Vision Title *</label>
           <input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
             placeholder="e.g. Dream Penthouse in Manhattan"
             className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50" />
         </div>
 
-        {/* Primary Category */}
-        <div className="mb-4">
+          {/* Primary Category */}
+          <div className="mb-4">
           <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Primary Category</label>
           <div className="grid grid-cols-2 gap-2">
             {CATEGORIES.map(cat => (
@@ -152,8 +156,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </div>
         </div>
 
-        {/* Secondary Category */}
-        <div className="mb-4">
+          {/* Secondary Category */}
+          <div className="mb-4">
           <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Secondary Category <span className="text-muted-foreground/50 normal-case">(optional)</span></label>
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button onClick={() => setForm(p => ({ ...p, secondary_category: "none" }))}
@@ -173,25 +177,25 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </div>
         </div>
 
-        {/* Emotional Goal */}
-        <div className="mb-4">
-          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">How will you feel when you have this?</label>
+          {/* Emotional Goal */}
+          <div className="mb-4">
+            <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">How will you feel when you have this?</label>
           <input value={form.emotional_goal} onChange={e => setForm(p => ({ ...p, emotional_goal: e.target.value }))}
             placeholder={primaryMeta.prompt}
             className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50" />
         </div>
 
-        {/* Why I want this */}
-        <div className="mb-4">
-          <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Why I Want This</label>
+          {/* Why I want this */}
+          <div className="mb-4">
+            <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Why I Want This</label>
           <textarea value={form.why_i_want_this} onChange={e => setForm(p => ({ ...p, why_i_want_this: e.target.value }))}
             placeholder="What deeper purpose or meaning is behind this vision? Be honest."
             rows={3}
             className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 resize-none" />
         </div>
 
-        {/* Timeline */}
-        <div className="mb-5">
+          {/* Timeline */}
+          <div className="mb-5">
           <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block">Desired Timeline</label>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {TIMELINES.map(t => (
@@ -205,10 +209,11 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </div>
         </div>
 
-        <button onClick={handleSave} disabled={saving || !form.title || uploading}
-          className="w-full py-4 gold-gradient text-background font-semibold rounded-xl disabled:opacity-40 flex items-center justify-center gap-2">
-          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (vision ? "Save Vision" : "Add to Living Vision Board ✦")}
-        </button>
+          <button onClick={handleSave} disabled={saving || !form.title || uploading}
+            className="w-full py-4 gold-gradient text-background font-semibold rounded-xl disabled:opacity-40 flex items-center justify-center gap-2">
+            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (vision ? "Save Vision" : "Add to Living Vision Board ✦")}
+          </button>
+        </div>
       </motion.div>
     </motion.div>
   );

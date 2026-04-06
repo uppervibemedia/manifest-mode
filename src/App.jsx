@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate, Outlet, useLocation }
 import { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
+import LazyErrorBoundary from '@/lib/LazyErrorBoundary';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { UserProfileProvider, useUserProfile } from '@/lib/UserProfileContext';
 import { ModalProvider, useModalState } from '@/lib/ModalContext';
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
   return (
     <>
       <MobileHeader />
+      <LazyErrorBoundary>
       <Suspense fallback={<LoadingFallback />}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -110,6 +112,7 @@ const AuthenticatedApp = () => {
           </motion.div>
         </AnimatePresence>
       </Suspense>
+      </LazyErrorBoundary>
     </>
   );
 };

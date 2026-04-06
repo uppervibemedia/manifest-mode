@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { TrendingUp, ArrowRight, RefreshCw } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";

@@ -76,13 +76,13 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
         {/* Header */}
-        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0"
+        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0 relative z-10 pointer-events-auto"
           style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
           <div>
             <h2 className="font-playfair text-lg font-semibold">{vision ? "Edit Vision" : "Add to Living Vision Board"}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Bring your future into focus</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-border flex items-center justify-center shrink-0">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-border flex items-center justify-center shrink-0 relative z-20">
             <X className="w-4 h-4" />
           </button>
         </div>

@@ -47,7 +47,7 @@ export default function Vision() {
   const handleVisionClick = (vision) => setViewerVision(vision);
 
   const tier = profile?.subscription_tier || "free";
-  const uploadLimit = tier === "free" ? 5 : tier === "supporter" ? 20 : 999;
+  const uploadLimit = tier === "free" ? 3 : tier === "supporter" ? 15 : 999;
   const canUpload = visions.length < uploadLimit;
   const canUseSeeMe = tier === "premium";
 

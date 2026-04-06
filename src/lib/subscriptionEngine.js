@@ -19,7 +19,7 @@ export const TIERS = {
 // Feature entitlements per tier
 const ENTITLEMENTS = {
   free: {
-    vision_limit: 5,
+    vision_limit: 3,
     full_assessment: false,
     score_history: false,
     blueprint_full: false,
@@ -28,7 +28,7 @@ const ENTITLEMENTS = {
     priority_ai: false,
   },
   supporter: {
-    vision_limit: 20,
+    vision_limit: 15,
     full_assessment: true,
     score_history: true,
     blueprint_full: false,

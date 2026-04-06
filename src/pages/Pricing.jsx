@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/lib/UserProfileContext";
-import { Check, Lock, Crown, Sparkles, ChevronLeft, Loader2, ExternalLink } from "lucide-react";
+import { Check, Lock, Crown, Sparkles, ChevronLeft, Loader2, ExternalLink, Image } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { base44 } from "@/api/base44Client";
 import { PLAN_LABELS } from "@/lib/subscriptionEngine";
@@ -12,10 +12,11 @@ const PLANS = [
     id: "free",
     name: "Free",
     subtitle: "Start your shift",
+    visionLimit: "3 images",
     monthlyPrice: null,
     annualPrice: null,
     included: [
-      "Limited Vision Vault images",
+      "3 Vision Vault images",
       "Basic Reality Match Assessment",
       "Daily Shift access",
       "Morning Alignment Check-In",
@@ -26,9 +27,10 @@ const PLANS = [
     locked: {
       label: "Unlock with Plus or Premium",
       items: [
+        "More Vision Vault image capacity",
         "Full Reality Match Assessment",
         "Full score tracking and history",
-        "Full Future Self Blueprint access",
+        "Future Self Journal access",
         "Future Self Coach (AI)",
         "See Me In This Vision (AI)",
       ],
@@ -41,11 +43,12 @@ const PLANS = [
     id: "supporter",
     name: "Plus",
     subtitle: "Build momentum with deeper structure",
+    visionLimit: "15 images",
     monthlyPrice: 7.99,
     annualPrice: 59.99,
     annualSavings: "Save 37%",
     included: [
-      "Expanded Vision Vault images",
+      "15 Vision Vault images",
       "Full Reality Match Assessment",
       "Personalized Daily Shift Plan",
       "Morning and Evening Alignment Check-Ins",
@@ -57,10 +60,11 @@ const PLANS = [
     locked: {
       label: "Premium only",
       items: [
+        "Unlimited Vision Vault images",
+        "Future Self Journal access",
         "Future Self Coach (AI)",
         "See Me In This Vision (AI)",
         "Priority AI responses",
-        "Full Future Self Blueprint access",
       ],
     },
     cta: "Choose Plus",
@@ -71,6 +75,7 @@ const PLANS = [
     id: "premium",
     name: "Premium",
     subtitle: "Unlock your full future-self experience",
+    visionLimit: "Unlimited images",
     monthlyPrice: 14.99,
     annualPrice: 119.99,
     annualSavings: "Save 33%",
@@ -80,7 +85,7 @@ const PLANS = [
       "Personalized Daily Shift Plan",
       "Morning and Evening Alignment Check-Ins",
       "Full Reality Match Score tracking and history",
-      "Full Future Self Blueprint access",
+      "Future Self Journal access",
       "Future Self Coach (AI)",
       "See Me In This Vision (AI)",
       "Priority AI responses",
@@ -302,6 +307,10 @@ export default function Pricing() {
                       <h3 className={`font-playfair text-xl font-bold ${plan.color}`}>{plan.name}</h3>
                     </div>
                     <p className="text-xs text-muted-foreground">{plan.subtitle}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Image className={`w-3.5 h-3.5 ${plan.color}`} />
+                      <span className={`text-[10px] font-bold ${plan.color}`}>{plan.visionLimit}</span>
+                    </div>
                   </div>
 
                   {/* Price */}

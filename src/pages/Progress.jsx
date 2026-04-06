@@ -1,14 +1,34 @@
 import { useState, useEffect } from "react";
-import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { ArrowRight } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import RefreshSpinner from "@/components/mobile/RefreshSpinner";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";
+import { useScrollContainer } from "@/lib/ScrollContext";
 import { loadShiftStats } from "@/lib/shiftGamification";
+
+function usePullToRefreshSetup(onRefresh) {
+  const scrollContainer = useScrollContainer();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (!scrollContainer.current) return;
+    const handleWheel = (e) => {
+      if (scrollContainer.current.scrollTop === 0 && e.deltaY < 0) {
+        setIsRefreshing(true);
+        onRefresh().then(() => setIsRefreshing(false));
+      }
+    };
+    scrollContainer.current.addEventListener('wheel', handleWheel);
+    return () => scrollContainer.current?.removeEventListener('wheel', handleWheel);
+  }, [scrollContainer, onRefresh]);
+
+  return { isRefreshing, setIsRefreshing };
+}
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -30,10 +50,7 @@ export default function Progress() {
     setLoading(false);
   };
 
-  const { containerRef, setIsRefreshing } = usePullToRefresh(async () => {
-    await loadData();
-    setIsRefreshing(false);
-  });
+  const { isRefreshing, setIsRefreshing } = usePullToRefreshSetup(loadData);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -78,7 +95,8 @@ export default function Progress() {
 
   return (
     <AppLayout>
-      <div ref={containerRef} className="px-5 pt-4 pb-6">
+      <RefreshSpinner isRefreshing={isRefreshing} />
+      <div className="px-5 pt-4 pb-6">
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Your Alignment</p>
         <h1 className="font-playfair text-2xl font-semibold mb-8">Reality Match Score</h1>
 

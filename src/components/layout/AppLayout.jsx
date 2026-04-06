@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import { Zap, Image, TrendingUp, User, Sparkles } from "lucide-react";
 import { useModalState } from "@/lib/ModalContext";
+import { ScrollProvider } from "@/lib/ScrollContext";
 import { trackPageVisit } from "@/lib/dailyRoutingEngine";
 
 const NAV_ITEMS = [
@@ -86,49 +87,51 @@ export default function AppLayout({ children }) {
   };
 
   return (
-    <div
-      className="bg-background flex flex-col max-w-md mx-auto relative"
-      style={{ minHeight: "100dvh" }}
-    >
-      <main
-        ref={containerRef}
-        className="flex-1 overflow-y-auto"
-        style={{
-          paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))",
-          paddingBottom: hideNav ? "0px" : "calc(6rem + env(safe-area-inset-bottom, 0px))",
-        }}
+    <ScrollProvider containerRef={containerRef}>
+      <div
+        className="bg-background flex flex-col max-w-md mx-auto relative"
+        style={{ minHeight: "100dvh" }}
       >
-        {children}
-      </main>
-
-      {!hideNav && (
-        <nav
-          role="tablist"
-          aria-label="Main navigation"
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-[60] glass-card border-t border-border"
+        <main
+          ref={containerRef}
+          className="flex-1 overflow-y-auto"
+          style={{
+            paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+            paddingBottom: hideNav ? "0px" : "calc(6rem + env(safe-area-inset-bottom, 0px))",
+          }}
         >
-          <div className="flex items-center justify-around px-2 py-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
-            {NAV_ITEMS.map(({ path, icon: Icon, label, id }) => {
-              const active = currentTabId === id;
-              return (
-                <button
-                  key={path}
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={label}
-                  onClick={() => handleTabPress(id, path)}
-                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-12 h-14 justify-center ${
-                    active ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Icon className={`w-6 h-6 transition-all ${active ? "scale-110" : ""}`} aria-hidden="true" />
-                  <span className={`text-[10px] font-medium leading-tight ${active ? "text-primary" : ""}`}>{label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-      )}
-    </div>
+          {children}
+        </main>
+
+        {!hideNav && (
+          <nav
+            role="tablist"
+            aria-label="Main navigation"
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-[60] glass-card border-t border-border"
+          >
+            <div className="flex items-center justify-around px-2 py-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
+              {NAV_ITEMS.map(({ path, icon: Icon, label, id }) => {
+                const active = currentTabId === id;
+                return (
+                  <button
+                    key={path}
+                    role="tab"
+                    aria-selected={active}
+                    aria-label={label}
+                    onClick={() => handleTabPress(id, path)}
+                    className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-12 h-14 justify-center ${
+                      active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className={`w-6 h-6 transition-all ${active ? "scale-110" : ""}`} aria-hidden="true" />
+                    <span className={`text-[10px] font-medium leading-tight ${active ? "text-primary" : ""}`}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        )}
+      </div>
+    </ScrollProvider>
   );
 }

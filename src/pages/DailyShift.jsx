@@ -5,10 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { Sun, Moon, Check, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import RefreshSpinner from "@/components/mobile/RefreshSpinner";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
 import MicroActionSuggester from "@/components/daily/MicroActionSuggester";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
+import { useScrollContainer } from "@/lib/ScrollContext";
 
 
 // ─── Morning Check-In ──────────────────────────────────────────────────────────
@@ -293,6 +295,7 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
 export default function DailyShift() {
   const navigate = useNavigate();
   const { user, loading: profileLoading } = useUserProfile();
+  const scrollContainer = useScrollContainer();
   const [today] = useState(() => getLocalToday());
   const [plan, setPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
@@ -302,11 +305,19 @@ export default function DailyShift() {
   const [eveningSaved, setEveningSaved] = useState(false);
   const [reflectionPrompt, setReflectionPrompt] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { containerRef, isRefreshing, setIsRefreshing } = usePullToRefresh(async () => {
-    await loadData();
-    setIsRefreshing(false);
-  });
+  useEffect(() => {
+    if (!scrollContainer.current) return;
+    const { cleanupPullToRefresh } = usePullToRefresh(
+      scrollContainer.current,
+      async () => {
+        await loadData();
+        setIsRefreshing(false);
+      }
+    );
+    return cleanupPullToRefresh;
+  }, [scrollContainer]);
 
   const loadData = async () => {
     if (!user || profileLoading) return;
@@ -359,7 +370,8 @@ export default function DailyShift() {
 
   return (
     <AppLayout>
-      <div ref={containerRef} className="px-5 pt-6 pb-6">
+      <RefreshSpinner isRefreshing={isRefreshing} />
+      <div className="px-5 pt-6 pb-6">
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">
           {new Date().toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}
         </p>

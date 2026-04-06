@@ -314,6 +314,7 @@ export default function DailyShift() {
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [localHour, setLocalHour] = useState(() => new Date().getHours());
 
   const loadData = useCallback(async () => {
     if (!user || profileLoading) return;
@@ -382,6 +383,15 @@ export default function DailyShift() {
     }
   }, [morningSaved, profile]);
 
+  // Update local hour every minute for time-based locking
+  useEffect(() => {
+    const interval = setInterval(() => setLocalHour(new Date().getHours()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Check if Evening Reflection is available (5:00 PM or later in local time)
+  const eveningAvailable = localHour >= 17;
+
   if (profileLoading || planLoading) {
     return (
       <AppLayout>
@@ -436,12 +446,22 @@ export default function DailyShift() {
 
         <MicroActionSuggester userEmail={user?.email} />
 
-        {!eveningDone && !eveningSaved && (
+        {eveningAvailable && !eveningDone && !eveningSaved && (
           <div className="flex items-center gap-3 my-8">
             <div className="flex-1 h-px bg-border/60" />
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium">Evening</span>
             <div className="flex-1 h-px bg-border/60" />
           </div>
+        )}
+
+        {!eveningAvailable && !eveningDone && !eveningSaved && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="my-8">
+            <div className="glass-card border border-purple-400/20 rounded-2xl p-5 text-center">
+              <Moon className="w-5 h-5 text-purple-400 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-foreground mb-1">Evening Reflection</p>
+              <p className="text-xs text-muted-foreground">Available at 5:00 PM</p>
+            </div>
+          </motion.div>
         )}
 
         <AnimatePresence mode="wait">
@@ -454,7 +474,7 @@ export default function DailyShift() {
                 <p className="text-xs text-muted-foreground mt-0.5">Self-awareness fuels alignment.</p>
               </div>
             </motion.div>
-          ) : !eveningSaved ? (
+          ) : eveningAvailable && !eveningSaved ? (
             <EveningReview key="evening" userEmail={user?.email} reflectionPrompt={reflectionPrompt} today={today} onSaved={() => setEveningSaved(true)} />
           ) : null}
         </AnimatePresence>

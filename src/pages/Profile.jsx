@@ -135,10 +135,10 @@ export default function Profile() {
           </div>
           <p className="text-xs text-muted-foreground mb-4">
             {tier === "free"
-              ? "You're on the Free plan. Upgrade to unlock AI coaching, more visions, and full blueprint access."
+              ? "Free forever. Upgrade to Plus for expanded features or Premium for unlimited access and AI coaching."
               : tier === "supporter"
-              ? "You're on Plus. Upgrade to Premium for unlimited visions and AI scene generation."
-              : "You have full access to all Premium features. ✦"}
+              ? "Plus plan unlocked. Upgrade to Premium for Future Self Coach, See Me In This Vision, and unlimited visions."
+              : "Premium unlocked. You have full access to all features including AI coaching and scene generation. ✦"}
           </p>
           <button
             onClick={() => {

@@ -131,11 +131,11 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
                   {!hasCoachAccess ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center">
                       <Lock className="w-8 h-8 text-muted-foreground mb-3" />
-                      <h3 className="font-playfair text-lg font-semibold mb-2">Coach Access</h3>
-                      <p className="text-sm text-muted-foreground mb-6 max-w-xs">AI coaching is available on Premium and Supporter plans</p>
+                      <h3 className="font-playfair text-lg font-semibold mb-2">Future Self Coach</h3>
+                      <p className="text-sm text-muted-foreground mb-6 max-w-xs">AI coaching is a Premium feature. Get personalized guidance from your future self.</p>
                       <button onClick={() => navigate("/pricing")}
-                        className="px-6 py-2 gold-gradient text-background font-semibold rounded-xl">
-                        View Plans
+                        className="px-6 py-2.5 gold-gradient text-background font-semibold rounded-xl">
+                        Upgrade to Premium
                       </button>
                     </div>
                   ) : (

@@ -49,6 +49,7 @@ export default function Vision() {
   const tier = profile?.subscription_tier || "free";
   const uploadLimit = tier === "free" ? 5 : tier === "supporter" ? 20 : 999;
   const canUpload = visions.length < uploadLimit;
+  const canUseSeeMe = tier === "premium";
 
   if (loading || profileLoading) {
     return (
@@ -80,22 +81,41 @@ export default function Vision() {
         </div>
 
         {/* See Me In This Vision — Premium Feature */}
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => { setSeeMeVision(null); setShowSeeMe(true); }}
-          className="w-full mb-5 glass-card glow-gold border border-primary/25 rounded-2xl p-4 flex items-center gap-4 text-left hover:border-primary/50 transition-colors"
-        >
-          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">🪞</div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
-              <span className="text-[9px] uppercase tracking-widest font-bold text-background bg-primary rounded-full px-1.5 py-0.5">Premium</span>
+        {canUseSeeMe ? (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => { setSeeMeVision(null); setShowSeeMe(true); }}
+            className="w-full mb-5 glass-card glow-gold border border-primary/25 rounded-2xl p-4 flex items-center gap-4 text-left hover:border-primary/50 transition-colors"
+          >
+            <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">🪞</div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
+                <span className="text-[9px] uppercase tracking-widest font-bold text-foreground bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5">Premium Only</span>
+              </div>
+              <p className="text-xs text-muted-foreground">Place yourself inside your dream life with AI</p>
             </div>
-            <p className="text-xs text-muted-foreground">Place yourself inside your dream life with AI</p>
-          </div>
-          <Sparkles className="w-4 h-4 text-primary shrink-0" />
-        </motion.button>
+            <Sparkles className="w-4 h-4 text-primary shrink-0" />
+          </motion.button>
+        ) : (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => navigate("/pricing")}
+            className="w-full mb-5 glass-card border border-border rounded-2xl p-4 flex items-center gap-4 text-left hover:border-primary/20 transition-colors"
+          >
+            <div className="w-11 h-11 rounded-xl bg-border flex items-center justify-center shrink-0 text-xl">🪞</div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-sm font-semibold text-muted-foreground">See Me In This Vision</p>
+                <span className="text-[9px] uppercase tracking-widest font-bold text-background bg-primary rounded-full px-1.5 py-0.5">Unlock</span>
+              </div>
+              <p className="text-xs text-muted-foreground">AI scene generation. Premium feature only.</p>
+            </div>
+            <Lock className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+          </motion.button>
+        )}
 
         {!canUpload && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}

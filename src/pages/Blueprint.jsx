@@ -107,7 +107,7 @@ export default function Blueprint() {
                           {locked && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
                         </div>
                         {locked ? (
-                          <p className="text-sm text-muted-foreground/50 italic">Premium feature. Upgrade to unlock.</p>
+                          <p className="text-sm text-muted-foreground/50 italic">Premium feature · <button onClick={() => navigate("/pricing")} className="underline hover:text-muted-foreground transition-colors">Upgrade to unlock</button></p>
                         ) : (
                           <p className={`text-sm leading-relaxed ${section.key === "identity" ? "text-foreground font-medium" : "text-foreground/80"}`}>
                             {blueprint?.[section.key]}
@@ -142,7 +142,7 @@ export default function Blueprint() {
                     <p className="text-xs text-muted-foreground mb-3">+{analysis.action_plan.length - 3} more activation steps</p>
                     <button onClick={() => navigate("/pricing")}
                       className="w-full py-2.5 bg-primary/10 border border-primary/20 rounded-xl text-xs text-primary font-semibold hover:bg-primary/15 transition-colors">
-                      Unlock Full Blueprint — Premium
+                      Upgrade to Premium for Full Blueprint
                     </button>
                   </motion.div>
                 )}

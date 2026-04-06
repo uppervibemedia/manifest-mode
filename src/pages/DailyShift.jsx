@@ -123,7 +123,7 @@ function MorningCheckIn({ userEmail, onSaved, today }) {
 
       <button
         onClick={handleSave}
-        disabled={!isComplete || saving}
+        disabled={!isComplete}
         className="w-full py-3 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-30"
       >
         <Sun className="w-4 h-4" />
@@ -268,7 +268,7 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
 
       <button
         onClick={handleSave}
-        disabled={!allScored || saving}
+        disabled={!allScored}
         className="w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-30 border border-purple-400/30 text-purple-400 bg-purple-400/8"
       >
         <Moon className="w-4 h-4" />

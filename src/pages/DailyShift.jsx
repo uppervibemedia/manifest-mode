@@ -306,23 +306,6 @@ export default function DailyShift() {
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    try {
-      const scrollContainer = useScrollContainer();
-      if (!scrollContainer.current) return;
-      const { cleanupPullToRefresh } = usePullToRefresh(
-        scrollContainer.current,
-        async () => {
-          await loadData();
-          setIsRefreshing(false);
-        }
-      );
-      return cleanupPullToRefresh;
-    } catch {
-      // ScrollProvider may not be available in this context
-    }
-  }, []);
-
   const loadData = async () => {
     if (!user || profileLoading) return;
     setPlanLoading(true);
@@ -341,6 +324,23 @@ export default function DailyShift() {
       setPlanLoading(false);
     }
   };
+
+  useEffect(() => {
+    try {
+      const scrollContainer = useScrollContainer();
+      if (!scrollContainer.current) return;
+      const { cleanupPullToRefresh } = usePullToRefresh(
+        scrollContainer.current,
+        async () => {
+          await loadData();
+          setIsRefreshing(false);
+        }
+      );
+      return cleanupPullToRefresh;
+    } catch {
+      // ScrollProvider may not be available in this context
+    }
+  }, [loadData]);
 
   useEffect(() => {
     if (profileLoading) return;

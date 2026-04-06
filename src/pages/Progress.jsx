@@ -48,7 +48,7 @@ export default function Progress() {
     } catch {
       // ScrollProvider may not be available
     }
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     if (profileLoading) return;

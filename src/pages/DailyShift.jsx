@@ -365,17 +365,7 @@ export default function DailyShift() {
 
   useEffect(() => {
     loadData();
-  }, [user?.email, profileLoading, today]);
-
-  if (profileLoading || planLoading) {
-    return (
-      <AppLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
-      </AppLayout>
-    );
-  }
+  }, [loadData]);
 
   // Show notification prompt after morning intention is saved and hasn't been asked yet
   useEffect(() => {
@@ -391,6 +381,16 @@ export default function DailyShift() {
       setTimeout(() => setShowNotificationPrompt(true), 1500);
     }
   }, [morningSaved, profile]);
+
+  if (profileLoading || planLoading) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   const handleAllowNotifications = async (settings) => {
     await base44.auth.updateMe(settings);

@@ -1,60 +1,48 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, RefreshCw, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { getLocalToday } from "@/lib/dateUtils";
 
+const CACHE_KEY_PREFIX = "emotion-alignment-";
+
 export default function MicroActionSuggester({ userEmail }) {
-  const [actions, setActions] = useState([]);
+  const [alignment, setAlignment] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [completed, setCompleted] = useState({});
   const [collapsed, setCollapsed] = useState(false);
-  const [focusLabel, setFocusLabel] = useState("");
 
   useEffect(() => {
-    if (userEmail) loadSuggestions();
+    if (userEmail) loadAlignment();
   }, [userEmail]);
 
-  const loadSuggestions = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
-
+  const loadAlignment = async () => {
+    setLoading(true);
     try {
       const today = getLocalToday();
+      const cacheKey = `${CACHE_KEY_PREFIX}${today}`;
 
-      // Return cached result for today unless refreshing
-      if (!isRefresh) {
-        const cached = sessionStorage.getItem(`alignment-action-${today}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          setFocusLabel(parsed.focus_label || "");
-          setActions(parsed.actions || []);
-          setLoading(false);
-          return;
-        }
+      // Return cached result for today — no manual refresh allowed
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        setAlignment(JSON.parse(cached));
+        setLoading(false);
+        return;
       }
-      const dayOfYear = Math.floor(
-        (new Date(today) - new Date(new Date(today).getFullYear(), 0, 0)) / 86400000
-      );
 
-      const [analyses, scores, checkins, plans, entries] = await Promise.all([
+      const [analyses, scores, checkins, entries] = await Promise.all([
         base44.entities.AIAnalysis.filter({ user_email: userEmail }, "-created_date", 1),
-        base44.entities.ScoreHistory.filter({ user_email: userEmail }, "-created_date", 3),
+        base44.entities.ScoreHistory.filter({ user_email: userEmail }, "-created_date", 1),
         base44.entities.DailyCheckIn.filter({ user_email: userEmail }, "-created_date", 3),
-        base44.entities.DailyShiftPlan.filter({ user_email: userEmail, plan_date: today }, "-created_date", 1),
         base44.entities.JournalEntry.filter({ user_email: userEmail }, "-created_date", 5),
       ]);
 
       const analysis = analyses[0];
-      if (!analysis) {
-        setActions([]);
-        return;
-      }
+      if (!analysis) { setAlignment(null); return; }
 
       const latestScore = scores[0];
-      const todayCheckin = checkins.find(c => c.checkin_date === today);
-      const todayPlan = plans[0];
+      const recentMoods = checkins.map(c => `mood:${c.mood || "?"} energy:${c.energy || "?"} confidence:${c.confidence || "?"}`).join("; ");
+      const recentJournal = entries.map(e => e.response_text).filter(Boolean).slice(0, 3).join(" | ");
 
       const categoryScores = latestScore ? [
         { name: "mindset", score: latestScore.mindset_score || 50 },
@@ -65,92 +53,68 @@ export default function MicroActionSuggester({ userEmail }) {
         { name: "environment", score: latestScore.environment_score || 50 },
       ].sort((a, b) => a.score - b.score) : [];
 
-      const focusAreas = categoryScores.slice(0, 3);
-      const rotatedFocus = focusAreas[dayOfYear % Math.max(focusAreas.length, 1)] || focusAreas[0];
-
-      const morningGoal = todayCheckin?.progress_made || null;
-      const morningGratitude = todayCheckin?.gratitude || null;
-      const completedHabits = todayPlan?.completed_habits?.length || 0;
-      const totalHabits = todayPlan?.habits?.length || 0;
-      const recentJournalThemes = entries
-        .map(e => e.response_text)
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(" | ");
-
-      const identityStatement = analysis.future_self_statement || "their highest potential";
-      const misalignment = analysis.misalignment_summary || "";
-      const strengths = analysis.strengths_summary || "";
-      const limitingBeliefs = (analysis.limiting_beliefs || []).slice(0, 2).join(", ");
-      const habitUpgrades = (analysis.habit_upgrades || []).slice(0, 3).join(", ");
-      const dailySeed = `DAY-${dayOfYear}-FOCUS-${rotatedFocus?.name || "growth"}`;
+      const weakest = categoryScores.slice(0, 2).map(c => `${c.name} (${c.score})`).join(", ");
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an elite personal growth strategist. Generate 1 highly specific, intelligent daily alignment action for this user.
+        prompt: `You are an elite emotional alignment coach. Generate today's Emotion Alignment guidance to help this user emotionally step into their future self.
 
 === USER PROFILE ===
-Future Self Identity: "${identityStatement}"
-Primary Misalignment: "${misalignment}"
-Strengths: "${strengths}"
-Limiting Beliefs: ${limitingBeliefs || "not specified"}
-Habit Upgrades Needed: ${habitUpgrades || "not specified"}
+Future Self Identity: "${analysis.future_self_statement || "their highest potential"}"
+Strengths: "${analysis.strengths_summary || ""}"
+Misalignment: "${analysis.misalignment_summary || ""}"
+Limiting Beliefs: ${(analysis.limiting_beliefs || []).slice(0, 2).join(", ") || "not specified"}
 
-=== TODAY'S CONTEXT ===
-Focus Area for Today: ${rotatedFocus?.name || "growth"} (score: ${rotatedFocus?.score || "?"}/100)
-Morning Goal Set: "${morningGoal || "none recorded"}"
-Morning Gratitude: "${morningGratitude || "none recorded"}"
-Daily Shift Progress: ${completedHabits}/${totalHabits} habits completed today
-Recent Journal Themes: "${recentJournalThemes || "no recent entries"}"
-Daily Seed for Variety: ${dailySeed}
+=== EMOTIONAL CONTEXT ===
+Recent Check-In Scores: ${recentMoods || "none recorded"}
+Recent Journal Themes: "${recentJournal || "no recent entries"}"
+Weakest Areas: ${weakest || "unknown"}
 
 === REQUIREMENTS ===
-- Generate EXACTLY 1 action
-- It must take 5–20 minutes max
-- Be ultra-specific — name exact techniques, numbers, or durations
-- Connect to today's morning goal if one was set, otherwise target the user's lowest alignment area (${rotatedFocus?.name || "growth"})
-- The "why" should reference something specific from their profile
+Generate a daily emotion alignment plan with:
+1. "emotion_theme": A 2-4 word emotional theme for the day (e.g. "Calm Confidence", "Fearless Clarity")
+2. "core_feeling": The ONE emotion to embody today to align with the future self (1 sentence)
+3. "morning_intention": A specific emotional intention to set this morning (1-2 sentences)
+4. "midday_reset": A quick emotional reset practice for midday — be specific with a technique (1-2 sentences)  
+5. "evening_reflection": An evening emotional check-in question (1 sentence)
+6. "affirmation": A powerful first-person affirmation tied to today's emotion theme
+
+Make it deeply personal. Reference their actual data. Each item should feel like it was written specifically for them TODAY.
 
 Return ONLY valid JSON:
 {
-  "focus_label": "short 2-3 word theme for today",
-  "actions": [
-    { "action": "...", "why": "..." }
-  ]
+  "emotion_theme": "...",
+  "core_feeling": "...",
+  "morning_intention": "...",
+  "midday_reset": "...",
+  "evening_reflection": "...",
+  "affirmation": "..."
 }`,
         response_json_schema: {
           type: "object",
           properties: {
-            focus_label: { type: "string" },
-            actions: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  action: { type: "string" },
-                  why: { type: "string" },
-                },
-              },
-            },
+            emotion_theme: { type: "string" },
+            core_feeling: { type: "string" },
+            morning_intention: { type: "string" },
+            midday_reset: { type: "string" },
+            evening_reflection: { type: "string" },
+            affirmation: { type: "string" },
           },
         },
       });
 
-      const data = { focus_label: result?.focus_label || "", actions: result?.actions || [] };
-      sessionStorage.setItem(`alignment-action-${today}`, JSON.stringify(data));
-
-      if (data.focus_label) setFocusLabel(data.focus_label);
-      setActions(data.actions);
-      setCompleted({});
+      if (result) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(result));
+        setAlignment(result);
+      }
     } catch (e) {
-      console.error("MicroActionSuggester error:", e);
+      console.error("EmotionAlignment error:", e);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
-  const toggleComplete = (i) =>
-    setCompleted((prev) => ({ ...prev, [i]: !prev[i] }));
+  const toggleComplete = (key) =>
+    setCompleted((prev) => ({ ...prev, [key]: !prev[key] }));
 
   if (loading) {
     return (
@@ -163,51 +127,51 @@ Return ONLY valid JSON:
     );
   }
 
-  if (!actions.length) return null;
+  if (!alignment) return null;
+
+  const steps = [
+    { key: "core_feeling", label: "Feel This Today", value: alignment.core_feeling, icon: "💫" },
+    { key: "morning_intention", label: "Morning Intention", value: alignment.morning_intention, icon: "🌅" },
+    { key: "midday_reset", label: "Midday Reset", value: alignment.midday_reset, icon: "🔄" },
+    { key: "evening_reflection", label: "Evening Reflection", value: alignment.evening_reflection, icon: "🌙" },
+  ];
 
   const completedCount = Object.values(completed).filter(Boolean).length;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-6"
-    >
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-primary" />
+          <Heart className="w-4 h-4 text-pink-400" />
           <div>
-            <h3 className="font-playfair text-base font-semibold leading-tight">Alignment Actions</h3>
-            {focusLabel && (
-              <p className="text-[10px] uppercase tracking-widest text-primary/60 font-semibold mt-0.5">{focusLabel}</p>
+            <h3 className="font-playfair text-base font-semibold leading-tight">Emotion Alignment</h3>
+            {alignment.emotion_theme && (
+              <p className="text-[10px] uppercase tracking-widest text-pink-400/70 font-semibold mt-0.5">{alignment.emotion_theme}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
           {completedCount > 0 && (
             <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-0.5">
-              {completedCount}/{actions.length}
+              {completedCount}/{steps.length}
             </span>
           )}
-          <button
-            onClick={() => loadSuggestions(true)}
-            disabled={refreshing}
-            className="w-7 h-7 rounded-lg bg-card border border-border flex items-center justify-center hover:border-primary/30 transition-colors"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${refreshing ? "animate-spin" : ""}`} />
-          </button>
           <button
             onClick={() => setCollapsed((c) => !c)}
             className="w-7 h-7 rounded-lg bg-card border border-border flex items-center justify-center hover:border-primary/30 transition-colors"
           >
-            {collapsed ? (
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-            ) : (
-              <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
-            )}
+            {collapsed ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />}
           </button>
         </div>
       </div>
+
+      {/* Affirmation card — always visible */}
+      {alignment.affirmation && (
+        <div className="glass-card border border-pink-400/20 rounded-xl p-4 mb-3">
+          <p className="text-[10px] uppercase tracking-widest text-pink-400/60 font-semibold mb-1">Today's Affirmation</p>
+          <p className="text-sm text-foreground/90 leading-relaxed italic">"{alignment.affirmation}"</p>
+        </div>
+      )}
 
       <AnimatePresence>
         {!collapsed && (
@@ -217,36 +181,39 @@ Return ONLY valid JSON:
             exit={{ opacity: 0, height: 0 }}
             className="space-y-3 overflow-hidden"
           >
-            {actions.map((item, i) => (
+            {steps.map((item, i) => (
               <motion.div
-                key={i}
+                key={item.key}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.07 }}
                 className={`glass-card rounded-xl p-4 border transition-all duration-300 ${
-                  completed[i]
+                  completed[item.key]
                     ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-border hover:border-primary/20"
+                    : "border-border hover:border-pink-400/20"
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <button
-                    onClick={() => toggleComplete(i)}
+                    onClick={() => toggleComplete(item.key)}
                     className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                      completed[i]
+                      completed[item.key]
                         ? "bg-emerald-500 border-emerald-500"
-                        : "border-muted-foreground/30 hover:border-primary/50"
+                        : "border-muted-foreground/30 hover:border-pink-400/50"
                     }`}
                   >
-                    {completed[i] && <Check className="w-3 h-3 text-white" />}
+                    {completed[item.key] && <Check className="w-3 h-3 text-white" />}
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold leading-snug mb-1 transition-all ${
-                      completed[i] ? "line-through text-muted-foreground" : "text-foreground"
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs">{item.icon}</span>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{item.label}</p>
+                    </div>
+                    <p className={`text-sm leading-relaxed transition-all ${
+                      completed[item.key] ? "line-through text-muted-foreground" : "text-foreground"
                     }`}>
-                      {item.action}
+                      {item.value}
                     </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{item.why}</p>
                   </div>
                 </div>
               </motion.div>

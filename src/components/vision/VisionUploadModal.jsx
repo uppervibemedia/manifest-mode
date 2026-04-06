@@ -87,7 +87,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-5 py-5 pt-4">
 
           {/* Image Upload */}
           <label className="block mb-5 cursor-pointer">

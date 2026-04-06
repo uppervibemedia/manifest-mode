@@ -63,9 +63,6 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
     }
   };
 
-  const tier = profile?.subscription_tier || "free";
-  const hasCoachAccess = true;
-
   if (loading || profileLoading) {
     return (
       <AppLayout>
@@ -75,13 +72,6 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
       </AppLayout>
     );
   }
-
-  const blueprint = analysis ? {
-    identity: analysis.future_self_statement,
-    mindset: (analysis.replacement_beliefs || [])[0] || "Think long-term. Act daily.",
-    standards: (analysis.identity_shifts || [])[0] || "You operate from intention, not reaction.",
-    activation: analysis.action_plan?.slice(0, 3) || [],
-  } : null;
 
   return (
     <AppLayout>

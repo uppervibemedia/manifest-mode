@@ -167,21 +167,6 @@ Return ONLY valid JSON:
         </div>
       </div>
 
-      {/* Strongest & Needs Focus (all users) */}
-      <div className="space-y-3 mb-4">
-        {/* Strongest Area */}
-        <div className="glass-card rounded-xl p-4 border border-emerald-500/20 bg-emerald-500/5">
-          <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-2">Strongest Area</p>
-          <p className="text-sm font-semibold text-foreground">{displayData.strongest.name} — You're in alignment here. Keep building.</p>
-        </div>
-
-        {/* Needs Focus Area */}
-        <div className="glass-card rounded-xl p-4 border border-orange-400/20 bg-orange-400/5">
-          <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-2">Needs Focus</p>
-          <p className="text-sm font-semibold text-foreground">{displayData.weakest.name} — This area has room for growth.</p>
-        </div>
-      </div>
-
       {/* AI Pattern Analysis (Plus+ unlock) */}
       {canAccessAI ? (
         <div>
@@ -277,6 +262,21 @@ Return ONLY valid JSON:
           </span>
         </motion.button>
       )}
+
+      {/* Strongest & Needs Focus (all users) */}
+      <div className="space-y-3 mt-4">
+        {/* Strongest Area */}
+        <div className="glass-card rounded-xl p-4 border border-emerald-500/20 bg-emerald-500/5">
+          <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-2">Strongest Area</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.strongest.name} — You're in alignment here. Keep building.</p>
+        </div>
+
+        {/* Needs Focus Area */}
+        <div className="glass-card rounded-xl p-4 border border-orange-400/20 bg-orange-400/5">
+          <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-2">Needs Focus</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.weakest.name} — This area has room for growth.</p>
+        </div>
+      </div>
     </motion.div>
   );
 }

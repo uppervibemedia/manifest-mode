@@ -162,7 +162,7 @@ Return ONLY valid JSON:
           <TrendingUp className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <h3 className="font-playfair text-lg font-semibold text-foreground">Weekly Pattern</h3>
+          <h3 className="font-playfair text-lg font-semibold text-foreground">Weekly Pattern Analysis AI</h3>
           <p className="text-xs text-muted-foreground">Last 7 days of alignment</p>
         </div>
       </div>

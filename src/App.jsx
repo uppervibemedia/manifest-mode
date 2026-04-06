@@ -12,6 +12,7 @@ import { ModalProvider, useModalState } from '@/lib/ModalContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import AppLayout from '@/components/layout/AppLayout';
+import { getInitialRoute, trackPageVisit } from '@/lib/dailyRoutingEngine';
 
 // Lazy load pages for code splitting
 const DailyShift = lazy(() => import('./pages/DailyShift'));
@@ -117,7 +118,7 @@ const AuthenticatedApp = () => {
   );
 };
 
-// Redirects new users (onboarding not complete) to assessment, otherwise to daily-shift
+// Redirects new users (onboarding not complete) to assessment, otherwise uses smart daily routing
 function NewUserGate() {
   const { user, profile, loading } = useUserProfile();
   
@@ -133,7 +134,9 @@ function NewUserGate() {
     return <Navigate to="/assessment?onboarding=1" replace />;
   }
   
-  return <Navigate to="/daily-shift" replace />;
+  // Use smart daily routing: first open = Daily Shift, later opens = last visited page
+  const route = getInitialRoute();
+  return <Navigate to={route} replace />;
 }
 
 function App() {

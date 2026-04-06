@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import { Zap, Image, TrendingUp, User, Sparkles } from "lucide-react";
 import { useModalState } from "@/lib/ModalContext";
+import { trackPageVisit } from "@/lib/dailyRoutingEngine";
 
 const NAV_ITEMS = [
   { path: "/daily-shift", icon: Zap, label: "Daily Shift", id: "shift" },
@@ -43,6 +44,11 @@ export default function AppLayout({ children }) {
   const hideNav = activeFullscreenModal === "see-me-vision";
 
   const currentTabId = getTabId(location.pathname);
+
+  // Track page visits for daily routing
+  useEffect(() => {
+    trackPageVisit(location.pathname);
+  }, [location.pathname]);
 
   // Save scroll of leaving tab, restore scroll of arriving tab
   useEffect(() => {

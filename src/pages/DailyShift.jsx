@@ -283,7 +283,7 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
 export default function DailyShift() {
   const navigate = useNavigate();
   const { user, loading: profileLoading } = useUserProfile();
-  const [today, setToday] = useState(() => getLocalToday());
+  const [today] = useState(() => getLocalToday());
   const [plan, setPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
   const [morningDone, setMorningDone] = useState(false);
@@ -320,23 +320,6 @@ export default function DailyShift() {
     if (profileLoading) return;
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
-
-  // Monitor date changes and reset daily state
-  useEffect(() => {
-    const checkDateChange = () => {
-      const newToday = getLocalToday();
-      if (newToday !== today) {
-        setToday(newToday);
-        setMorningDone(false);
-        setMorningSaved(false);
-        setEveningDone(false);
-        setEveningSaved(false);
-      }
-    };
-
-    const interval = setInterval(checkDateChange, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [today]);
 
   useEffect(() => {
     loadData();

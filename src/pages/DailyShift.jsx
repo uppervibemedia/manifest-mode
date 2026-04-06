@@ -442,10 +442,10 @@ export default function DailyShift() {
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">
           {new Date().toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}
         </p>
-        <h1 className="font-playfair text-3xl font-bold text-foreground mb-1">
+        <h1 className="font-playfair text-xl font-semibold text-foreground mb-1">
           {getGreeting()}, {user?.full_name?.split(" ")[0] || "there"}
         </h1>
-        <p className="text-sm text-muted-foreground mb-8">Let's align you with your future self</p>
+        <p className="text-xs text-muted-foreground mb-8">Let's align you with your future self</p>
 
         <AnimatePresence mode="wait">
           {morningDone && !morningSaved ? (

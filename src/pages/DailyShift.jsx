@@ -412,6 +412,21 @@ export default function DailyShift() {
     setShowNotificationPrompt(false);
   };
 
+  // Get greeting based on user's timezone
+  const getGreeting = () => {
+    const userTz = profile?.timezone || "America/Los_Angeles";
+    const formatter = new Intl.DateTimeFormat("en", {
+      timeZone: userTz,
+      hour: "2-digit",
+      hour12: false,
+    });
+    const hour = parseInt(formatter.format(new Date()).split(":")[0]);
+    
+    if (hour >= 5 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
   return (
     <AppLayout>
       <RefreshSpinner isRefreshing={isRefreshing} />
@@ -427,7 +442,10 @@ export default function DailyShift() {
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">
           {new Date().toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}
         </p>
-        <h1 className="font-playfair text-2xl font-semibold mb-8">Daily Shift</h1>
+        <h1 className="font-playfair text-3xl font-bold text-foreground mb-1">
+          {getGreeting()}, {user?.full_name?.split(" ")[0] || "there"}
+        </h1>
+        <p className="text-sm text-muted-foreground mb-8">Let's align you with your future self</p>
 
         <AnimatePresence mode="wait">
           {morningDone && !morningSaved ? (

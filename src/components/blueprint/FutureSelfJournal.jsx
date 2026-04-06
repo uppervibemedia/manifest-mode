@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { BookOpen, Sparkles, ChevronDown, ChevronUp, Loader2, Check, Brain } from "lucide-react";
+import { BookOpen, Sparkles, ChevronDown, ChevronUp, Loader2, Check } from "lucide-react";
 
 const PROMPTS = [
   {
@@ -33,126 +33,6 @@ const PROMPTS = [
     icon: "⚡",
   },
 ];
-
-function WeeklyInsights({ userEmail }) {
-  const [insights, setInsights] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  const generateInsights = async () => {
-    setLoading(true);
-    setOpen(true);
-    try {
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const entries = await base44.entities.JournalEntry.filter(
-        { user_email: userEmail, entry_type: "guided" },
-        "-created_date",
-        20
-      );
-
-      const recent = entries.filter(e => e.created_date >= oneWeekAgo);
-      if (recent.length === 0) {
-        setInsights({ empty: true });
-        setLoading(false);
-        return;
-      }
-
-      const combined = recent
-        .map(e => `[${e.title}]: ${e.response_text}`)
-        .join("\n\n");
-
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a Future Self transformation coach analyzing a user's identity journal entries from the past week.
-
-Journal entries:
-${combined}
-
-Based on these, provide a brief, emotionally resonant analysis. Be warm, insightful, and identity-focused.
-
-Return a JSON object with:
-- breakthrough: (string) The biggest identity shift or positive pattern emerging
-- pattern: (string) A recurring emotional theme or limiting belief to watch
-- affirmation: (string) A powerful, personalized affirmation based on their entries (1-2 sentences, start with "I am" or "I choose")`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            breakthrough: { type: "string" },
-            pattern: { type: "string" },
-            affirmation: { type: "string" },
-          },
-        },
-      });
-
-      setInsights(result);
-    } catch (e) {
-      console.error("Weekly insights error:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mb-4">
-      <button
-        onClick={() => (insights || loading) ? setOpen(o => !o) : generateInsights()}
-        className="w-full flex items-center justify-between px-4 py-3 glass-card border border-primary/20 rounded-xl hover:border-primary/40 transition-colors"
-      >
-        <div className="flex items-center gap-2.5">
-          <Brain className="w-4 h-4 text-primary" />
-          <span className="text-sm font-semibold text-foreground">Weekly Pattern Analysis</span>
-          {!insights && !loading && (
-            <span className="text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary rounded-full px-2 py-0.5">AI</span>
-          )}
-        </div>
-        {loading ? (
-          <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-        ) : open ? (
-          <ChevronUp className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        )}
-      </button>
-
-      <AnimatePresence>
-        {open && !loading && insights && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            {insights.empty ? (
-              <div className="pt-3 px-1">
-                <p className="text-xs text-muted-foreground">Write at least one Future Self journal entry this week to unlock pattern analysis.</p>
-              </div>
-            ) : (
-              <div className="pt-3 space-y-3">
-                <div className="glass-card border border-emerald-500/20 rounded-xl p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-1.5">✦ Breakthrough Emerging</p>
-                  <p className="text-sm text-foreground/85 leading-relaxed">{insights.breakthrough}</p>
-                </div>
-                <div className="glass-card border border-orange-400/20 rounded-xl p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-1.5">⚡ Pattern to Watch</p>
-                  <p className="text-sm text-foreground/85 leading-relaxed">{insights.pattern}</p>
-                </div>
-                <div className="glass-card border border-primary/25 rounded-xl p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-primary/70 font-semibold mb-1.5">Your Affirmation This Week</p>
-                  <p className="text-sm font-medium text-foreground italic leading-relaxed">"{insights.affirmation}"</p>
-                </div>
-                <button
-                  onClick={generateInsights}
-                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" /> Refresh analysis
-                </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 function JournalPrompt({ prompt, userEmail, existingEntry }) {
   const [open, setOpen] = useState(false);
@@ -271,9 +151,6 @@ export default function FutureSelfJournal({ userEmail }) {
           <p className="text-xs text-muted-foreground">Identity work. Who you are becoming.</p>
         </div>
       </div>
-
-      {/* Weekly AI insights */}
-      <WeeklyInsights userEmail={userEmail} />
 
       {/* Guided prompts */}
       <div className="space-y-3">

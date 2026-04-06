@@ -169,98 +169,75 @@ Return ONLY valid JSON:
 
       {/* AI Pattern Analysis (Plus+ unlock) */}
       {canAccessAI ? (
-        <div>
-          <button
-            onClick={() => {
-              if (!aiAnalysis && !loadingAI) generateAIAnalysis();
-              else setExpandedAI(e => !e);
-            }}
-            className="w-full flex items-center justify-between px-4 py-3 glass-card border border-primary/20 rounded-xl hover:border-primary/40 transition-colors mb-4"
-          >
-            <div className="flex items-center gap-2.5">
-              <Brain className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">AI Pattern Analysis</span>
-            </div>
-            {loadingAI ? (
-              <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-            ) : expandedAI ? (
-              <ChevronUp className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {expandedAI && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden space-y-3"
-              >
-                {!aiAnalysis && !loadingAI ? (
-                  <div className="text-center py-6">
-                    <p className="text-xs text-muted-foreground mb-3">Analyze your weekly patterns with AI</p>
-                    <button
-                      onClick={generateAIAnalysis}
-                      className="px-4 py-2 text-xs font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
-                    >
-                      Generate Analysis
-                    </button>
+        <AnimatePresence>
+          {expandedAI && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden space-y-3 mb-4"
+            >
+              {!aiAnalysis && !loadingAI ? (
+                <div className="text-center py-6">
+                  <p className="text-xs text-muted-foreground mb-3">Analyze your weekly patterns with AI</p>
+                  <button
+                    onClick={generateAIAnalysis}
+                    className="px-4 py-2 text-xs font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/10 transition-colors"
+                  >
+                    Generate Analysis
+                  </button>
+                </div>
+              ) : loadingAI ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="w-4 h-4 text-primary animate-spin mr-2" />
+                  <span className="text-xs text-muted-foreground">Analyzing your week...</span>
+                </div>
+              ) : aiAnalysis ? (
+                <>
+                  <div className="glass-card border border-primary/25 rounded-xl p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-primary/70 font-semibold mb-1.5">✦ Weekly Insight</p>
+                    <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.insight}</p>
                   </div>
-                ) : loadingAI ? (
-                  <div className="flex items-center justify-center py-6">
-                    <Loader2 className="w-4 h-4 text-primary animate-spin mr-2" />
-                    <span className="text-xs text-muted-foreground">Analyzing your week...</span>
+                  <div className="glass-card border border-orange-400/20 rounded-xl p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-1.5">⚡ Why This Pattern</p>
+                    <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.pattern}</p>
                   </div>
-                ) : aiAnalysis ? (
-                  <>
-                    <div className="glass-card border border-primary/25 rounded-xl p-4">
-                      <p className="text-[10px] uppercase tracking-widest text-primary/70 font-semibold mb-1.5">✦ Weekly Insight</p>
-                      <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.insight}</p>
-                    </div>
-                    <div className="glass-card border border-orange-400/20 rounded-xl p-4">
-                      <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-1.5">⚡ Why This Pattern</p>
-                      <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.pattern}</p>
-                    </div>
-                    <div className="glass-card border border-emerald-500/20 rounded-xl p-4">
-                      <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-1.5">→ Next Action</p>
-                      <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.recommendation}</p>
-                    </div>
-                    <div className="glass-card border border-purple-400/20 rounded-xl p-4">
-                      <p className="text-[10px] uppercase tracking-widest text-purple-400 font-semibold mb-1.5">🎯 Focus Next Week</p>
-                      <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.nextFocus}</p>
-                    </div>
-                    <button
-                      onClick={generateAIAnalysis}
-                      className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mt-2"
-                    >
-                      <Sparkles className="w-3 h-3" /> Regenerate analysis
-                    </button>
-                  </>
-                ) : null}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  <div className="glass-card border border-emerald-500/20 rounded-xl p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-1.5">→ Next Action</p>
+                    <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.recommendation}</p>
+                  </div>
+                  <div className="glass-card border border-purple-400/20 rounded-xl p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-purple-400 font-semibold mb-1.5">🎯 Focus Next Week</p>
+                    <p className="text-sm text-foreground/85 leading-relaxed">{aiAnalysis.nextFocus}</p>
+                  </div>
+                  <button
+                    onClick={generateAIAnalysis}
+                    className="text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mt-2"
+                  >
+                    <Sparkles className="w-3 h-3" /> Regenerate analysis
+                  </button>
+                </>
+              ) : null}
+            </motion.div>
+          )}
+        </AnimatePresence>
       ) : (
-        <motion.button
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           onClick={() => window.location.href = "/pricing"}
-          className="w-full flex items-center justify-between px-4 py-3 glass-card border border-border rounded-xl hover:border-primary/20 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 glass-card border border-border rounded-xl hover:border-primary/20 transition-colors mb-4 cursor-pointer"
         >
           <div className="flex items-center gap-2.5">
             <Lock className="w-4 h-4 text-muted-foreground/50" />
             <div className="text-left">
-              <span className="text-sm font-semibold text-foreground">AI Pattern Analysis</span>
               <p className="text-[9px] text-muted-foreground">Plus feature</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-primary border border-primary/30 rounded-full px-2 py-0.5">
-            Upgrade
+            Unlock
           </span>
-        </motion.button>
+        </motion.div>
       )}
 
       {/* Strongest & Needs Focus (all users) */}

@@ -5,10 +5,16 @@ import { Sun, Moon, Bell, BellOff, Loader2 } from "lucide-react";
 export default function ReminderSettings({ profile, onUpdate }) {
   const [saving, setSaving] = useState(false);
   const [local, setLocal] = useState({
-    morning_reminder_enabled: profile?.morning_reminder_enabled || false,
-    morning_reminder_time: profile?.morning_reminder_time || "07:00",
-    evening_reminder_enabled: profile?.evening_reminder_enabled || false,
-    evening_reminder_time: profile?.evening_reminder_time || "20:00",
+    morning_intention_enabled: profile?.morning_intention_enabled || false,
+    morning_intention_time: profile?.morning_intention_time || "07:00",
+    midday_alignment_enabled: profile?.midday_alignment_enabled || false,
+    midday_alignment_time: profile?.midday_alignment_time || "12:00",
+    evening_reflection_enabled: profile?.evening_reflection_enabled || false,
+    evening_reflection_time: profile?.evening_reflection_time || "20:00",
+    morning_emotion_enabled: profile?.morning_emotion_enabled || false,
+    morning_emotion_time: profile?.morning_emotion_time || "07:30",
+    evening_emotion_enabled: profile?.evening_emotion_enabled || false,
+    evening_emotion_time: profile?.evening_emotion_time || "20:30",
   });
 
   const handleSave = async () => {
@@ -17,11 +23,18 @@ export default function ReminderSettings({ profile, onUpdate }) {
     setSaving(false);
   };
 
-  const changed =
-    local.morning_reminder_enabled !== (profile?.morning_reminder_enabled || false) ||
-    local.morning_reminder_time !== (profile?.morning_reminder_time || "07:00") ||
-    local.evening_reminder_enabled !== (profile?.evening_reminder_enabled || false) ||
-    local.evening_reminder_time !== (profile?.evening_reminder_time || "20:00");
+  const changed = JSON.stringify(local) !== JSON.stringify({
+    morning_intention_enabled: profile?.morning_intention_enabled || false,
+    morning_intention_time: profile?.morning_intention_time || "07:00",
+    midday_alignment_enabled: profile?.midday_alignment_enabled || false,
+    midday_alignment_time: profile?.midday_alignment_time || "12:00",
+    evening_reflection_enabled: profile?.evening_reflection_enabled || false,
+    evening_reflection_time: profile?.evening_reflection_time || "20:00",
+    morning_emotion_enabled: profile?.morning_emotion_enabled || false,
+    morning_emotion_time: profile?.morning_emotion_time || "07:30",
+    evening_emotion_enabled: profile?.evening_emotion_enabled || false,
+    evening_emotion_time: profile?.evening_emotion_time || "20:30",
+  });
 
   return (
     <motion.div
@@ -35,75 +48,66 @@ export default function ReminderSettings({ profile, onUpdate }) {
         <p className="text-sm font-semibold text-foreground">Daily Reminders</p>
       </div>
 
-      {/* Morning */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Sun className="w-4 h-4 text-primary" />
-            <span className="text-sm text-foreground">Morning Check-In</span>
-          </div>
-          <button
-            role="switch"
-            aria-checked={local.morning_reminder_enabled}
-            aria-label="Toggle morning reminder"
-            onClick={() => setLocal(l => ({ ...l, morning_reminder_enabled: !l.morning_reminder_enabled }))}
-            className={`rounded-full relative transition-colors duration-200 flex items-center px-0.5 ${
-              local.morning_reminder_enabled ? "bg-primary" : "bg-border"
-            }`}
-            style={{ width: 40, height: 22 }}
-          >
-            <span
-              className={`w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
-                local.morning_reminder_enabled ? "translate-x-[18px]" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-        {local.morning_reminder_enabled && (
-          <input
-            type="time"
-            value={local.morning_reminder_time}
-            onChange={e => setLocal(l => ({ ...l, morning_reminder_time: e.target.value }))}
-            className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/40"
-          />
-        )}
-      </div>
-
-      {/* Evening */}
+      {/* Core Reminders */}
       <div className="mb-5">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Moon className="w-4 h-4 text-purple-400" />
-            <span className="text-sm text-foreground">Evening Review</span>
-          </div>
-          <button
-            role="switch"
-            aria-checked={local.evening_reminder_enabled}
-            aria-label="Toggle evening reminder"
-            onClick={() => setLocal(l => ({ ...l, evening_reminder_enabled: !l.evening_reminder_enabled }))}
-            className={`relative rounded-full flex items-center px-0.5 transition-colors duration-200 ${
-              local.evening_reminder_enabled ? "bg-purple-400" : "bg-border"
-            }`}
-            style={{ width: 40, height: 22 }}
-          >
-            <span
-              className={`w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
-                local.evening_reminder_enabled ? "translate-x-[18px]" : "translate-x-0"
-              }`}
-            />
-          </button>
-        </div>
-        {local.evening_reminder_enabled && (
-          <input
-            type="time"
-            value={local.evening_reminder_time}
-            onChange={e => setLocal(l => ({ ...l, evening_reminder_time: e.target.value }))}
-            className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/40"
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Recommended</p>
+        <div className="space-y-3">
+          {/* Morning Intention */}
+          <ReminderRow
+            icon={<Sun className="w-4 h-4 text-primary" />}
+            label="Morning Intention"
+            enabled={local.morning_intention_enabled}
+            time={local.morning_intention_time}
+            onToggle={() => setLocal(l => ({ ...l, morning_intention_enabled: !l.morning_intention_enabled }))}
+            onTimeChange={(time) => setLocal(l => ({ ...l, morning_intention_time: time }))}
           />
-        )}
+          {/* Midday Emotion Alignment */}
+          <ReminderRow
+            icon={<div className="text-sm">🔄</div>}
+            label="Midday Emotion Alignment"
+            enabled={local.midday_alignment_enabled}
+            time={local.midday_alignment_time}
+            onToggle={() => setLocal(l => ({ ...l, midday_alignment_enabled: !l.midday_alignment_enabled }))}
+            onTimeChange={(time) => setLocal(l => ({ ...l, midday_alignment_time: time }))}
+          />
+          {/* Evening Reflection */}
+          <ReminderRow
+            icon={<Moon className="w-4 h-4 text-purple-400" />}
+            label="Evening Reflection"
+            enabled={local.evening_reflection_enabled}
+            time={local.evening_reflection_time}
+            onToggle={() => setLocal(l => ({ ...l, evening_reflection_enabled: !l.evening_reflection_enabled }))}
+            onTimeChange={(time) => setLocal(l => ({ ...l, evening_reflection_time: time }))}
+          />
+        </div>
       </div>
 
-      {(!local.morning_reminder_enabled && !local.evening_reminder_enabled) && (
+      {/* Optional Reminders */}
+      <div className="mb-5">
+        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Optional</p>
+        <div className="space-y-3">
+          {/* Morning Emotion */}
+          <ReminderRow
+            icon={<Sun className="w-4 h-4 text-muted-foreground" />}
+            label="Morning Emotion Alignment"
+            enabled={local.morning_emotion_enabled}
+            time={local.morning_emotion_time}
+            onToggle={() => setLocal(l => ({ ...l, morning_emotion_enabled: !l.morning_emotion_enabled }))}
+            onTimeChange={(time) => setLocal(l => ({ ...l, morning_emotion_time: time }))}
+          />
+          {/* Evening Emotion */}
+          <ReminderRow
+            icon={<Moon className="w-4 h-4 text-muted-foreground" />}
+            label="Evening Emotion Alignment"
+            enabled={local.evening_emotion_enabled}
+            time={local.evening_emotion_time}
+            onToggle={() => setLocal(l => ({ ...l, evening_emotion_enabled: !l.evening_emotion_enabled }))}
+            onTimeChange={(time) => setLocal(l => ({ ...l, evening_emotion_time: time }))}
+          />
+        </div>
+      </div>
+
+      {!local.morning_intention_enabled && !local.midday_alignment_enabled && !local.evening_reflection_enabled && !local.morning_emotion_enabled && !local.evening_emotion_enabled && (
         <p className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
           <BellOff className="w-3.5 h-3.5" /> All reminders off — toggle to enable email nudges
         </p>
@@ -119,5 +123,42 @@ export default function ReminderSettings({ profile, onUpdate }) {
         </button>
       )}
     </motion.div>
+  );
+}
+
+function ReminderRow({ icon, label, enabled, time, onToggle, onTimeChange }) {
+  return (
+    <div className={`glass-card rounded-xl p-3 border transition-all ${enabled ? "border-border" : "border-border/40"}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          {icon}
+          <span className="text-sm text-foreground">{label}</span>
+        </div>
+        <button
+          role="switch"
+          aria-checked={enabled}
+          aria-label={`Toggle ${label}`}
+          onClick={onToggle}
+          className={`rounded-full relative transition-colors duration-200 flex items-center px-0.5 shrink-0 ${
+            enabled ? "bg-primary" : "bg-border"
+          }`}
+          style={{ width: 40, height: 22 }}
+        >
+          <span
+            className={`w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              enabled ? "translate-x-[18px]" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+      {enabled && (
+        <input
+          type="time"
+          value={time}
+          onChange={e => onTimeChange(e.target.value)}
+          className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary/40"
+        />
+      )}
+    </div>
   );
 }

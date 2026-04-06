@@ -84,21 +84,49 @@
       "type": "boolean",
       "default": true
     },
-    "morning_reminder_enabled": {
+    "notifications_permission_asked": {
       "type": "boolean",
       "default": false
     },
-    "morning_reminder_time": {
+    "morning_intention_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "morning_intention_time": {
       "type": "string",
       "default": "07:00"
     },
-    "evening_reminder_enabled": {
+    "midday_alignment_enabled": {
       "type": "boolean",
       "default": false
     },
-    "evening_reminder_time": {
+    "midday_alignment_time": {
+      "type": "string",
+      "default": "12:00"
+    },
+    "evening_reflection_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "evening_reflection_time": {
       "type": "string",
       "default": "20:00"
+    },
+    "morning_emotion_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "morning_emotion_time": {
+      "type": "string",
+      "default": "07:30"
+    },
+    "evening_emotion_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "evening_emotion_time": {
+      "type": "string",
+      "default": "20:30"
     },
     "streak_count": {
       "type": "number",

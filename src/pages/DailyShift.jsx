@@ -6,6 +6,7 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import { Sun, Moon, Check, Loader2 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import RefreshSpinner from "@/components/mobile/RefreshSpinner";
+import NotificationPermissionModal from "@/components/notifications/NotificationPermissionModal";
 import { getLocalToday } from "@/lib/dateUtils";
 import { getTodaysShift } from "@/lib/shiftEngine";
 import MicroActionSuggester from "@/components/daily/MicroActionSuggester";
@@ -36,6 +37,12 @@ function MorningCheckIn({ userEmail, onSaved, today }) {
     // Optimistic: mark saved immediately
     setSaved(true);
     onSaved();
+    // Check if we should show notification prompt after morning save
+    if ("Notification" in window && Notification.permission === "default") {
+      setTimeout(() => {
+        // Only show if user hasn't seen it yet (check in parent)
+      }, 1000);
+    }
     // Persist in background
     Promise.all([
       base44.entities.JournalEntry.create({
@@ -294,7 +301,7 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
 
 export default function DailyShift() {
   const navigate = useNavigate();
-  const { user, loading: profileLoading } = useUserProfile();
+  const { user, profile, loading: profileLoading } = useUserProfile();
   const [today] = useState(() => getLocalToday());
   const [plan, setPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
@@ -305,6 +312,7 @@ export default function DailyShift() {
   const [reflectionPrompt, setReflectionPrompt] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
   const loadData = async () => {
     if (!user || profileLoading) return;
@@ -372,9 +380,41 @@ export default function DailyShift() {
     );
   }
 
+  // Show notification prompt after morning intention is saved and hasn't been asked yet
+  useEffect(() => {
+    const shouldShowNotificationPrompt =
+      morningSaved &&
+      profile &&
+      !profile.notifications_permission_asked &&
+      "Notification" in window &&
+      Notification.permission === "default";
+
+    if (shouldShowNotificationPrompt) {
+      setTimeout(() => setShowNotificationPrompt(true), 1500);
+    }
+  }, [morningSaved, profile?.notifications_permission_asked]);
+
+  const handleAllowNotifications = async (settings) => {
+    await base44.auth.updateMe(settings);
+    setShowNotificationPrompt(false);
+  };
+
+  const handleDismissNotifications = async () => {
+    await base44.auth.updateMe({ notifications_permission_asked: true });
+    setShowNotificationPrompt(false);
+  };
+
   return (
     <AppLayout>
       <RefreshSpinner isRefreshing={isRefreshing} />
+      <AnimatePresence>
+        {showNotificationPrompt && (
+          <NotificationPermissionModal
+            onAllow={handleAllowNotifications}
+            onDismiss={handleDismissNotifications}
+          />
+        )}
+      </AnimatePresence>
       <div className="px-5 pt-6 pb-6">
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">
           {new Date().toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}

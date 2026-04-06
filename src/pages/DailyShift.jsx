@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -315,7 +315,7 @@ export default function DailyShift() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user || profileLoading) return;
     setPlanLoading(true);
     try {
@@ -332,7 +332,7 @@ export default function DailyShift() {
     } finally {
       setPlanLoading(false);
     }
-  };
+  }, [user, profileLoading, today]);
 
   useEffect(() => {
     if (!scrollContainer?.current) return;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Download, Image as ImageIcon, RefreshCw, Check, Loader2, Sparkles } from "lucide-react";
+import { X, Download, Image as ImageIcon, Check, Loader2, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getCategoryMeta } from "@/lib/categories";
 
@@ -138,14 +138,7 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
             </button>
           </div>
 
-          {/* Regenerate — ONLY for AI-generated images */}
-          {isAiGenerated && onRegenerate && (
-            <button
-              onClick={() => onRegenerate(vision)}
-              className="w-full py-3 rounded-xl border border-primary/30 text-primary font-semibold flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors text-sm">
-              <RefreshCw className="w-4 h-4" /> Regenerate AI Image
-            </button>
-          )}
+
         </div>
       </motion.div>
     </motion.div>

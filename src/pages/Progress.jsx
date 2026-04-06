@@ -14,7 +14,7 @@ import { loadShiftStats } from "@/lib/shiftGamification";
 
 export default function Progress() {
   const navigate = useNavigate();
-  const { user, loading: profileLoading } = useUserProfile();
+  const { user, profile, loading: profileLoading } = useUserProfile();
   const [scores, setScores] = useState([]);
   const [latest, setLatest] = useState(null);
   const [loading, setLoading] = useState(true);

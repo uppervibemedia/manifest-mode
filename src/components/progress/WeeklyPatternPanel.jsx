@@ -10,8 +10,7 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
   const [loadingAI, setLoadingAI] = useState(false);
   const [expandedAI, setExpandedAI] = useState(false);
 
-  const isPremium = tier === "premium";
-  const isPlus = true; // Always show weekly pattern for all users
+  const canAccessAI = tier === "supporter" || tier === "premium";
 
   // Generate weekly summary from scores
   useEffect(() => {
@@ -69,9 +68,9 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
     }
   }, [scores]);
 
-  // Generate AI analysis for premium users
+  // Generate AI analysis for Plus+ users
   const generateAIAnalysis = async () => {
-    if (!isPremium || !summaryData) return;
+    if (!canAccessAI || !summaryData) return;
     setLoadingAI(true);
     setExpandedAI(true);
 
@@ -168,60 +167,23 @@ Return ONLY valid JSON:
         </div>
       </div>
 
-      {/* Weekly Summary (Plus & Premium) */}
+      {/* Strongest & Needs Focus (all users) */}
       <div className="space-y-3 mb-4">
-        {/* Average Score */}
-        <div className="glass-card rounded-xl p-4 border border-border">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Average Score</p>
-          <div className="flex items-end gap-2">
-            <span className="font-playfair text-3xl font-bold text-primary">{displayData.avgScore}</span>
-            <span className="text-xs text-muted-foreground mb-1">/100</span>
-          </div>
-        </div>
-
-        {/* Score Movement */}
-        <div className="glass-card rounded-xl p-4 border border-border">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Weekly Movement</p>
-          <div className="flex items-center gap-2">
-            {displayData.scoreMovement > 0 ? (
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-            ) : displayData.scoreMovement < 0 ? (
-              <TrendingDown className="w-4 h-4 text-orange-400" />
-            ) : (
-              <div className="w-4 h-4 text-muted-foreground text-xs font-bold">−</div>
-            )}
-            <span className={`text-lg font-bold ${
-              displayData.scoreMovement > 0 ? "text-emerald-400" : displayData.scoreMovement < 0 ? "text-orange-400" : "text-muted-foreground"
-            }`}>
-              {displayData.scoreMovement > 0 ? "+" : ""}{displayData.scoreMovement}
-            </span>
-            <span className="text-xs text-muted-foreground">points</span>
-          </div>
-        </div>
-
-        {/* Completion Rate */}
-        <div className="glass-card rounded-xl p-4 border border-border">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Tracked Days</p>
-          <p className="text-sm font-semibold text-foreground">{displayData.completions}/{displayData.daysTracked} days logged</p>
-        </div>
-
         {/* Strongest Area */}
         <div className="glass-card rounded-xl p-4 border border-emerald-500/20 bg-emerald-500/5">
           <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-2">Strongest Area</p>
-          <p className="text-sm font-semibold text-foreground">{displayData.strongest.name}</p>
-          <p className="text-xs text-muted-foreground mt-1">You're in alignment here. Keep building.</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.strongest.name} — You're in alignment here. Keep building.</p>
         </div>
 
-        {/* Weakest Area */}
+        {/* Needs Focus Area */}
         <div className="glass-card rounded-xl p-4 border border-orange-400/20 bg-orange-400/5">
           <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-2">Needs Focus</p>
-          <p className="text-sm font-semibold text-foreground">{displayData.weakest.name}</p>
-          <p className="text-xs text-muted-foreground mt-1">This area has room for growth.</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.weakest.name} — This area has room for growth.</p>
         </div>
       </div>
 
-      {/* AI Analysis (Premium Only) */}
-      {isPremium ? (
+      {/* AI Pattern Analysis (Plus+ unlock) */}
+      {canAccessAI ? (
         <div>
           <button
             onClick={() => {
@@ -307,11 +269,11 @@ Return ONLY valid JSON:
             <Lock className="w-4 h-4 text-muted-foreground/50" />
             <div className="text-left">
               <span className="text-sm font-semibold text-foreground">AI Pattern Analysis</span>
-              <p className="text-[9px] text-muted-foreground">Premium feature</p>
+              <p className="text-[9px] text-muted-foreground">Plus feature</p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-primary border border-primary/30 rounded-full px-2 py-0.5">
-            Unlock
+            Upgrade
           </span>
         </motion.button>
       )}

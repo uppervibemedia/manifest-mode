@@ -6,17 +6,17 @@ import { Sparkles, Lock, ChevronDown, ChevronUp, Brain, Loader2, TrendingUp, Tre
 export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
   const [summaryData, setSummaryData] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState(null);
-  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [expandedAI, setExpandedAI] = useState(false);
 
   const isPremium = tier === "premium";
-  const isPlus = tier === "supporter" || tier === "premium";
+  const isPlus = tier === "supporter" || tier === "premium" || !tier; // Show for free tier during testing
 
   // Generate weekly summary from scores
   useEffect(() => {
     if (!scores || scores.length === 0) {
-      setLoadingSummary(false);
+      setSummaryData(null);
       return;
     }
 
@@ -25,7 +25,7 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
       const weekScores = scores.slice(0, 7).reverse();
       
       if (weekScores.length === 0) {
-        setLoadingSummary(false);
+        setSummaryData(null);
         return;
       }
 
@@ -66,8 +66,6 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
       });
     } catch (e) {
       console.error("Weekly summary error:", e);
-    } finally {
-      setLoadingSummary(false);
     }
   }, [scores]);
 
@@ -94,14 +92,14 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
       }));
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an elite performance coach analyzing a user's weekly alignment data.
+       prompt: `You are an elite performance coach analyzing a user's weekly alignment data.
 
-Weekly Stats:
-- Average Reality Match Score: ${summaryData.avgScore}/100
-- Score Movement: ${summaryData.scoreMovement > 0 ? "+" : ""}${summaryData.scoreMovement} points
-- Days Tracked: ${summaryData.daysTracked}/7
-- Strongest Area: ${summaryData.strongest.name} (${summaryData.strongest.avg})
-- Weakest Area: ${summaryData.weakest.name} (${summaryData.weakest.avg})
+      Weekly Stats:
+      - Average Reality Match Score: ${displayData.avgScore}/100
+      - Score Movement: ${displayData.scoreMovement > 0 ? "+" : ""}${displayData.scoreMovement} points
+      - Days Tracked: ${displayData.daysTracked}/7
+      - Strongest Area: ${displayData.strongest.name} (${displayData.strongest.avg})
+      - Weakest Area: ${displayData.weakest.name} (${displayData.weakest.avg})
 
 Category Breakdown:
 ${avgsByCategory.map(c => `- ${c.name}: ${c.avg}`).join("\n")}
@@ -142,13 +140,20 @@ Return ONLY valid JSON:
     }
   };
 
-  if (!isPlus || loadingSummary) {
+  // Show for Plus and Premium users (or for all users if tier is undefined)
+  if (!isPlus) {
     return null;
   }
 
-  if (!summaryData) {
-    return null;
-  }
+  // Use calculated summary data or provide default if still calculating
+  const displayData = summaryData || {
+    avgScore: scores && scores.length > 0 ? Math.round(scores.slice(0, 7).reduce((sum, s) => sum + (s.overall_score || 0), 0) / Math.min(7, scores.length)) : 0,
+    scoreMovement: 0,
+    completions: 0,
+    daysTracked: scores?.length || 0,
+    strongest: { name: "Calculating...", avg: 0 },
+    weakest: { name: "Calculating...", avg: 0 },
+  };
 
   return (
     <motion.div
@@ -172,7 +177,7 @@ Return ONLY valid JSON:
         <div className="glass-card rounded-xl p-4 border border-border">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Average Score</p>
           <div className="flex items-end gap-2">
-            <span className="font-playfair text-3xl font-bold text-primary">{summaryData.avgScore}</span>
+            <span className="font-playfair text-3xl font-bold text-primary">{displayData.avgScore}</span>
             <span className="text-xs text-muted-foreground mb-1">/100</span>
           </div>
         </div>
@@ -181,17 +186,17 @@ Return ONLY valid JSON:
         <div className="glass-card rounded-xl p-4 border border-border">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Weekly Movement</p>
           <div className="flex items-center gap-2">
-            {summaryData.scoreMovement > 0 ? (
+            {displayData.scoreMovement > 0 ? (
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-            ) : summaryData.scoreMovement < 0 ? (
+            ) : displayData.scoreMovement < 0 ? (
               <TrendingDown className="w-4 h-4 text-orange-400" />
             ) : (
               <div className="w-4 h-4 text-muted-foreground text-xs font-bold">−</div>
             )}
             <span className={`text-lg font-bold ${
-              summaryData.scoreMovement > 0 ? "text-emerald-400" : summaryData.scoreMovement < 0 ? "text-orange-400" : "text-muted-foreground"
+              displayData.scoreMovement > 0 ? "text-emerald-400" : displayData.scoreMovement < 0 ? "text-orange-400" : "text-muted-foreground"
             }`}>
-              {summaryData.scoreMovement > 0 ? "+" : ""}{summaryData.scoreMovement}
+              {displayData.scoreMovement > 0 ? "+" : ""}{displayData.scoreMovement}
             </span>
             <span className="text-xs text-muted-foreground">points</span>
           </div>
@@ -200,20 +205,20 @@ Return ONLY valid JSON:
         {/* Completion Rate */}
         <div className="glass-card rounded-xl p-4 border border-border">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Tracked Days</p>
-          <p className="text-sm font-semibold text-foreground">{summaryData.completions}/{summaryData.daysTracked} days logged</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.completions}/{displayData.daysTracked} days logged</p>
         </div>
 
         {/* Strongest Area */}
         <div className="glass-card rounded-xl p-4 border border-emerald-500/20 bg-emerald-500/5">
           <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold mb-2">Strongest Area</p>
-          <p className="text-sm font-semibold text-foreground">{summaryData.strongest.name}</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.strongest.name}</p>
           <p className="text-xs text-muted-foreground mt-1">You're in alignment here. Keep building.</p>
         </div>
 
         {/* Weakest Area */}
         <div className="glass-card rounded-xl p-4 border border-orange-400/20 bg-orange-400/5">
           <p className="text-[10px] uppercase tracking-widest text-orange-400 font-semibold mb-2">Needs Focus</p>
-          <p className="text-sm font-semibold text-foreground">{summaryData.weakest.name}</p>
+          <p className="text-sm font-semibold text-foreground">{displayData.weakest.name}</p>
           <p className="text-xs text-muted-foreground mt-1">This area has room for growth.</p>
         </div>
       </div>

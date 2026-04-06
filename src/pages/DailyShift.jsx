@@ -339,7 +339,7 @@ export default function DailyShift() {
 
   return (
     <AppLayout>
-      <div ref={containerRef} className="px-5 pt-6 pb-6" style={{ overflowY: 'auto' }}>
+      <div ref={containerRef} className="px-5 pt-6 pb-6">
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">
           {new Date().toLocaleDateString("en", { weekday: "long", month: "short", day: "numeric" })}
         </p>

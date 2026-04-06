@@ -9,8 +9,11 @@ export default function MobileHeader() {
   const isTabRoot = TAB_ROOTS.includes(location.pathname) || location.pathname === '/';
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 max-w-md mx-auto glass-card border-b border-border" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-      <div className="flex items-center justify-between px-5 py-4 h-14">
+    <div
+      className="fixed top-0 left-0 right-0 z-40 max-w-md mx-auto glass-card border-b border-border"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
+      <div className="flex items-center justify-between px-5 h-14">
         {isTabRoot ? (
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />

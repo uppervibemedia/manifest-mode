@@ -62,9 +62,8 @@ const AuthenticatedApp = () => {
   return (
     <>
       <MobileHeader />
-      <div className="pt-14">
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/onboarding/future-self" element={<FutureSelfSetup />} />
             <Route path="/onboarding/first-vision" element={<FirstVision />} />
@@ -81,9 +80,8 @@ const AuthenticatedApp = () => {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/blueprint" element={<Blueprint />} />
             <Route path="*" element={<PageNotFound />} />
-          </Routes>
-        </Suspense>
-      </div>
+        </Routes>
+      </Suspense>
     </>
   );
 };

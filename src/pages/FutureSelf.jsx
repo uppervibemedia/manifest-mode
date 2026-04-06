@@ -85,7 +85,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
 
   return (
     <AppLayout>
-      <div className="px-5 pt-6 pb-6">
+      <div className="px-5 pt-4 pb-6">
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Who You're Becoming</p>
         <h1 className="font-playfair text-2xl font-semibold mb-6">Future Self</h1>
 

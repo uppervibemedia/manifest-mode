@@ -57,7 +57,7 @@ export default function Vision() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-6 pb-6">
+      <div className="px-5 pt-4 pb-6">
         <div className="flex items-start justify-between mb-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">The Life You Want</p>

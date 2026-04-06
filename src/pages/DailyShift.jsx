@@ -382,9 +382,10 @@ export default function DailyShift() {
 
   // Show notification prompt after morning intention is saved and hasn't been asked yet
   useEffect(() => {
+    if (!profile) return;
+    
     const shouldShowNotificationPrompt =
       morningSaved &&
-      profile &&
       !profile.notifications_permission_asked &&
       "Notification" in window &&
       Notification.permission === "default";
@@ -392,7 +393,7 @@ export default function DailyShift() {
     if (shouldShowNotificationPrompt) {
       setTimeout(() => setShowNotificationPrompt(true), 1500);
     }
-  }, [morningSaved, profile?.notifications_permission_asked]);
+  }, [morningSaved, profile]);
 
   const handleAllowNotifications = async (settings) => {
     await base44.auth.updateMe(settings);

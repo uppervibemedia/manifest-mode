@@ -7,6 +7,9 @@ export default function MobileHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const isTabRoot = TAB_ROOTS.includes(location.pathname) || location.pathname === '/';
+  const isOnboarding = location.pathname.startsWith('/onboarding');
+
+  if (isOnboarding) return null;
 
   return (
     <div

@@ -358,8 +358,6 @@ export default function DailyShift() {
           ) : null}
         </AnimatePresence>
 
-        <DailyPlan plan={plan} loading={planLoading} />
-
         <MicroActionSuggester userEmail={user?.email} />
 
         {!eveningDone && !eveningSaved && (

@@ -130,7 +130,6 @@ Return ONLY valid JSON:
   if (!alignment) return null;
 
   const steps = [
-    { key: "core_feeling", label: "Feel This Today", value: alignment.core_feeling, icon: "💫" },
     { key: "morning_intention", label: "Morning Intention", value: alignment.morning_intention, icon: "🌅" },
     { key: "midday_reset", label: "Midday Reset", value: alignment.midday_reset, icon: "🔄" },
     { key: "evening_reflection", label: "Evening Reflection", value: alignment.evening_reflection, icon: "🌙" },

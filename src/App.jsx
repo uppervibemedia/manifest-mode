@@ -133,7 +133,7 @@ function NewUserGate() {
     return <Navigate to="/assessment?onboarding=1" replace />;
   }
   
-  return <DailyShift />;
+  return <Navigate to="/daily-shift" replace />;
 }
 
 function App() {

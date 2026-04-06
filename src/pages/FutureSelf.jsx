@@ -14,6 +14,7 @@ export default function FutureSelf() {
   const [analysis, setAnalysis] = useState(null);
   const [activeTab, setActiveTab] = useState("journal"); // "journal" or "coach"
   const [loading, setLoading] = useState(true);
+  const hasCoachAccess = profile?.subscription_tier === "supporter" || profile?.subscription_tier === "premium";
 
   // Coach state
   const [messages, setMessages] = useState([]);

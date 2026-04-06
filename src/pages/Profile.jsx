@@ -141,7 +141,13 @@ export default function Profile() {
               : "You have full access to all Premium features. ✦"}
           </p>
           <button
-            onClick={() => tier === "premium" && profile?.billing_platform === "stripe" ? handleManageBilling() : navigate("/pricing")}
+            onClick={() => {
+              if (tier === "premium" && profile?.billing_platform === "stripe") {
+                handleManageBilling();
+              } else {
+                navigate("/pricing");
+              }
+            }}
             className={`w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
               tier === "premium"
                 ? "bg-card border border-border text-muted-foreground hover:border-primary/20"

@@ -51,21 +51,33 @@ export default function VisionVault() {
     }
   };
 
-  const handleDelete = async (id) => {
-    await base44.entities.VisionItem.update(id, { is_active: false });
+  const handleDelete = (id) => {
+    // Optimistic: remove immediately
     setVisions(prev => prev.filter(v => v.id !== id));
+    base44.entities.VisionItem.update(id, { is_active: false }).catch(() => {
+      // Rollback on failure — reload
+      loadData();
+    });
   };
 
-  const handlePriority = async (vision) => {
+  const handlePriority = (vision) => {
     const updated = { is_priority: !vision.is_priority };
-    await base44.entities.VisionItem.update(vision.id, updated);
+    // Optimistic update
     setVisions(prev => prev.map(v => v.id === vision.id ? { ...v, ...updated } : v));
+    base44.entities.VisionItem.update(vision.id, updated).catch(() => {
+      // Rollback
+      setVisions(prev => prev.map(v => v.id === vision.id ? { ...v, is_priority: vision.is_priority } : v));
+    });
   };
 
-  const handlePin = async (vision) => {
+  const handlePin = (vision) => {
     const updated = { is_pinned: !vision.is_pinned };
-    await base44.entities.VisionItem.update(vision.id, updated);
+    // Optimistic update
     setVisions(prev => prev.map(v => v.id === vision.id ? { ...v, ...updated } : v));
+    base44.entities.VisionItem.update(vision.id, updated).catch(() => {
+      // Rollback
+      setVisions(prev => prev.map(v => v.id === vision.id ? { ...v, is_pinned: vision.is_pinned } : v));
+    });
   };
 
   const tier = profile?.subscription_tier || "free";

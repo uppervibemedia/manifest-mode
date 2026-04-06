@@ -160,22 +160,26 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const handleSave = async () => {
     if (!result) return;
     setSaving(true);
+
+    // Optimistically mark as saved right away for snappy feel
+    setSaved(true);
+    setSaving(false);
+
     const file_url = await uploadResult();
 
     if (vision?.id) {
-      // Store as a proof image AND mark the vision so we know it has an AI-generated image
       const currentProof = vision.proof_images || [];
-      // Prefix ai-generated URLs with a special marker stored in notes
       const aiNotes = vision.notes ? vision.notes : "";
       const aiMarker = `[ai_generated:${file_url}]`;
       const notesUpdated = aiNotes.includes(aiMarker) ? aiNotes : `${aiNotes}\n${aiMarker}`.trim();
-      await base44.entities.VisionItem.update(vision.id, {
+      base44.entities.VisionItem.update(vision.id, {
         proof_images: [...currentProof, file_url],
         notes: notesUpdated,
+      }).then(() => {
+        onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url], notes: notesUpdated });
       });
-      onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url], notes: notesUpdated });
     } else {
-      const newVision = await base44.entities.VisionItem.create({
+      base44.entities.VisionItem.create({
         user_email: userEmail,
         title: "See Me In This Vision",
         category: "lifestyle",
@@ -183,12 +187,10 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         notes: `[ai_generated:${file_url}]`,
         is_active: true,
         progress: 0,
+      }).then((newVision) => {
+        onSave && onSave(newVision);
       });
-      onSave && onSave(newVision);
     }
-
-    setSaved(true);
-    setSaving(false);
   };
 
   const handleDownload = async () => {

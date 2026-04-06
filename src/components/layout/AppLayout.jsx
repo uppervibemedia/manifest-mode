@@ -11,21 +11,12 @@ const NAV_ITEMS = [
   { path: "/profile", icon: User, label: "Profile", id: "profile" },
 ];
 
-// Tab roots — used to detect when a tab's root is active
-const TAB_ROOTS = {
-  shift: "/daily-shift",
-  vision: "/vision",
-  progress: "/progress",
-  future: "/future-self",
-  profile: "/profile",
-};
-
-// Persisted scroll positions across tab switches
+// Persisted scroll positions across tab switches (module-level = survives re-renders)
 const tabScrollPositions = {
   shift: 0, vision: 0, progress: 0, future: 0, profile: 0,
 };
 
-function getTabId(pathname) {
+export function getTabId(pathname) {
   if (pathname === "/" || pathname === "/daily-shift") return "shift";
   if (pathname.startsWith("/vision")) return "vision";
   if (pathname.startsWith("/progress")) return "progress";
@@ -55,12 +46,14 @@ export default function AppLayout({ children }) {
 
     prevTabRef.current = nextTab;
 
-    // Restore incoming tab's scroll on next frame
+    // Restore incoming tab's scroll after paint (double rAF ensures content has rendered)
     if (nextTab) {
       requestAnimationFrame(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = tabScrollPositions[nextTab] ?? 0;
-        }
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollTo({ top: tabScrollPositions[nextTab] ?? 0, behavior: "instant" });
+          }
+        });
       });
     }
   }, [location.pathname]);

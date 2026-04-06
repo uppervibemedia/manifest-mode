@@ -42,11 +42,17 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     if (!form.title) return;
     setSaving(true);
     const data = { ...form, secondary_category: form.secondary_category || "none" };
-    let saved;
+
     if (vision) {
-      saved = await base44.entities.VisionItem.update(vision.id, data);
+      // Optimistic: call onSave immediately with merged data, then confirm with server
+      const optimistic = { ...vision, ...data };
+      onSave(optimistic);
+      base44.entities.VisionItem.update(vision.id, data).catch(() => {
+        // silent — next load will resync
+      });
     } else {
-      saved = await base44.entities.VisionItem.create({
+      // For new items we need a real id — wait for server but close immediately after
+      const saved = await base44.entities.VisionItem.create({
         ...data,
         user_email: userEmail,
         is_active: true,
@@ -54,8 +60,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         action_steps: [],
         proof_images: [],
       });
+      onSave(saved);
     }
-    onSave(saved);
   };
 
   const primaryMeta = getCategoryMeta(form.category);

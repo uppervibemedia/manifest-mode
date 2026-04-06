@@ -15,15 +15,17 @@ import { usePullToRefresh } from "@/lib/usePullToRefresh";
 
 function MorningCheckIn({ userEmail, onSaved, today }) {
   const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ gratitude: "", reflection: null, goal: "" });
 
   const isComplete = form.gratitude.trim() && form.reflection !== null && form.goal.trim();
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!isComplete) return;
-    setSaving(true);
-    await Promise.all([
+    // Optimistic: mark saved immediately
+    setSaved(true);
+    onSaved();
+    // Persist in background
+    Promise.all([
       base44.entities.JournalEntry.create({
         user_email: userEmail,
         title: "Morning Gratitude",
@@ -52,9 +54,6 @@ function MorningCheckIn({ userEmail, onSaved, today }) {
         discipline: 5,
       }),
     ]);
-    setSaved(true);
-    setSaving(false);
-    onSaved();
   };
 
   if (saved) return (
@@ -127,8 +126,8 @@ function MorningCheckIn({ userEmail, onSaved, today }) {
         disabled={!isComplete || saving}
         className="w-full py-3 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-30"
       >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sun className="w-4 h-4" />}
-        {saving ? "Saving..." : "Set Intention"}
+        <Sun className="w-4 h-4" />
+        Set Intention
       </button>
     </motion.div>
   );
@@ -181,20 +180,22 @@ function DailyPlan({ plan, loading }) {
 
 function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
   const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [scores, setScores] = useState({ action: null, identity: null, emotional: null });
 
   const allScored = Object.values(scores).every(s => s !== null);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!allScored) return;
-    setSaving(true);
+    // Optimistic: mark saved immediately
+    setSaved(true);
+    onSaved();
+    // Persist in background
     const items = [
       { key: "action", label: "Did your actions match your goals?" },
       { key: "identity", label: "Did you show up as your future self?" },
       { key: "emotional", label: "Did your emotions match your future life?" },
     ];
-    await Promise.all(
+    Promise.all(
       items.map(item =>
         base44.entities.JournalEntry.create({
           user_email: userEmail,
@@ -206,9 +207,6 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
         })
       )
     );
-    setSaved(true);
-    setSaving(false);
-    onSaved();
   };
 
   if (saved) return (
@@ -273,8 +271,8 @@ function EveningReview({ userEmail, onSaved, reflectionPrompt, today }) {
         disabled={!allScored || saving}
         className="w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-30 border border-purple-400/30 text-purple-400 bg-purple-400/8"
       >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Moon className="w-4 h-4" />}
-        {saving ? "Saving..." : "Complete Review"}
+        <Moon className="w-4 h-4" />
+        Complete Review
       </button>
     </motion.div>
   );

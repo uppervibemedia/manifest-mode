@@ -12,7 +12,7 @@ export default function FutureSelf() {
   const navigate = useNavigate();
   const { user, profile, loading: profileLoading } = useUserProfile();
   const [analysis, setAnalysis] = useState(null);
-  const [activeTab, setActiveTab] = useState("blueprint"); // "blueprint", "journal", or "coach"
+  const [activeTab, setActiveTab] = useState("journal"); // "journal" or "coach"
   const [loading, setLoading] = useState(true);
 
   // Coach state
@@ -107,15 +107,6 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
             {/* Tabs */}
             <div className="flex gap-2 mb-6">
               <button
-                onClick={() => setActiveTab("blueprint")}
-                className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  activeTab === "blueprint"
-                    ? "bg-card text-foreground border border-primary/30"
-                    : "bg-background text-muted-foreground border border-border"
-                }`}>
-                Blueprint
-              </button>
-              <button
                 onClick={() => setActiveTab("journal")}
                 className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
                   activeTab === "journal"
@@ -135,49 +126,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
               </button>
             </div>
 
-            {/* Blueprint Tab */}
             <AnimatePresence mode="wait">
-              {activeTab === "blueprint" && blueprint && (
-                <motion.div key="blueprint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 mb-6">
-                  {/* Your Future Self Is */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="glass-card rounded-2xl p-5 border border-primary/25">
-                    <p className="text-xs uppercase tracking-widest text-primary/70 font-semibold mb-2">Your Future Self Is</p>
-                    <p className="text-sm font-semibold text-foreground leading-relaxed">{blueprint.identity}</p>
-                  </motion.div>
-
-                  {/* How You Think */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                    className="glass-card rounded-2xl p-5 border border-border">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2">How You Think</p>
-                    <p className="text-sm text-foreground/80 leading-relaxed">{blueprint.mindset}</p>
-                  </motion.div>
-
-                  {/* Your Daily Standards */}
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="glass-card rounded-2xl p-5 border border-border">
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2">Your Daily Standards</p>
-                    <p className="text-sm text-foreground/80 leading-relaxed">{blueprint.standards}</p>
-                  </motion.div>
-
-                  {/* Activation Steps */}
-                  {blueprint.activation.length > 0 && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                      className="glass-card rounded-2xl p-5 border border-border">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Next Steps</p>
-                      <div className="space-y-2">
-                        {blueprint.activation.map((step, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <span className="text-xs font-bold text-primary shrink-0 mt-0.5">{i + 1}</span>
-                            <p className="text-sm text-foreground/80 leading-relaxed">{step}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              )}
-
               {/* Journal Tab */}
               {activeTab === "journal" && (
                 <motion.div key="journal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

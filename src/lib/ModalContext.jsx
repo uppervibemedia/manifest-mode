@@ -17,3 +17,6 @@ export function useModalState() {
   if (!ctx) throw new Error("useModalState must be used within ModalProvider");
   return ctx;
 }
+
+// Modal types that hide bottom nav
+export const FULLSCREEN_MODALS = ["see-me-vision", "vision-upload"];

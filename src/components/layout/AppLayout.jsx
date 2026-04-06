@@ -41,10 +41,12 @@ export default function AppLayout({ children }) {
   const containerRef = useRef(null);
   const prevTabRef = useRef(getTabId(location.pathname));
   const { activeFullscreenModal } = useModalState();
-  // Only hide the bottom nav for full-screen AI flows, not every modal
-  const hideNav = activeFullscreenModal === "see-me-vision";
 
   const currentTabId = getTabId(location.pathname);
+  
+  // Hide nav for fullscreen modals
+  const hiddenModals = ["see-me-vision", "vision-upload"];
+  const hideNav = hiddenModals.includes(activeFullscreenModal);
 
   // Track page visits for daily routing
   useEffect(() => {

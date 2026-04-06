@@ -43,8 +43,11 @@ export default function ReminderSettings({ profile, onUpdate }) {
             <span className="text-sm text-foreground">Morning Check-In</span>
           </div>
           <button
+            role="switch"
+            aria-checked={local.morning_reminder_enabled}
+            aria-label="Toggle morning reminder"
             onClick={() => setLocal(l => ({ ...l, morning_reminder_enabled: !l.morning_reminder_enabled }))}
-            className={`w-10 h-5.5 rounded-full relative transition-colors duration-200 flex items-center px-0.5 ${
+            className={`rounded-full relative transition-colors duration-200 flex items-center px-0.5 ${
               local.morning_reminder_enabled ? "bg-primary" : "bg-border"
             }`}
             style={{ width: 40, height: 22 }}
@@ -74,6 +77,9 @@ export default function ReminderSettings({ profile, onUpdate }) {
             <span className="text-sm text-foreground">Evening Review</span>
           </div>
           <button
+            role="switch"
+            aria-checked={local.evening_reminder_enabled}
+            aria-label="Toggle evening reminder"
             onClick={() => setLocal(l => ({ ...l, evening_reminder_enabled: !l.evening_reminder_enabled }))}
             className={`relative rounded-full flex items-center px-0.5 transition-colors duration-200 ${
               local.evening_reminder_enabled ? "bg-purple-400" : "bg-border"

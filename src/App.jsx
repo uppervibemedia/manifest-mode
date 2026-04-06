@@ -1,8 +1,9 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { UserProfileProvider, useUserProfile } from '@/lib/UserProfileContext';
@@ -59,28 +60,41 @@ const AuthenticatedApp = () => {
     }
   }
 
+  const location = useLocation();
+
   return (
     <>
       <MobileHeader />
       <Suspense fallback={<LoadingFallback />}>
-        <Routes>
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/onboarding/future-self" element={<FutureSelfSetup />} />
-            <Route path="/onboarding/first-vision" element={<FirstVision />} />
-            <Route path="/assessment" element={<Assessment />} />
-            <Route path="/" element={<NewUserGate />} />
-            <Route path="/score" element={<ScorePage />} />
-            <Route path="/daily-shift" element={<DailyShift />} />
-            <Route path="/vision" element={<Vision />} />
-            <Route path="/vision-vault" element={<VisionVault />} />
-            <Route path="/vision/add" element={<Vision />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/future-self" element={<FutureSelf />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/blueprint" element={<Blueprint />} />
-            <Route path="*" element={<PageNotFound />} />
-        </Routes>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.18, ease: "easeInOut" }}
+            style={{ minHeight: "100dvh" }}
+          >
+            <Routes location={location}>
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/onboarding/future-self" element={<FutureSelfSetup />} />
+              <Route path="/onboarding/first-vision" element={<FirstVision />} />
+              <Route path="/assessment" element={<Assessment />} />
+              <Route path="/" element={<NewUserGate />} />
+              <Route path="/score" element={<ScorePage />} />
+              <Route path="/daily-shift" element={<DailyShift />} />
+              <Route path="/vision" element={<Vision />} />
+              <Route path="/vision-vault" element={<VisionVault />} />
+              <Route path="/vision/add" element={<Vision />} />
+              <Route path="/progress" element={<Progress />} />
+              <Route path="/future-self" element={<FutureSelf />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/blueprint" element={<Blueprint />} />
+              <Route path="*" element={<PageNotFound />} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
       </Suspense>
     </>
   );

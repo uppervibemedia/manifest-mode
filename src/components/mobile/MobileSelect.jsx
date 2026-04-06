@@ -11,6 +11,9 @@ export default function MobileSelect({ value, onChange, options, label, placehol
       {label && <label className="text-sm font-semibold text-foreground block mb-2">{label}</label>}
       
       <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(true)}
         className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground text-sm font-medium flex items-center justify-between active:bg-card/50 transition-colors min-h-12"
       >
@@ -26,7 +29,8 @@ export default function MobileSelect({ value, onChange, options, label, placehol
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-40 bg-black/50"
+              aria-hidden="true"
             />
             <motion.div
               initial={{ y: '100%' }}
@@ -38,10 +42,13 @@ export default function MobileSelect({ value, onChange, options, label, placehol
               <div className="px-5 py-4">
                 <div className="h-1 w-12 bg-border rounded-full mx-auto mb-4" />
                 <p className="text-sm font-semibold text-foreground mb-4">{label || 'Select an option'}</p>
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                <div role="listbox" aria-label={label || 'Select an option'} className="space-y-2 max-h-[60vh] overflow-y-auto">
                   {options.map(opt => (
                     <button
                       key={opt.value}
+                      role="option"
+                      aria-selected={value === opt.value}
+                      type="button"
                       onClick={() => {
                         onChange(opt.value);
                         setIsOpen(false);

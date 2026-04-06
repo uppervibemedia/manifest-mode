@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
 import { Zap, Image, TrendingUp, User, Sparkles } from "lucide-react";
 import { useModalState } from "@/lib/ModalContext";
@@ -11,7 +11,15 @@ const NAV_ITEMS = [
   { path: "/profile", icon: User, label: "Profile", id: "profile" },
 ];
 
-// Persisted scroll positions across tab switches (module-level = survives re-renders)
+const TAB_ROOTS = {
+  shift: "/daily-shift",
+  vision: "/vision",
+  progress: "/progress",
+  future: "/future-self",
+  profile: "/profile",
+};
+
+// Module-level scroll positions — survive re-renders and tab switches
 const tabScrollPositions = {
   shift: 0, vision: 0, progress: 0, future: 0, profile: 0,
 };
@@ -27,6 +35,7 @@ export function getTabId(pathname) {
 
 export default function AppLayout({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const containerRef = useRef(null);
   const prevTabRef = useRef(getTabId(location.pathname));
   const { activeFullscreenModal } = useModalState();
@@ -46,7 +55,7 @@ export default function AppLayout({ children }) {
 
     prevTabRef.current = nextTab;
 
-    // Restore incoming tab's scroll after paint (double rAF ensures content has rendered)
+    // Restore incoming tab's scroll after paint
     if (nextTab) {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -57,6 +66,17 @@ export default function AppLayout({ children }) {
       });
     }
   }, [location.pathname]);
+
+  const handleTabPress = (id, path) => {
+    if (currentTabId === id) {
+      // Re-tapping active tab: reset to root + scroll to top
+      tabScrollPositions[id] = 0;
+      if (containerRef.current) containerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      if (location.pathname !== TAB_ROOTS[id]) navigate(TAB_ROOTS[id]);
+    } else {
+      navigate(path);
+    }
+  };
 
   return (
     <div
@@ -76,6 +96,8 @@ export default function AppLayout({ children }) {
 
       {!hideNav && (
         <nav
+          role="tablist"
+          aria-label="Main navigation"
           className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 glass-card border-t border-border"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
@@ -83,17 +105,19 @@ export default function AppLayout({ children }) {
             {NAV_ITEMS.map(({ path, icon: Icon, label, id }) => {
               const active = currentTabId === id;
               return (
-                <Link
+                <button
                   key={path}
-                  to={path}
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={label}
+                  onClick={() => handleTabPress(id, path)}
                   className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-12 h-14 justify-center ${
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                   }`}
-                  aria-label={label}
                 >
-                  <Icon className={`w-6 h-6 transition-all ${active ? "scale-110" : ""}`} />
+                  <Icon className={`w-6 h-6 transition-all ${active ? "scale-110" : ""}`} aria-hidden="true" />
                   <span className={`text-[10px] font-medium leading-tight ${active ? "text-primary" : ""}`}>{label}</span>
-                </Link>
+                </button>
               );
             })}
           </div>

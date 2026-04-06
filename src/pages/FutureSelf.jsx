@@ -64,7 +64,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
   };
 
   const tier = profile?.subscription_tier || "free";
-  const hasCoachAccess = tier === "premium" || tier === "supporter";
+  const hasCoachAccess = true;
 
   if (loading || profileLoading) {
     return (

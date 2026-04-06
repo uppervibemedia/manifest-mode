@@ -76,7 +76,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
         {/* Header */}
-        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0 relative z-10 pointer-events-auto bg-card"
+        <div className="px-5 pb-4 border-b border-border flex items-center justify-between sticky top-0 z-20 pointer-events-auto bg-card"
           style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-0.5">

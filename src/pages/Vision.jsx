@@ -7,6 +7,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import SeeMeModal from "@/components/vision/SeeMeModal";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
+import VisionImageViewer from "@/components/vision/VisionImageViewer";
 
 const CATEGORIES = [
   { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
@@ -26,6 +27,7 @@ export default function Vision() {
   const [showSeeMe, setShowSeeMe] = useState(false);
   const [seeMeVision, setSeeMeVision] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [viewerVision, setViewerVision] = useState(null);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -128,7 +130,7 @@ export default function Vision() {
                     exit={{ opacity: 0, scale: 0.92 }}
                     transition={{ delay: i * 0.04 }}
                     className="relative rounded-2xl overflow-hidden group cursor-pointer"
-                    onClick={() => { setSeeMeVision(vision); setShowSeeMe(true); }}
+                    onClick={() => setViewerVision(vision)}
                     style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
 
                     {vision.image_url ? (
@@ -200,6 +202,22 @@ export default function Vision() {
               setVisions(prev => [v, ...prev]);
               setShowUpload(false);
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {viewerVision && (
+          <VisionImageViewer
+            vision={viewerVision}
+            userEmail={user?.email}
+            onClose={() => setViewerVision(null)}
+            onRegenerate={(v) => {
+              setViewerVision(null);
+              setSeeMeVision(v);
+              setShowSeeMe(true);
+            }}
+            onUpdate={(updated) => setVisions(prev => prev.map(v => v.id === updated.id ? updated : v))}
           />
         )}
       </AnimatePresence>

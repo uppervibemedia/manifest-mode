@@ -163,18 +163,24 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     const file_url = await uploadResult();
 
     if (vision?.id) {
+      // Store as a proof image AND mark the vision so we know it has an AI-generated image
       const currentProof = vision.proof_images || [];
+      // Prefix ai-generated URLs with a special marker stored in notes
+      const aiNotes = vision.notes ? vision.notes : "";
+      const aiMarker = `[ai_generated:${file_url}]`;
+      const notesUpdated = aiNotes.includes(aiMarker) ? aiNotes : `${aiNotes}\n${aiMarker}`.trim();
       await base44.entities.VisionItem.update(vision.id, {
         proof_images: [...currentProof, file_url],
+        notes: notesUpdated,
       });
-      onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url] });
+      onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url], notes: notesUpdated });
     } else {
       const newVision = await base44.entities.VisionItem.create({
         user_email: userEmail,
         title: "See Me In This Vision",
         category: "lifestyle",
         image_url: file_url,
-        ai_insight: "Generated via See Me In This Vision",
+        notes: `[ai_generated:${file_url}]`,
         is_active: true,
         progress: 0,
       });

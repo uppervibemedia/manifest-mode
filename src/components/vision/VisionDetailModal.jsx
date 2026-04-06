@@ -5,6 +5,12 @@ import { X, Plus, Trash2, Loader2, Image, Sparkles, Camera, Target } from "lucid
 import { getCategoryMeta } from "@/lib/categories";
 import VisionMilestones from "./VisionMilestones";
 
+function getAiGeneratedUrls(vision) {
+  if (!vision?.notes) return new Set();
+  const matches = vision.notes.matchAll(/\[ai_generated:([^\]]+)\]/g);
+  return new Set([...matches].map(m => m[1]));
+}
+
 export default function VisionDetailModal({ vision, profile, onClose, onUpdate, onGenerateScene }) {
   const meta = getCategoryMeta(vision.category);
   const [progress, setProgress] = useState(vision.progress || 0);
@@ -18,6 +24,7 @@ export default function VisionDetailModal({ vision, profile, onClose, onUpdate, 
   const [dailyAction, setDailyAction] = useState(vision.daily_action || null);
   const [uploadingProof, setUploadingProof] = useState(false);
   const isPremium = profile?.subscription_tier === "premium";
+  const aiGeneratedUrls = getAiGeneratedUrls(vision);
 
   const saveChanges = async (updates) => {
     setSaving(true);
@@ -183,21 +190,21 @@ Return as JSON: { "insight": "...", "daily_action": "..." }`;
             </div>
           </div>
 
-          {/* Future Self Scene (Premium) */}
+          {/* See Me In This Vision — AI Creation (Premium only) */}
           {isPremium && (
             <button
               onClick={() => onGenerateScene?.(vision)}
               className="w-full glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-left hover:border-primary/50 transition-colors flex items-center gap-3"
             >
               <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shrink-0 text-background">
-                <Camera className="w-5 h-5" />
+                <Sparkles className="w-5 h-5" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground">Future Self Scene</p>
-                  <span className="text-[9px] font-bold text-primary bg-primary/20 border border-primary/30 rounded px-1.5 py-0.5">✦ Premium</span>
+                  <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
+                  <span className="text-[9px] font-bold text-background bg-primary rounded-full px-1.5 py-0.5">AI</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">Place yourself in your vision. Upload a photo and generate an aspirational scene.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Place yourself inside this vision using AI. Upload a photo of yourself to begin.</p>
               </div>
             </button>
           )}
@@ -314,18 +321,24 @@ Return as JSON: { "insight": "...", "daily_action": "..." }`;
               <p className="text-xs text-muted-foreground/50 italic">Upload real photos showing your movement toward this vision — your body, bank account, environment. Track your transformation.</p>
             ) : (
               <div className="grid grid-cols-3 gap-2">
-                {proofImages.map((url, i) => (
-                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
-                    <img src={url} alt={`Proof ${i + 1}`} className="w-full h-full object-cover" />
-                    <button onClick={() => removeProof(i)}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X className="w-2.5 h-2.5 text-white" />
-                    </button>
-                    <div className="absolute bottom-1 left-1 text-[9px] text-white/60 bg-black/40 rounded px-1">
-                      #{i + 1}
+                {proofImages.map((url, i) => {
+                  const isAi = aiGeneratedUrls.has(url);
+                  return (
+                    <div key={i} className={`relative aspect-square rounded-xl overflow-hidden group ${isAi ? "ring-1 ring-primary/40" : ""}`}>
+                      <img src={url} alt={`Proof ${i + 1}`} className="w-full h-full object-cover" />
+                      <button onClick={() => removeProof(i)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X className="w-2.5 h-2.5 text-white" />
+                      </button>
+                      <div className="absolute bottom-1 left-1 flex items-center gap-1">
+                        {isAi && (
+                          <span className="text-[8px] font-bold text-background bg-primary rounded px-1 py-0.5">AI</span>
+                        )}
+                        <span className="text-[9px] text-white/60 bg-black/40 rounded px-1">#{i + 1}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

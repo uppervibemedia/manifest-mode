@@ -25,13 +25,12 @@ export default function Profile() {
   const { user, profile, loading: profileLoading, clearProfile, updateProfile } = useUserProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+  const [portalLoading, setPortalLoading] = useState(false);
+
   useEffect(() => {
     if (profileLoading) return;
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
-
-  const [portalLoading, setPortalLoading] = useState(false);
 
   const handleManageBilling = async () => {
     setPortalLoading(true);

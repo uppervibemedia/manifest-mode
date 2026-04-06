@@ -11,25 +11,6 @@ import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";
 import { useScrollContainer } from "@/lib/ScrollContext";
 import { loadShiftStats } from "@/lib/shiftGamification";
 
-function usePullToRefreshSetup(onRefresh) {
-  const scrollContainer = useScrollContainer();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  useEffect(() => {
-    if (!scrollContainer.current) return;
-    const handleWheel = (e) => {
-      if (scrollContainer.current.scrollTop === 0 && e.deltaY < 0) {
-        setIsRefreshing(true);
-        onRefresh().then(() => setIsRefreshing(false));
-      }
-    };
-    scrollContainer.current.addEventListener('wheel', handleWheel);
-    return () => scrollContainer.current?.removeEventListener('wheel', handleWheel);
-  }, [scrollContainer, onRefresh]);
-
-  return { isRefreshing, setIsRefreshing };
-}
-
 export default function Progress() {
   const navigate = useNavigate();
   const { user, loading: profileLoading } = useUserProfile();
@@ -50,7 +31,24 @@ export default function Progress() {
     setLoading(false);
   };
 
-  const { isRefreshing, setIsRefreshing } = usePullToRefreshSetup(loadData);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    try {
+      const scrollContainer = useScrollContainer();
+      if (!scrollContainer.current) return;
+      const handleWheel = (e) => {
+        if (scrollContainer.current.scrollTop === 0 && e.deltaY < 0) {
+          setIsRefreshing(true);
+          loadData().then(() => setIsRefreshing(false));
+        }
+      };
+      scrollContainer.current.addEventListener('wheel', handleWheel);
+      return () => scrollContainer.current?.removeEventListener('wheel', handleWheel);
+    } catch {
+      // ScrollProvider may not be available
+    }
+  }, []);
 
   useEffect(() => {
     if (profileLoading) return;

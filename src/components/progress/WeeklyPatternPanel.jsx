@@ -9,8 +9,26 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [expandedAI, setExpandedAI] = useState(false);
+  const [habitLogs, setHabitLogs] = useState([]);
 
   const canAccessAI = tier === "supporter" || tier === "premium";
+
+  // Fetch habit logs from last 7 days
+  useEffect(() => {
+    if (!userEmail) return;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const dateStr = sevenDaysAgo.toISOString().split('T')[0];
+
+    base44.entities.HabitLog.filter(
+      { user_email: userEmail },
+      "-log_date",
+      100
+    ).then(logs => {
+      const recentLogs = logs.filter(l => l.log_date >= dateStr);
+      setHabitLogs(recentLogs);
+    });
+  }, [userEmail]);
 
   // Generate weekly summary from scores
   useEffect(() => {
@@ -90,26 +108,42 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
         ),
       }));
 
-      const result = await base44.integrations.Core.InvokeLLM({
-       prompt: `You are an elite performance coach analyzing a user's weekly alignment data.
+      // Analyze habit completion patterns
+      const habitStats = habitLogs.reduce((acc, log) => {
+        const category = log.category || 'uncategorized';
+        if (!acc[category]) acc[category] = { total: 0, completed: 0 };
+        acc[category].total++;
+        if (log.completed) acc[category].completed++;
+        return acc;
+      }, {});
 
-      Weekly Stats:
-      - Average Reality Match Score: ${displayData.avgScore}/100
-      - Score Movement: ${displayData.scoreMovement > 0 ? "+" : ""}${displayData.scoreMovement} points
-      - Days Tracked: ${displayData.daysTracked}/7
-      - Strongest Area: ${displayData.strongest.name} (${displayData.strongest.avg})
-      - Weakest Area: ${displayData.weakest.name} (${displayData.weakest.avg})
+      const habitsAnalysis = Object.entries(habitStats)
+        .map(([cat, stats]) => `${cat}: ${stats.completed}/${stats.total} completed`)
+        .join("; ");
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are an elite performance coach analyzing a user's weekly alignment data based on their actual behavior.
+
+Weekly Stats:
+- Average Reality Match Score: ${displayData.avgScore}/100
+- Score Movement: ${displayData.scoreMovement > 0 ? "+" : ""}${displayData.scoreMovement} points
+- Days Tracked: ${displayData.daysTracked}/7
+- Strongest Area: ${displayData.strongest.name} (${displayData.strongest.avg})
+- Weakest Area: ${displayData.weakest.name} (${displayData.weakest.avg})
+
+Weekly Habit Performance:
+${habitsAnalysis || "No habits tracked"}
 
 Category Breakdown:
 ${avgsByCategory.map(c => `- ${c.name}: ${c.avg}`).join("\n")}
 
-Provide a brief, actionable weekly pattern analysis:
-1. "insight": A 1-2 sentence insight about the user's week
-2. "pattern": Why this pattern is happening (what behavior or mindset is driving it)
-3. "recommendation": One specific action to strengthen their weakest area
-4. "nextFocus": What to emphasize next week based on their Future Self identity
+Provide a detailed weekly pattern analysis based on their ACTUAL BEHAVIOR:
+1. "insight": A specific insight about their week based on their habit completion and score patterns
+2. "pattern": Why this pattern is happening - connect their habit behavior to their scores
+3. "recommendation": One specific, actionable habit change based on their weakest area and habit data
+4. "nextFocus": What to emphasize next week based on what worked and what didn't
 
-Keep it personal and motivational. Reference the actual data.
+Be personal, specific to their data, and motivational.
 
 Return ONLY valid JSON:
 {

@@ -157,18 +157,48 @@ Return ONLY valid JSON:
       animate={{ opacity: 1, y: 0 }}
       className="mb-8"
     >
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-          <TrendingUp className="w-4 h-4 text-primary" />
+      {/* Header Box - Clickable when locked */}
+      <motion.button
+        onClick={() => {
+          if (!canAccessAI) {
+            window.location.href = "/pricing";
+          } else if (!aiAnalysis && !loadingAI) {
+            generateAIAnalysis();
+          } else {
+            setExpandedAI(e => !e);
+          }
+        }}
+        className="w-full text-left glass-card rounded-2xl p-5 border border-border hover:border-primary/20 transition-colors mb-4"
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-playfair text-lg font-semibold text-foreground">AI Weekly Pattern Analysis</h3>
+              <p className="text-xs text-muted-foreground">Last 7 days of alignment</p>
+              {!canAccessAI && (
+                <div className="flex items-center gap-2 mt-2">
+                  <Lock className="w-3 h-3 text-muted-foreground/50" />
+                  <span className="text-[9px] text-muted-foreground">Plus feature</span>
+                </div>
+              )}
+            </div>
+          </div>
+          {!canAccessAI && (
+            <span className="text-[11px] font-semibold text-primary border border-primary/30 rounded-full px-2 py-0.5 shrink-0">
+              Unlock
+            </span>
+          )}
+          {canAccessAI && (
+            expandedAI ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
         </div>
-        <div>
-          <h3 className="font-playfair text-lg font-semibold text-foreground">Weekly Pattern Analysis AI</h3>
-          <p className="text-xs text-muted-foreground">Last 7 days of alignment</p>
-        </div>
-      </div>
+      </motion.button>
 
-      {/* AI Pattern Analysis (Plus+ unlock) */}
-      {canAccessAI ? (
+      {/* AI Analysis Content (Plus+ only) */}
+      {canAccessAI && (
         <AnimatePresence>
           {expandedAI && (
             <motion.div
@@ -221,23 +251,6 @@ Return ONLY valid JSON:
             </motion.div>
           )}
         </AnimatePresence>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={() => window.location.href = "/pricing"}
-          className="w-full flex items-center justify-between px-4 py-3 glass-card border border-border rounded-xl hover:border-primary/20 transition-colors mb-4 cursor-pointer"
-        >
-          <div className="flex items-center gap-2.5">
-            <Lock className="w-4 h-4 text-muted-foreground/50" />
-            <div className="text-left">
-              <p className="text-[9px] text-muted-foreground">Plus feature</p>
-            </div>
-          </div>
-          <span className="text-[11px] font-semibold text-primary border border-primary/30 rounded-full px-2 py-0.5">
-            Unlock
-          </span>
-        </motion.div>
       )}
 
       {/* Strongest & Needs Focus (all users) */}

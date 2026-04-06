@@ -6,6 +6,7 @@ import { getLocalToday } from "@/lib/dateUtils";
 
 const CACHE_KEY_PREFIX = "emotion-alignment-";
 const COMPLETION_KEY_PREFIX = "emotion-completed-";
+const ALIGNMENT_SESSION_KEY = "emotion-alignment-session-"; // Prevent refetching within same session
 
 // Time windows in local hours (24h)
 // Morning: 3:00 – 11:59
@@ -61,14 +62,21 @@ export default function MicroActionSuggester({ userEmail }) {
   }, [today]);
 
   useEffect(() => {
-    if (userEmail) loadAlignment();
-  }, [userEmail]);
+    if (userEmail) {
+      // Only fetch if not already fetched in this session for this day
+      const sessionKey = `${ALIGNMENT_SESSION_KEY}${today}`;
+      if (!sessionStorage.getItem(sessionKey)) {
+        loadAlignment();
+        sessionStorage.setItem(sessionKey, "1");
+      }
+    }
+  }, [userEmail, today]);
 
   const loadAlignment = async () => {
     setLoading(true);
     try {
       const cacheKey = `${CACHE_KEY_PREFIX}${today}`;
-      const cached = sessionStorage.getItem(cacheKey);
+      const cached = localStorage.getItem(cacheKey);
       if (cached) {
         setAlignment(JSON.parse(cached));
         setLoading(false);
@@ -148,7 +156,7 @@ Return ONLY valid JSON:
       });
 
       if (result) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(result));
+        localStorage.setItem(cacheKey, JSON.stringify(result));
         setAlignment(result);
       }
     } catch (e) {

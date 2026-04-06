@@ -12,6 +12,7 @@ import { ModalProvider, useModalState } from '@/lib/ModalContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import MobileHeader from '@/components/mobile/MobileHeader';
 import AppLayout from '@/components/layout/AppLayout';
+import { useFirstAppOfDay } from '@/lib/useFirstAppOfDay';
 
 // Lazy load pages for code splitting
 const DailyShift = lazy(() => import('./pages/DailyShift'));
@@ -118,8 +119,10 @@ const AuthenticatedApp = () => {
 };
 
 // Redirects new users (onboarding not complete) to assessment, otherwise to daily-shift
+// Also handles first-app-of-day routing to Daily Shift
 function NewUserGate() {
   const { user, profile, loading } = useUserProfile();
+  useFirstAppOfDay(user, loading);
   
   if (loading) return null;
   

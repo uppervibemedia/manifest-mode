@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -17,23 +18,30 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [shiftStats, setShiftStats] = useState(null);
 
+  const loadData = async () => {
+    if (!user || profileLoading) return;
+    const [data, stats] = await Promise.all([
+      base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20),
+      loadShiftStats(user.email),
+    ]);
+    setScores(data);
+    setLatest(data[0] || null);
+    setShiftStats(stats);
+    setLoading(false);
+  };
+
+  const { containerRef, setIsRefreshing } = usePullToRefresh(async () => {
+    await loadData();
+    setIsRefreshing(false);
+  });
+
   useEffect(() => {
     if (profileLoading) return;
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
 
   useEffect(() => {
-    (async () => {
-      if (!user || profileLoading) return;
-      const [data, stats] = await Promise.all([
-        base44.entities.ScoreHistory.filter({ user_email: user.email }, "-created_date", 20),
-        loadShiftStats(user.email),
-      ]);
-      setScores(data);
-      setLatest(data[0] || null);
-      setShiftStats(stats);
-      setLoading(false);
-    })();
+    loadData();
   }, [user?.email, profileLoading]);
 
   if (loading || profileLoading) {
@@ -70,7 +78,7 @@ export default function Progress() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-4 pb-6">
+      <div ref={containerRef} className="px-5 pt-4 pb-6">
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Your Alignment</p>
         <h1 className="font-playfair text-2xl font-semibold mb-8">Reality Match Score</h1>
 

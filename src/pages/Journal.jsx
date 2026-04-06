@@ -5,6 +5,7 @@ import { Plus, ChevronLeft, Loader2, BookOpen } from "lucide-react";
 import { getLevelForPoints, POINT_VALUES } from "@/lib/identityEngine";
 import AppLayout from "@/components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
 
 const PROMPTS = [
   "What about your vision matters most to you right now?",
@@ -26,12 +27,23 @@ export default function Journal() {
   const [form, setForm] = useState({ prompt_question: "", response_text: "", title: "" });
   const [selectedPrompt, setSelectedPrompt] = useState(null);
 
+  const loadEntries = async (u) => {
+    const currentUser = u || user;
+    if (!currentUser) return;
+    const e = await base44.entities.JournalEntry.filter({ user_email: currentUser.email }, "-created_date", 20);
+    setEntries(e);
+  };
+
+  const { containerRef, setIsRefreshing } = usePullToRefresh(async () => {
+    await loadEntries();
+    setIsRefreshing(false);
+  });
+
   useEffect(() => {
     (async () => {
       const u = await base44.auth.me();
       setUser(u);
-      const e = await base44.entities.JournalEntry.filter({ user_email: u.email }, "-created_date", 20);
-      setEntries(e);
+      await loadEntries(u);
       setLoading(false);
     })();
   }, []);
@@ -72,7 +84,7 @@ export default function Journal() {
 
   return (
     <AppLayout>
-      <div className="px-5 pt-12 pb-6">
+      <div ref={containerRef} className="px-5 pt-12 pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Reflection</p>

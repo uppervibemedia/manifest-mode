@@ -176,7 +176,10 @@ Return ONLY valid JSON:
               <TrendingUp className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h3 className="font-playfair text-lg font-semibold text-foreground">AI Weekly Pattern Analysis</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-playfair text-lg font-semibold text-foreground">Weekly Pattern Analysis</h3>
+                <span className="text-[9px] uppercase tracking-widest font-bold text-primary bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5">AI</span>
+              </div>
               <p className="text-xs text-muted-foreground">Last 7 days of alignment</p>
               {!canAccessAI && (
                 <div className="flex items-center gap-2 mt-2">

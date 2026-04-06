@@ -334,20 +334,17 @@ export default function DailyShift() {
   };
 
   useEffect(() => {
-    try {
-      const scrollContainer = useScrollContainer();
-      if (!scrollContainer.current) return;
-      const { cleanupPullToRefresh } = usePullToRefresh(
-        scrollContainer.current,
-        async () => {
-          await loadData();
-          setIsRefreshing(false);
-        }
-      );
-      return cleanupPullToRefresh;
-    } catch {
-      // ScrollProvider may not be available in this context
-    }
+    const scrollContainer = useScrollContainer();
+    if (!scrollContainer?.current) return;
+    
+    const { cleanupPullToRefresh } = usePullToRefresh(
+      scrollContainer.current,
+      async () => {
+        await loadData();
+        setIsRefreshing(false);
+      }
+    );
+    return cleanupPullToRefresh;
   }, [loadData]);
 
   useEffect(() => {

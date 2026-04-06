@@ -10,7 +10,7 @@ export default function MobileHeader() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-40 max-w-md mx-auto glass-card border-b border-border"
+      className="fixed top-0 left-0 right-0 z-[60] max-w-md mx-auto glass-card border-b border-border"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="flex items-center justify-between px-5 h-14">

@@ -230,8 +230,8 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col h-screen md:h-auto md:rounded-2xl"
-        style={{ maxHeight: "100dvh" }}
+        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col md:h-auto md:rounded-2xl"
+        style={{ height: "100dvh", maxHeight: "100dvh" }}
       >
         {/* Header */}
         <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0"

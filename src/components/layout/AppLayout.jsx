@@ -39,7 +39,8 @@ export default function AppLayout({ children }) {
   const containerRef = useRef(null);
   const prevTabRef = useRef(getTabId(location.pathname));
   const { activeFullscreenModal } = useModalState();
-  const hideNav = !!activeFullscreenModal;
+  // Only hide the bottom nav for full-screen AI flows, not every modal
+  const hideNav = activeFullscreenModal === "see-me-vision";
 
   const currentTabId = getTabId(location.pathname);
 
@@ -98,7 +99,7 @@ export default function AppLayout({ children }) {
         <nav
           role="tablist"
           aria-label="Main navigation"
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 glass-card border-t border-border"
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-[60] glass-card border-t border-border"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
           <div className="flex items-center justify-around px-2 py-3">

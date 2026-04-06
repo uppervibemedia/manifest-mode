@@ -89,7 +89,7 @@ export default function AppLayout({ children }) {
         className="flex-1 overflow-y-auto"
         style={{
           paddingTop: "calc(3.5rem + env(safe-area-inset-top, 0px))",
-          paddingBottom: hideNav ? "0px" : "calc(5rem + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: hideNav ? "0px" : "calc(6rem + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {children}
@@ -100,9 +100,8 @@ export default function AppLayout({ children }) {
           role="tablist"
           aria-label="Main navigation"
           className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-[60] glass-card border-t border-border"
-          style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
-          <div className="flex items-center justify-around px-2 py-3">
+          <div className="flex items-center justify-around px-2 py-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}>
             {NAV_ITEMS.map(({ path, icon: Icon, label, id }) => {
               const active = currentTabId === id;
               return (

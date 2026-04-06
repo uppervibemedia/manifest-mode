@@ -6,6 +6,7 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import { LogOut, Crown, ChevronRight, Zap, ExternalLink, Loader2, AlertTriangle } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import ReminderSettings from "@/components/profile/ReminderSettings";
+import { clearUserSessionState } from "@/lib/sessionStateManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +46,7 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
+    clearUserSessionState();
     clearProfile();
     base44.auth.logout();
   };

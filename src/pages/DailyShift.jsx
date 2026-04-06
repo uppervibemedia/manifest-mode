@@ -16,6 +16,16 @@ import { usePullToRefresh } from "@/lib/usePullToRefresh";
 function MorningCheckIn({ userEmail, onSaved, today }) {
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({ gratitude: "", reflection: null, goal: "" });
+  const [localUserEmail, setLocalUserEmail] = useState(userEmail);
+
+  // Reset form when user changes
+  useEffect(() => {
+    if (userEmail && userEmail !== localUserEmail) {
+      setLocalUserEmail(userEmail);
+      setSaved(false);
+      setForm({ gratitude: "", reflection: null, goal: "" });
+    }
+  }, [userEmail, localUserEmail]);
 
   const isComplete = form.gratitude.trim() && form.reflection !== null && form.goal.trim();
 
@@ -291,6 +301,7 @@ export default function DailyShift() {
   const [morningSaved, setMorningSaved] = useState(false);
   const [eveningSaved, setEveningSaved] = useState(false);
   const [reflectionPrompt, setReflectionPrompt] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
 
   const { containerRef, isRefreshing, setIsRefreshing } = usePullToRefresh(async () => {
     await loadData();
@@ -320,6 +331,17 @@ export default function DailyShift() {
     if (profileLoading) return;
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
+
+  // Detect user change and reset Morning Intention state
+  useEffect(() => {
+    if (user?.email && user.email !== currentUserEmail) {
+      setCurrentUserEmail(user.email);
+      setMorningSaved(false); // Reset Morning Intention for new user
+      setMorningDone(false);
+      setEveningSaved(false);
+      setEveningDone(false);
+    }
+  }, [user?.email, currentUserEmail]);
 
   useEffect(() => {
     loadData();

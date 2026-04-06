@@ -199,29 +199,10 @@ function buildStableHabits(analysis, profile) {
 // ─── Main: get or build today's shift ────────────────────────────────────────
 
 export async function getTodaysShift(userEmail, today) {
-  const [plans, analyses, profiles, scores, recentCheckins, eveningJournals] = await Promise.all([
-    base44.entities.DailyShiftPlan.filter({ user_email: userEmail, plan_date: today }),
-    base44.entities.AIAnalysis.filter({ user_email: userEmail }, "-created_date", 1),
-    base44.entities.UserProfile.filter({ user_email: userEmail }),
-    base44.entities.ScoreHistory.filter({ user_email: userEmail }, "-created_date", 2),
-    base44.entities.DailyCheckIn.filter({ user_email: userEmail }, "-created_date", 1),
-    base44.entities.JournalEntry.filter({ user_email: userEmail, entry_type: "checkin" }, "-created_date", 12),
-  ]);
+  // Check for today's plan first — if it exists and is fresh, return early without extra calls
+  const plans = await base44.entities.DailyShiftPlan.filter({ user_email: userEmail, plan_date: today });
 
-  const analysis = analyses[0] || null;
-  const profile = profiles[0] || null;
-  const latestScore = scores[0]?.overall_score || null;
-
-  // Parse recent evening scores (action/identity/emotional checkin entries with "Score: X/5")
-  const recentEveningScores = eveningJournals
-    .filter(e => e.category === "action" && e.response_text?.startsWith("Score:"))
-    .map(e => parseInt(e.response_text.replace("Score:", "").trim()))
-    .filter(n => !isNaN(n))
-    .slice(0, 5);
-
-  const lastCheckinDate = recentCheckins[0]?.checkin_date || null;
-
-  // ── Dynamic layer: always fresh, deterministic per day ──
+  // ── Dynamic layer: deterministic per day, no API needed ──
   const mi = dailyIndex(userEmail, today, MINDSET_FOCUSES.length);
   const ai = dailyIndex(userEmail + "a", today, AFFIRMATIONS.length);
   const aci = dailyIndex(userEmail + "ac", today, ACTION_CHALLENGES.length);
@@ -236,25 +217,44 @@ export async function getTodaysShift(userEmail, today) {
     reflection_prompt: EVENING_REFLECTIONS[eri],
   };
 
-  // ── If we already have today's plan, just update the dynamic fields ──
   if (plans[0]) {
     const existing = plans[0];
-    // Update dynamic fields if they differ (they should change each day)
     const needsUpdate =
       existing.mindset_focus !== dynamicLayer.mindset_focus ||
       existing.affirmation !== dynamicLayer.affirmation;
 
     if (needsUpdate) {
-      const updated = await base44.entities.DailyShiftPlan.update(existing.id, dynamicLayer);
+      base44.entities.DailyShiftPlan.update(existing.id, dynamicLayer); // fire-and-forget
       return { ...existing, ...dynamicLayer };
     }
     return existing;
   }
 
+  // No plan for today — fetch only what's needed to build one
+  const [analyses, profiles, scores, recentCheckins, eveningJournals] = await Promise.all([
+    base44.entities.AIAnalysis.filter({ user_email: userEmail }, "-created_date", 1),
+    base44.entities.UserProfile.filter({ user_email: userEmail }),
+    base44.entities.ScoreHistory.filter({ user_email: userEmail }, "-created_date", 2),
+    base44.entities.DailyCheckIn.filter({ user_email: userEmail }, "-created_date", 1),
+    base44.entities.JournalEntry.filter({ user_email: userEmail, entry_type: "checkin" }, "-created_date", 12),
+  ]);
+
+  const analysis = analyses[0] || null;
+  const profile = profiles[0] || null;
+  const latestScore = scores[0]?.overall_score || null;
+
+  const recentEveningScores = eveningJournals
+    .filter(e => e.category === "action" && e.response_text?.startsWith("Score:"))
+    .map(e => parseInt(e.response_text.replace("Score:", "").trim()))
+    .filter(n => !isNaN(n))
+    .slice(0, 5);
+
+  const lastCheckinDate = recentCheckins[0]?.checkin_date || null;
+
   // ── Build stable habits layer ──
-  // Look for most recent plan to reuse habits if still valid
+  // Fetch recent plans to reuse habits if still valid
   const recentPlans = await base44.entities.DailyShiftPlan.filter({ user_email: userEmail }, "-created_date", 3);
-  const lastPlan = recentPlans[0] || null;
+  const lastPlan = recentPlans.find(p => p.plan_date !== today) || recentPlans[0] || null;
 
   const storedScore = lastPlan?.habits?.length ? (scores[1]?.overall_score || latestScore) : null;
   const storedFocus = lastPlan?.mindset_focus; // not the focus, but we use it as proxy for last plan date

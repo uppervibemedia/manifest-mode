@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, ChevronRight } from "lucide-react";
+import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useModalState } from "@/lib/ModalContext";
 
@@ -94,6 +94,9 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [setAsFocus, setSetAsFocus] = useState(false);
+  const [savedFileUrl, setSavedFileUrl] = useState(null);
   const [step, setStep] = useState(1); // 1=setup, 2=result
 
   // Hide bottom nav when modal opens
@@ -144,29 +147,34 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     setGenerating(false);
   };
 
-  const handleSave = async () => {
-    if (!result) return;
-    setSaving(true);
-    // Upload result to permanent storage
+  // Upload once and reuse the permanent URL
+  const uploadResult = async () => {
+    if (savedFileUrl) return savedFileUrl;
     const blob = await fetch(result).then(r => r.blob());
     const file = new File([blob], "see-me-vision.jpg", { type: "image/jpeg" });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setSavedFileUrl(file_url);
+    return file_url;
+  };
+
+  const handleSave = async () => {
+    if (!result) return;
+    setSaving(true);
+    const file_url = await uploadResult();
 
     if (vision?.id) {
-      // Add to proof_images of existing vision
       const currentProof = vision.proof_images || [];
       await base44.entities.VisionItem.update(vision.id, {
         proof_images: [...currentProof, file_url],
       });
       onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url] });
     } else {
-      // Create a new vision item
       const newVision = await base44.entities.VisionItem.create({
         user_email: userEmail,
         title: "See Me In This Vision",
         category: "lifestyle",
         image_url: file_url,
-        proof_images: [result],
+        ai_insight: "Generated via See Me In This Vision",
         is_active: true,
         progress: 0,
       });
@@ -175,6 +183,29 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
 
     setSaved(true);
     setSaving(false);
+  };
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    const blob = await fetch(result).then(r => r.blob());
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "manifest-mode-vision.jpg";
+    a.click();
+    URL.revokeObjectURL(url);
+    setDownloading(false);
+  };
+
+  const handleSetAsFocus = async () => {
+    if (!vision?.id || setAsFocus) return;
+    const file_url = await uploadResult();
+    await base44.entities.VisionItem.update(vision.id, {
+      image_url: file_url,
+      is_priority: true,
+    });
+    onSave && onSave({ ...vision, image_url: file_url, is_priority: true });
+    setSetAsFocus(true);
   };
 
   return (
@@ -336,7 +367,9 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         )}
 
         {step === 2 && result && (
-          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2">
+          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2.5">
+
+            {/* Primary: Save to Vision Vault */}
             {saved ? (
               <div className="w-full py-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400" />
@@ -344,15 +377,41 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
               </div>
             ) : (
               <button onClick={handleSave} disabled={saving}
-                className="w-full py-3.5 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+                className="w-full py-3.5 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
                 {saving ? "Saving…" : "Save to Vision Vault"}
               </button>
             )}
 
+            {/* Secondary row: Download + Set as Focus */}
+            <div className="flex gap-2">
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="flex-1 py-3 rounded-xl border border-border bg-background text-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/40 transition-colors text-sm disabled:opacity-50">
+                {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {downloading ? "…" : "Download"}
+              </button>
+
+              {vision?.id && (
+                <button
+                  onClick={handleSetAsFocus}
+                  disabled={setAsFocus || saving}
+                  className={`flex-1 py-3 rounded-xl border font-semibold flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-50 ${
+                    setAsFocus
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary/40"
+                  }`}>
+                  {setAsFocus ? <Check className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+                  {setAsFocus ? "Set ✦" : "Set as Focus"}
+                </button>
+              )}
+            </div>
+
+            {/* Tertiary: Regenerate */}
             <button
-              onClick={() => { setStep(1); setResult(null); setSaved(false); }}
-              className="w-full py-3.5 rounded-xl border border-border text-muted-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/30 transition-colors text-sm">
+              onClick={() => { setStep(1); setResult(null); setSaved(false); setSetAsFocus(false); setSavedFileUrl(null); }}
+              className="w-full py-3 rounded-xl border border-border/60 text-muted-foreground font-medium flex items-center justify-center gap-2 hover:border-primary/20 transition-colors text-sm">
               <RefreshCw className="w-4 h-4" /> Regenerate
             </button>
           </div>

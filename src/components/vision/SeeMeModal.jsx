@@ -229,10 +229,11 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col h-screen md:h-auto md:rounded-2xl"
-        style={{ maxHeight: "100vh" }}
+        style={{ maxHeight: "100dvh" }}
       >
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between shrink-0">
+        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0"
+          style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <Sparkles className="w-4 h-4 text-primary" />

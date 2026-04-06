@@ -60,10 +60,11 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
         transition={{ type: "spring", damping: 28, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col"
-        style={{ maxHeight: "92vh" }}
+        style={{ maxHeight: "92dvh" }}
       >
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between shrink-0">
+        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0"
+          style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-base">{meta.icon}</span>

@@ -41,6 +41,8 @@ function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange })
     const file = e.target.files?.[0];
     if (!file) return;
     onChange(file);
+    // Reset input so same file can be selected again
+    e.target.value = null;
   };
 
   const handleDrop = (e) => {
@@ -154,19 +156,23 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     }
   };
 
-  const handleCropSave = (croppedUrl) => {
-    if (cropType === "vision") {
-      setVisionPreview(croppedUrl);
-      fetch(croppedUrl)
-        .then(r => r.blob())
-        .then(blob => setVisionFile(new File([blob], "vision.jpg", { type: "image/jpeg" })));
-    } else if (cropType === "self") {
-      setSelfPreview(croppedUrl);
-      fetch(croppedUrl)
-        .then(r => r.blob())
-        .then(blob => setSelfFile(new File([blob], "self.jpg", { type: "image/jpeg" })));
+  const handleCropSave = async (croppedUrl) => {
+    try {
+      if (cropType === "vision") {
+        setVisionPreview(croppedUrl);
+        const blob = await fetch(croppedUrl).then(r => r.blob());
+        setVisionFile(new File([blob], "vision.jpg", { type: "image/jpeg" }));
+      } else if (cropType === "self") {
+        setSelfPreview(croppedUrl);
+        const blob = await fetch(croppedUrl).then(r => r.blob());
+        setSelfFile(new File([blob], "self.jpg", { type: "image/jpeg" }));
+      }
+    } catch (error) {
+      console.error('Crop save error:', error);
+    } finally {
+      setShowCropTool(false);
+      setCropType(null);
     }
-    setShowCropTool(false);
   };
 
   const canGenerate = (visionPreview || visionFile) && selfFile;
@@ -286,6 +292,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                 setSelfFile(null);
                 setSelfPreview(null);
               }
+              setCropType(null);
             }}
           />
         )}

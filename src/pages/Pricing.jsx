@@ -7,6 +7,8 @@ import AppLayout from "@/components/layout/AppLayout";
 import { base44 } from "@/api/base44Client";
 import { PLAN_LABELS } from "@/lib/subscriptionEngine";
 import AppStorePaymentNotice from "@/components/payments/AppStorePaymentNotice";
+import RevenueCatPaywall from "@/components/payments/RevenueCatPaywall";
+import { isIOSNative } from "@/lib/platform";
 
 const PLANS = [
   {
@@ -129,6 +131,7 @@ export default function Pricing() {
   const currentTier = profile?.subscription_tier || "free";
   const hasPaidPlan = currentTier !== "free";
   const billingPlatform = profile?.billing_platform || "none";
+  const iosNative = isIOSNative();
 
   const getDisplayPrice = (plan) => {
     if (!plan.monthlyPrice) return { main: "$0", sub: "forever free" };
@@ -200,9 +203,6 @@ export default function Pricing() {
         <h1 className="font-playfair text-2xl font-semibold mb-2">Choose Your Plan</h1>
         <p className="text-sm text-muted-foreground mb-7">Invest in the version of yourself you're becoming.</p>
 
-        {/* App Store compliance notice (iOS WebView only) */}
-        <AppStorePaymentNotice />
-
         {/* Post-checkout banners */}
         {justSucceeded && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -254,32 +254,41 @@ export default function Pricing() {
           </motion.div>
         )}
 
-        {/* Billing Toggle */}
-        <div className="flex items-center justify-center mb-7">
-          <div className="flex bg-card border border-border rounded-xl p-1 gap-1">
-            <button
-              onClick={() => setBilling("monthly")}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                billing === "monthly" ? "bg-secondary text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBilling("annual")}
-              className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                billing === "annual" ? "gold-gradient text-background" : "text-muted-foreground"
-              }`}
-            >
-              Annual
-              <span className={`text-[9px] font-bold rounded-full px-1.5 py-0.5 ${
-                billing === "annual" ? "bg-background/20 text-background" : "bg-emerald-400/15 text-emerald-400"
-              }`}>
-                BEST VALUE
-              </span>
-            </button>
+        {/* ── iOS: RevenueCat paywall (or fallback notice if bridge missing) ── */}
+        {iosNative && (
+          <>
+            <AppStorePaymentNotice />
+            <RevenueCatPaywall onPurchased={() => refetch()} />
+          </>
+        )}
+
+        {/* ── Web: Stripe billing toggle + plan cards ── */}
+        {!iosNative && <>
+          <div className="flex items-center justify-center mb-7">
+            <div className="flex bg-card border border-border rounded-xl p-1 gap-1">
+              <button
+                onClick={() => setBilling("monthly")}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  billing === "monthly" ? "bg-secondary text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBilling("annual")}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
+                  billing === "annual" ? "gold-gradient text-background" : "text-muted-foreground"
+                }`}
+              >
+                Annual
+                <span className={`text-[9px] font-bold rounded-full px-1.5 py-0.5 ${
+                  billing === "annual" ? "bg-background/20 text-background" : "bg-emerald-400/15 text-emerald-400"
+                }`}>
+                  BEST VALUE
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Plan Cards */}
         <div className="space-y-4 mb-8">
@@ -426,10 +435,11 @@ export default function Pricing() {
           })}
         </div>
 
-        <div className="text-center space-y-1.5">
-          <p className="text-[11px] text-muted-foreground">Cancel anytime · No hidden fees</p>
-          <p className="text-[11px] text-muted-foreground">Annual plans billed once per year · Powered by Stripe</p>
-        </div>
+          <div className="text-center space-y-1.5">
+            <p className="text-[11px] text-muted-foreground">Cancel anytime · No hidden fees</p>
+            <p className="text-[11px] text-muted-foreground">Annual plans billed once per year · Powered by Stripe</p>
+          </div>
+        </>}
       </div>
     </AppLayout>
   );

@@ -34,14 +34,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const container = containerRef.current || canvas.parentElement;
-    const containerWidth = container?.offsetWidth || 400;
+    // Get actual rendered width from container, fallback to window width
+    const container = containerRef.current;
+    const containerWidth = container?.offsetWidth || window.innerWidth - 40;
     const containerHeight = (containerWidth * 4) / 3;
 
     canvas.width = containerWidth;
     canvas.height = containerHeight;
 
-    // Clear canvas
+    // Clear with semi-transparent overlay
     ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
     ctx.fillRect(0, 0, containerWidth, containerHeight);
 
@@ -50,19 +51,22 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     const scaledHeight = image.height * crop.scale;
 
     // Draw image centered with crop offset
+    const offsetX = (containerWidth - scaledWidth) / 2;
+    const offsetY = (containerHeight - scaledHeight) / 2;
+
     ctx.drawImage(
       image,
       crop.x,
       crop.y,
       image.width,
       image.height,
-      (containerWidth - scaledWidth) / 2,
-      (containerHeight - scaledHeight) / 2,
+      offsetX,
+      offsetY,
       scaledWidth,
       scaledHeight
     );
 
-    // Draw crop frame
+    // Draw golden crop frame border
     ctx.strokeStyle = "rgba(212, 175, 55, 0.8)";
     ctx.lineWidth = 3;
     ctx.strokeRect(0, 0, containerWidth, containerHeight);
@@ -111,8 +115,8 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const handleSave = () => {
     if (!image || !canvasRef.current) return;
 
-    const container = containerRef.current || canvasRef.current.parentElement;
-    const containerWidth = container?.offsetWidth || 400;
+    const container = containerRef.current;
+    const containerWidth = container?.offsetWidth || window.innerWidth - 40;
     const containerHeight = (containerWidth * 4) / 3;
 
     const croppedCanvas = document.createElement("canvas");
@@ -122,6 +126,8 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
 
     const scaledWidth = image.width * crop.scale;
     const scaledHeight = image.height * crop.scale;
+    const offsetX = (containerWidth - scaledWidth) / 2;
+    const offsetY = (containerHeight - scaledHeight) / 2;
 
     croppedCtx.fillStyle = "rgba(0, 0, 0, 0.3)";
     croppedCtx.fillRect(0, 0, containerWidth, containerHeight);
@@ -132,8 +138,8 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       crop.y,
       image.width,
       image.height,
-      (containerWidth - scaledWidth) / 2,
-      (containerHeight - scaledHeight) / 2,
+      offsetX,
+      offsetY,
       scaledWidth,
       scaledHeight
     );

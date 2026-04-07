@@ -48,9 +48,19 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
           bottom: top + cropHeight,
         });
 
-        // Fit image at 1:1 scale initially
-        setZoomScale(1);
-        setImageOffset({ x: 0, y: 0 });
+        // Scale image to fit within crop box
+        const scaleX = cropWidth / img.width;
+        const scaleY = cropHeight / img.height;
+        const fitScale = Math.min(scaleX, scaleY);
+        
+        // Center the scaled image in the crop box
+        const scaledWidth = img.width * fitScale;
+        const scaledHeight = img.height * fitScale;
+        const offsetX = left + (cropWidth - scaledWidth) / 2;
+        const offsetY = top + (cropHeight - scaledHeight) / 2;
+
+        setZoomScale(fitScale);
+        setImageOffset({ x: offsetX, y: offsetY });
       }
     };
     img.onerror = () => console.error("Failed to load image");

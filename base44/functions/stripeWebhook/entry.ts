@@ -66,14 +66,17 @@ Deno.serve(async (req) => {
         const userEmail = subscription.metadata?.user_email;
         if (!userEmail) break;
 
-        const planId = subscription.metadata?.plan_id;
+        // planId from metadata; fall back to price nickname or product lookup
+        const planId = subscription.metadata?.plan_id || resolvePlanFromPrice(subscription.items.data[0]?.price);
         const interval = subscription.items.data[0]?.price?.recurring?.interval;
         const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+        const tier = resolveTier(planId);
 
-        // Handle cancellation scheduled at period end
+        // Handle cancellation scheduled at period end — keep current tier active
         if (subscription.cancel_at_period_end) {
-          // Keep tier active until period ends — just note cancellation pending
           await updateUserSubscription(base44, userEmail, {
+            subscription_tier: tier,
+            billing_cycle: resolveBillingCycle(interval),
             renewal_date: renewalDate,
             stripe_subscription_id: subscription.id,
           });
@@ -89,10 +92,11 @@ Deno.serve(async (req) => {
           : null;
 
         await updateUserSubscription(base44, userEmail, {
-          subscription_tier: isActive ? resolveTier(planId) : 'free',
+          subscription_tier: isActive ? tier : 'free',
           billing_cycle: isActive ? resolveBillingCycle(interval) : 'monthly',
           renewal_date: renewalDate,
           stripe_subscription_id: subscription.id,
+          billing_platform: isActive ? 'stripe' : 'none',
           // Clear trial_ends_at when subscription becomes active (trial converted)
           trial_ends_at: isTrialing ? trialEndsAt : null,
         });
@@ -151,4 +155,17 @@ async function updateUserSubscription(base44, userEmail, updates) {
   const profiles = await base44.asServiceRole.entities.UserProfile.filter({ user_email: userEmail });
   if (!profiles[0]) return;
   await base44.asServiceRole.entities.UserProfile.update(profiles[0].id, updates);
+}
+
+// Fallback: derive plan_id from price nickname if metadata is missing
+function resolvePlanFromPrice(price) {
+  if (!price) return null;
+  const nickname = (price.nickname || '').toLowerCase();
+  if (nickname.includes('premium')) return 'premium';
+  if (nickname.includes('plus') || nickname.includes('supporter')) return 'supporter';
+  // Also check lookup_key
+  const key = (price.lookup_key || '').toLowerCase();
+  if (key.includes('premium')) return 'premium';
+  if (key.includes('plus') || key.includes('supporter')) return 'supporter';
+  return null;
 }

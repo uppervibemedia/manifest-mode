@@ -22,7 +22,7 @@ const TIER_COLORS = { free: "text-muted-foreground", supporter: "text-blue-400",
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, profile, loading: profileLoading, clearProfile, updateProfile } = useUserProfile();
+  const { user, profile, loading: profileLoading, clearProfile, updateProfile, refetch } = useUserProfile();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -32,11 +32,21 @@ export default function Profile() {
     if (!user) navigate("/");
   }, [user, profileLoading, navigate]);
 
+  // Refetch profile when returning from Stripe portal
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("from_portal") === "1") {
+      const t1 = setTimeout(() => refetch(), 1500);
+      const t2 = setTimeout(() => refetch(), 4000);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, []);
+
   const handleManageBilling = async () => {
     setPortalLoading(true);
     try {
       const res = await base44.functions.invoke("stripePortal", {
-        return_url: `${window.location.origin}/profile`,
+        return_url: `${window.location.origin}/profile?from_portal=1`,
       });
       if (res.data?.url) window.location.href = res.data.url;
     } finally {
@@ -142,19 +152,19 @@ export default function Profile() {
           </p>
           <button
             onClick={() => {
-              if (tier === "premium" && profile?.billing_platform === "stripe") {
+              if (tier !== "free" && profile?.billing_platform === "stripe") {
                 handleManageBilling();
               } else {
                 navigate("/pricing");
               }
             }}
             className={`w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
-              tier === "premium"
+              tier !== "free" && profile?.billing_platform === "stripe"
                 ? "bg-card border border-border text-muted-foreground hover:border-primary/20"
                 : "gold-gradient text-background"
             }`}
           >
-            {tier === "premium" ? (
+            {tier !== "free" && profile?.billing_platform === "stripe" ? (
               portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ExternalLink className="w-4 h-4" /> Manage Subscription</>
             ) : (
               <><Zap className="w-4 h-4" /> {tier === "free" ? "View Plans & Upgrade" : "Upgrade to Premium"}</>

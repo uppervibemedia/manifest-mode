@@ -232,11 +232,15 @@ export default function Pricing() {
               <p className="text-sm font-semibold text-foreground">
                 {PLAN_LABELS[currentTier]} · {profile?.billing_cycle === "annual" ? "Annual" : "Monthly"}
               </p>
-              {profile?.renewal_date && (
+              {profile?.trial_ends_at && new Date(profile.trial_ends_at) > new Date() ? (
+                <p className="text-xs text-blue-400 mt-0.5">
+                  Free trial ends {new Date(profile.trial_ends_at).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}
+                </p>
+              ) : profile?.renewal_date ? (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Renews {new Date(profile.renewal_date).toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
-              )}
+              ) : null}
             </div>
             <button onClick={handleManage} disabled={portalLoading}
               className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/10 transition-colors disabled:opacity-50">
@@ -304,6 +308,14 @@ export default function Pricing() {
                   <div className="px-5 py-2.5 bg-primary/8 flex items-center gap-2">
                     <Crown className="w-3.5 h-3.5 text-primary shrink-0" />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Featured Plan</span>
+                  </div>
+                )}
+                {isPlus && isCurrent && profile?.trial_ends_at && (
+                  <div className="px-5 py-2.5 bg-blue-400/10 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">
+                      Trial ends {new Date(profile.trial_ends_at).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                    </span>
                   </div>
                 )}
                 {!isCurrent && isPlus && (

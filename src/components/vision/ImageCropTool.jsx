@@ -6,15 +6,16 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const containerRef = useRef(null);
   const cropContainerRef = useRef(null);
   const imageRef = useRef(null);
+  
   const [image, setImage] = useState(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [imageScale, setImageScale] = useState(1);
   const [cropBox, setCropBox] = useState({ width: 0, height: 0 });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isDraggingEdge, setIsDraggingEdge] = useState(null);
-  const [isDraggingImageEdge, setIsDraggingImageEdge] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const lastTouchDistanceRef = useRef(0);
+  const initialStateRef = useRef({ scale: 1, x: 0, y: 0 });
 
   // Load image and set initial state
   useEffect(() => {
@@ -24,25 +25,23 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       imageRef.current = img;
       setImage(img);
 
-      // Calculate initial crop box size (portrait by default, responsive)
       const container = containerRef.current;
       if (container) {
         const padding = 40;
         const maxWidth = container.offsetWidth - padding;
-        const maxHeight = container.offsetHeight - 180; // Account for header/footer
+        const maxHeight = container.offsetHeight - 180;
 
-        // Crop box is portrait-oriented
         const cropWidth = Math.min(maxWidth, 300);
         const cropHeight = Math.min(maxHeight, 400);
-
         setCropBox({ width: cropWidth, height: cropHeight });
 
-        // Calculate initial image scale to fit inside crop box nicely
+        // Scale image to fit crop box nicely
         const scaleX = cropWidth / img.width;
         const scaleY = cropHeight / img.height;
-        const initialScale = Math.min(scaleX, scaleY) * 1.1; // Slightly zoomed for better composition
+        const initialScale = Math.min(scaleX, scaleY) * 1.1;
 
         setImageScale(initialScale);
+        initialStateRef.current = { scale: initialScale, x: 0, y: 0 };
         setImagePosition({ x: 0, y: 0 });
       }
     };
@@ -50,18 +49,20 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     img.src = imageUrl;
   }, [imageUrl]);
 
-  // Lock body scroll while crop tool is open
+  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
     return () => {
       document.body.style.overflow = "";
+      document.body.style.touchAction = "";
     };
   }, []);
 
-  // Handle image drag
-  const handleImagePointerDown = (e) => {
-    // Only allow left mouse button or touch
+  // Image drag handler
+  const handleImageDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
+    if (isDraggingEdge) return;
     
     const touch = e.touches?.[0];
     const clientX = touch?.clientX || e.clientX;
@@ -71,16 +72,16 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     setDragStart({ x: clientX - imagePosition.x, y: clientY - imagePosition.y });
   };
 
-  // Handle all pointer movement
+  // Unified pointer move handler
   const handlePointerMove = (e) => {
-    if (!isDraggingImage && !isDraggingEdge && !isDraggingImageEdge) return;
-
+    if (!isDraggingImage && !isDraggingEdge) return;
     e.preventDefault();
 
     const touch = e.touches?.[0];
     const clientX = touch?.clientX || e.clientX;
     const clientY = touch?.clientY || e.clientY;
 
+    // Handle image drag
     if (isDraggingImage) {
       setImagePosition({
         x: clientX - dragStart.x,
@@ -89,92 +90,46 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       return;
     }
 
-    if (isDraggingImageEdge) {
-      const deltaX = clientX - dragStart.x;
-      const deltaY = clientY - dragStart.y;
-
-      switch (isDraggingImageEdge) {
-        case "right":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + deltaX * 0.01)));
-          break;
-        case "left":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev - deltaX * 0.01)));
-          break;
-        case "bottom":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + deltaY * 0.01)));
-          break;
-        case "top":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev - deltaY * 0.01)));
-          break;
-        case "bottom-right":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + (deltaX + deltaY) * 0.005)));
-          break;
-        case "bottom-left":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + (deltaY - deltaX) * 0.005)));
-          break;
-        case "top-right":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + (deltaX - deltaY) * 0.005)));
-          break;
-        case "top-left":
-          setImageScale((prev) => Math.max(0.5, Math.min(4, prev - (deltaX + deltaY) * 0.005)));
-          break;
-      }
-
-      setDragStart({ x: clientX, y: clientY });
-      return;
-    }
-
+    // Handle crop frame edge resize
     if (isDraggingEdge) {
       const deltaX = clientX - dragStart.x;
       const deltaY = clientY - dragStart.y;
       const minSize = 150;
 
+      const newBox = { ...cropBox };
+
       switch (isDraggingEdge) {
         case "right":
-          setCropBox((prev) => ({ ...prev, width: Math.max(minSize, prev.width + deltaX) }));
+          newBox.width = Math.max(minSize, cropBox.width + deltaX);
           break;
         case "bottom":
-          setCropBox((prev) => ({ ...prev, height: Math.max(minSize, prev.height + deltaY) }));
+          newBox.height = Math.max(minSize, cropBox.height + deltaY);
           break;
         case "left":
-          setCropBox((prev) => ({
-            ...prev,
-            width: Math.max(minSize, prev.width - deltaX),
-          }));
+          newBox.width = Math.max(minSize, cropBox.width - deltaX);
           setImagePosition((prev) => ({ ...prev, x: prev.x + deltaX }));
           break;
         case "top":
-          setCropBox((prev) => ({
-            ...prev,
-            height: Math.max(minSize, prev.height - deltaY),
-          }));
+          newBox.height = Math.max(minSize, cropBox.height - deltaY);
           setImagePosition((prev) => ({ ...prev, y: prev.y + deltaY }));
           break;
         case "bottom-right":
-          setCropBox((prev) => ({
-            width: Math.max(minSize, prev.width + deltaX),
-            height: Math.max(minSize, prev.height + deltaY),
-          }));
+          newBox.width = Math.max(minSize, cropBox.width + deltaX);
+          newBox.height = Math.max(minSize, cropBox.height + deltaY);
           break;
         case "bottom-left":
-          setCropBox((prev) => ({
-            width: Math.max(minSize, prev.width - deltaX),
-            height: Math.max(minSize, prev.height + deltaY),
-          }));
+          newBox.width = Math.max(minSize, cropBox.width - deltaX);
+          newBox.height = Math.max(minSize, cropBox.height + deltaY);
           setImagePosition((prev) => ({ ...prev, x: prev.x + deltaX }));
           break;
         case "top-right":
-          setCropBox((prev) => ({
-            width: Math.max(minSize, prev.width + deltaX),
-            height: Math.max(minSize, prev.height - deltaY),
-          }));
+          newBox.width = Math.max(minSize, cropBox.width + deltaX);
+          newBox.height = Math.max(minSize, cropBox.height - deltaY);
           setImagePosition((prev) => ({ ...prev, y: prev.y + deltaY }));
           break;
         case "top-left":
-          setCropBox((prev) => ({
-            width: Math.max(minSize, prev.width - deltaX),
-            height: Math.max(minSize, prev.height - deltaY),
-          }));
+          newBox.width = Math.max(minSize, cropBox.width - deltaX);
+          newBox.height = Math.max(minSize, cropBox.height - deltaY);
           setImagePosition((prev) => ({
             x: prev.x + deltaX,
             y: prev.y + deltaY,
@@ -182,6 +137,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
           break;
       }
 
+      setCropBox(newBox);
       setDragStart({ x: clientX, y: clientY });
     }
   };
@@ -189,14 +145,12 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const handlePointerUp = () => {
     setIsDraggingImage(false);
     setIsDraggingEdge(null);
-    setIsDraggingImageEdge(null);
     lastTouchDistanceRef.current = 0;
   };
 
-  // Handle touch events with gesture prevention
+  // Touch start with pinch detection
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
-      // Pinch gesture
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.hypot(
@@ -205,14 +159,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       );
       lastTouchDistanceRef.current = distance;
     } else if (e.touches.length === 1) {
-      // Single touch drag
-      handleImagePointerDown(e);
+      handleImageDown(e);
     }
   };
 
+  // Touch move with pinch and drag
   const handleTouchMove = (e) => {
-    e.preventDefault(); // Prevent page scroll
-    
+    e.preventDefault();
+
     if (e.touches.length === 2) {
       // Pinch zoom
       const touch1 = e.touches[0];
@@ -229,7 +183,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
 
       lastTouchDistanceRef.current = distance;
     } else if (e.touches.length === 1) {
-      // Single touch drag
+      // Single touch drag or edge resize
       handlePointerMove(e);
     }
   };
@@ -271,18 +225,13 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
 
   // Reset to initial state
   const handleReset = () => {
-    if (!image || !cropBox.width) return;
-
-    const scaleX = cropBox.width / image.width;
-    const scaleY = cropBox.height / image.height;
-    const initialScale = Math.min(scaleX, scaleY) * 1.1;
-
-    setImageScale(initialScale);
+    if (!image) return;
+    setImageScale(initialStateRef.current.scale);
     setImagePosition({ x: 0, y: 0 });
   };
 
-  // Crop frame resize handle
-  const Handle = ({ position, cursor }) => (
+  // Crop frame edge handle
+  const CropHandle = ({ position, cursor }) => (
     <div
       onMouseDown={(e) => {
         e.preventDefault();
@@ -297,46 +246,16 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         const touch = e.touches[0];
         setDragStart({ x: touch.clientX, y: touch.clientY });
       }}
-      className={`absolute ${cursor} touch-none z-10`}
+      className={`absolute ${cursor} touch-none z-20`}
       style={{
-        ...(position === "top" && { top: -10, left: 0, right: 0, height: 20 }),
-        ...(position === "bottom" && { bottom: -10, left: 0, right: 0, height: 20 }),
-        ...(position === "left" && { left: -10, top: 0, bottom: 0, width: 20 }),
-        ...(position === "right" && { right: -10, top: 0, bottom: 0, width: 20 }),
-        ...(position === "top-left" && { top: -10, left: -10, width: 30, height: 30 }),
-        ...(position === "top-right" && { top: -10, right: -10, width: 30, height: 30 }),
-        ...(position === "bottom-left" && { bottom: -10, left: -10, width: 30, height: 30 }),
-        ...(position === "bottom-right" && { bottom: -10, right: -10, width: 30, height: 30 }),
-      }}
-    />
-  );
-
-  // Image edge handle for zooming
-  const ImageEdgeHandle = ({ position, cursor }) => (
-    <div
-      onMouseDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingImageEdge(position);
-        setDragStart({ x: e.clientX, y: e.clientY });
-      }}
-      onTouchStart={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingImageEdge(position);
-        const touch = e.touches[0];
-        setDragStart({ x: touch.clientX, y: touch.clientY });
-      }}
-      className={`absolute ${cursor} touch-none z-5`}
-      style={{
-        ...(position === "top" && { top: 0, left: 0, right: 0, height: 16 }),
-        ...(position === "bottom" && { bottom: 0, left: 0, right: 0, height: 16 }),
-        ...(position === "left" && { left: 0, top: 0, bottom: 0, width: 16 }),
-        ...(position === "right" && { right: 0, top: 0, bottom: 0, width: 16 }),
-        ...(position === "top-left" && { top: 0, left: 0, width: 24, height: 24 }),
-        ...(position === "top-right" && { top: 0, right: 0, width: 24, height: 24 }),
-        ...(position === "bottom-left" && { bottom: 0, left: 0, width: 24, height: 24 }),
-        ...(position === "bottom-right" && { bottom: 0, right: 0, width: 24, height: 24 }),
+        ...(position === "top" && { top: -12, left: 0, right: 0, height: 24 }),
+        ...(position === "bottom" && { bottom: -12, left: 0, right: 0, height: 24 }),
+        ...(position === "left" && { left: -12, top: 0, bottom: 0, width: 24 }),
+        ...(position === "right" && { right: -12, top: 0, bottom: 0, width: 24 }),
+        ...(position === "top-left" && { top: -12, left: -12, width: 32, height: 32 }),
+        ...(position === "top-right" && { top: -12, right: -12, width: 32, height: 32 }),
+        ...(position === "bottom-left" && { bottom: -12, left: -12, width: 32, height: 32 }),
+        ...(position === "bottom-right" && { bottom: -12, right: -12, width: 32, height: 32 }),
       }}
     />
   );
@@ -347,6 +266,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/95 z-[9999] flex flex-col select-none"
+      style={{ touchAction: "none" }}
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}
       onMouseLeave={handlePointerUp}
@@ -386,12 +306,12 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
                 overflow: "hidden",
                 boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
               }}
-              onPointerDown={handleImagePointerDown}
+              onPointerDown={handleImageDown}
               onTouchStart={handleTouchStart}
             >
               {/* Image Container */}
               <div
-                className="absolute inset-0"
+                className="absolute inset-0 cursor-grab active:cursor-grabbing"
                 style={{
                   transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
                   touchAction: "none",
@@ -408,6 +328,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
                     transform: `scale(${imageScale})`,
                     transformOrigin: "0 0",
                     willChange: "transform",
+                    userSelect: "none",
                   }}
                 />
               </div>
@@ -456,24 +377,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
               </div>
 
               {/* Crop Frame Resize Handles */}
-              <Handle position="top" cursor="cursor-ns-resize" />
-              <Handle position="bottom" cursor="cursor-ns-resize" />
-              <Handle position="left" cursor="cursor-ew-resize" />
-              <Handle position="right" cursor="cursor-ew-resize" />
-              <Handle position="top-left" cursor="cursor-nwse-resize" />
-              <Handle position="top-right" cursor="cursor-nesw-resize" />
-              <Handle position="bottom-left" cursor="cursor-nesw-resize" />
-              <Handle position="bottom-right" cursor="cursor-nwse-resize" />
-
-              {/* Image Edge Zoom Handles */}
-              <ImageEdgeHandle position="top" cursor="cursor-ns-resize" />
-              <ImageEdgeHandle position="bottom" cursor="cursor-ns-resize" />
-              <ImageEdgeHandle position="left" cursor="cursor-ew-resize" />
-              <ImageEdgeHandle position="right" cursor="cursor-ew-resize" />
-              <ImageEdgeHandle position="top-left" cursor="cursor-nwse-resize" />
-              <ImageEdgeHandle position="top-right" cursor="cursor-nesw-resize" />
-              <ImageEdgeHandle position="bottom-left" cursor="cursor-nesw-resize" />
-              <ImageEdgeHandle position="bottom-right" cursor="cursor-nwse-resize" />
+              <CropHandle position="top" cursor="cursor-ns-resize" />
+              <CropHandle position="bottom" cursor="cursor-ns-resize" />
+              <CropHandle position="left" cursor="cursor-ew-resize" />
+              <CropHandle position="right" cursor="cursor-ew-resize" />
+              <CropHandle position="top-left" cursor="cursor-nwse-resize" />
+              <CropHandle position="top-right" cursor="cursor-nesw-resize" />
+              <CropHandle position="bottom-left" cursor="cursor-nesw-resize" />
+              <CropHandle position="bottom-right" cursor="cursor-nwse-resize" />
             </div>
           </>
         ) : (

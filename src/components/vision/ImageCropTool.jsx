@@ -37,28 +37,22 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     canvas.width = containerWidth;
     canvas.height = containerHeight;
 
-    // Clear canvas
-    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     // Calculate scaled image dimensions
     const scaledWidth = image.width * crop.scale;
     const scaledHeight = image.height * crop.scale;
 
-    // Draw image with crop
-    ctx.save();
+    // Draw image with positioning (source crop coordinates map to canvas)
     ctx.drawImage(
       image,
       crop.x,
       crop.y,
+      image.width,
+      image.height,
+      0,
+      0,
       scaledWidth,
-      scaledHeight,
-      0,
-      0,
-      containerWidth,
-      containerHeight
+      scaledHeight
     );
-    ctx.restore();
 
     // Draw crop frame
     ctx.strokeStyle = "rgba(212, 175, 55, 0.6)";
@@ -106,10 +100,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const handleSave = async () => {
     if (!image || !canvasRef.current) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    const containerWidth = canvas.parentElement.offsetWidth;
+    const containerWidth = canvasRef.current.parentElement.offsetWidth;
     const containerHeight = (containerWidth * 4) / 3;
 
     // Create a new canvas with the cropped image
@@ -125,12 +116,12 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       image,
       crop.x,
       crop.y,
+      image.width,
+      image.height,
+      0,
+      0,
       scaledWidth,
-      scaledHeight,
-      0,
-      0,
-      containerWidth,
-      containerHeight
+      scaledHeight
     );
 
     // Convert to blob and call onSave

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ChevronRight, Sparkles, Eye, Brain, BarChart3, Zap, Star, Crown, Check } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
+import NotificationOptIn from "@/components/onboarding/NotificationOptIn";
 
 const SLIDES = [
   {
@@ -40,7 +41,7 @@ const UPSELL_FEATURES = [
 ];
 
 export default function Onboarding() {
-  const [step, setStep] = useState(0); // 0=slides, 1=categories, 2=upsell
+  const [step, setStep] = useState(0); // 0=slides, 1=categories, 2=notifications, 3=upsell
   const [slideIndex, setSlideIndex] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -196,6 +197,13 @@ export default function Onboarding() {
         )}
 
         {step === 2 && (
+          <NotificationOptIn
+            onContinue={() => setStep(3)}
+            onSkip={() => setStep(3)}
+          />
+        )}
+
+        {step === 3 && (
           <motion.div
             key="upsell"
             initial={{ opacity: 0, y: 30 }}

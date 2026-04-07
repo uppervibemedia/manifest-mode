@@ -197,10 +197,10 @@ export default function Profile() {
         {/* Legal links */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
           className="flex justify-center gap-6 py-2 mb-2">
-          <a href="https://manifestmode.app/privacy" target="_blank" rel="noopener noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
-          <a href="https://manifestmode.app/terms" target="_blank" rel="noopener noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Use</a>
+          <button onClick={() => navigate("/privacy")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</button>
+          <button onClick={() => navigate("/terms")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Use</button>
         </motion.div>
 
         {/* Delete Account */}

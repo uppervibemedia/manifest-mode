@@ -28,6 +28,8 @@ const Pricing = lazy(() => import('./pages/Pricing'));
 const FutureSelfSetup = lazy(() => import('./pages/onboarding/FutureSelfSetup'));
 const FirstVision = lazy(() => import('./pages/onboarding/FirstVision'));
 const Blueprint = lazy(() => import('./pages/Blueprint'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfUse = lazy(() => import('./pages/TermsOfUse'));
 
 const LoadingFallback = () => (
   <AppLayout>
@@ -108,6 +110,8 @@ const AuthenticatedApp = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/blueprint" element={<Blueprint />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfUse />} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </motion.div>

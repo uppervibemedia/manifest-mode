@@ -41,9 +41,10 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     setUploading(false);
   };
 
-  const handleCropSave = (croppedUrl) => {
+  const handleCropSave = (croppedUrl, metadata) => {
     setForm(prev => ({ ...prev, image_url: croppedUrl }));
     setShowCropTool(false);
+    // Metadata is available if needed (cropTop, cropLeft, cropRight, cropBottom, zoomScale, imageOffsetX, imageOffsetY)
   };
 
   const handleCropSkip = () => {

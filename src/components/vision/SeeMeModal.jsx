@@ -34,7 +34,7 @@ function buildPrompt(sceneOption, visionTitle, category) {
   return `Create a photorealistic, aspirational portrait of a person ${sceneDesc} ${visionTitle || "their dream vision"}. The scene should feel ${categoryContext}. The composition should be cinematic, with rich colors, perfect natural lighting, and an emotionally powerful mood that makes the viewer feel they have already achieved this. The image should look like a genuine photograph, not a composite. Premium, magazine-quality, aspirational lifestyle photography.`;
 }
 
-function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange }) {
+function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange, onImageLoad }) {
   const inputRef = useRef();
 
   const handleChange = async (e) => {
@@ -63,7 +63,7 @@ function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange })
       >
         {preview ? (
           <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
-            <img src={preview} alt={label} className="w-full h-full object-cover pointer-events-none" />
+            <img src={preview} alt={label} className="w-full h-full object-cover pointer-events-none" onLoad={onImageLoad} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <button
@@ -101,6 +101,8 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [selfFile, setSelfFile] = useState(null);
   const [visionPreview, setVisionPreview] = useState(vision?.image_url || null);
   const [selfPreview, setSelfPreview] = useState(null);
+  const [visionImageLoaded, setVisionImageLoaded] = useState(false);
+  const [selfImageLoaded, setSelfImageLoaded] = useState(false);
   const [scene, setScene] = useState("standing_front");
   const [result, setResult] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -122,19 +124,30 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [uploadingVision, setUploadingVision] = useState(false);
   const [uploadingSelf, setUploadingSelf] = useState(false);
 
+  // When vision preview is set, wait for image to load before allowing crop
+  const handleVisionImageLoad = () => {
+    setVisionImageLoaded(true);
+  };
+
+  // When self preview is set, wait for image to load before allowing crop
+  const handleSelfImageLoad = () => {
+    setSelfImageLoaded(true);
+  };
+
   const handleVisionFile = async (file) => {
     try {
       setUploadingVision(true);
-      const res = await base44.integrations.Core.UploadFile({ file });
-      const file_url = res?.file_url || res?.url;
-      if (!file_url) throw new Error('No file URL in response');
-      setVisionPreview(file_url);
+      // Store raw file immediately
       setVisionFile(file);
+      // Create local preview URL from file
+      const previewUrl = URL.createObjectURL(file);
+      setVisionPreview(previewUrl);
+      // Reset image loaded state - will be set to true when image tag fires onLoad
+      setVisionImageLoaded(false);
+      // Set crop type but do NOT open crop modal yet - wait for onLoad
       setCropType("vision");
-      setShowCropTool(true);
     } catch (error) {
-      console.error('Vision upload error:', error);
-    } finally {
+      console.error('Vision file selection error:', error);
       setUploadingVision(false);
     }
   };
@@ -142,28 +155,46 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const handleSelfFile = async (file) => {
     try {
       setUploadingSelf(true);
-      const res = await base44.integrations.Core.UploadFile({ file });
-      const file_url = res?.file_url || res?.url;
-      if (!file_url) throw new Error('No file URL in response');
-      setSelfPreview(file_url);
+      // Store raw file immediately
       setSelfFile(file);
+      // Create local preview URL from file
+      const previewUrl = URL.createObjectURL(file);
+      setSelfPreview(previewUrl);
+      // Reset image loaded state - will be set to true when image tag fires onLoad
+      setSelfImageLoaded(false);
+      // Set crop type but do NOT open crop modal yet - wait for onLoad
       setCropType("self");
-      setShowCropTool(true);
     } catch (error) {
-      console.error('Self upload error:', error);
-    } finally {
+      console.error('Self file selection error:', error);
       setUploadingSelf(false);
     }
   };
+
+  // Effect: open crop modal only when the image is fully loaded
+  useEffect(() => {
+    if (cropType === "vision" && visionImageLoaded && visionPreview) {
+      setShowCropTool(true);
+      setUploadingVision(false);
+    }
+  }, [cropType, visionImageLoaded, visionPreview]);
+
+  useEffect(() => {
+    if (cropType === "self" && selfImageLoaded && selfPreview) {
+      setShowCropTool(true);
+      setUploadingSelf(false);
+    }
+  }, [cropType, selfImageLoaded, selfPreview]);
 
   const handleCropSave = async (croppedUrl) => {
     try {
       if (cropType === "vision") {
         setVisionPreview(croppedUrl);
+        setVisionImageLoaded(true);
         const blob = await fetch(croppedUrl).then(r => r.blob());
         setVisionFile(new File([blob], "vision.jpg", { type: "image/jpeg" }));
       } else if (cropType === "self") {
         setSelfPreview(croppedUrl);
+        setSelfImageLoaded(true);
         const blob = await fetch(croppedUrl).then(r => r.blob());
         setSelfFile(new File([blob], "self.jpg", { type: "image/jpeg" }));
       }
@@ -348,6 +379,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                       onChange={handleVisionFile}
                       preview={visionPreview}
                       uploading={uploadingVision}
+                      onImageLoad={handleVisionImageLoad}
                       onCrop={() => {
                         setCropType("vision");
                         setShowCropTool(true);
@@ -363,6 +395,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                       onChange={handleSelfFile}
                       preview={selfPreview}
                       uploading={uploadingSelf}
+                      onImageLoad={handleSelfImageLoad}
                       onCrop={() => {
                         setCropType("self");
                         setShowCropTool(true);

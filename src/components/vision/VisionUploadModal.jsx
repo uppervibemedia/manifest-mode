@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { X, Upload, Loader2, Star } from "lucide-react";
+import { X, Upload, Loader2, Star, Crop } from "lucide-react";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useModalState } from "@/lib/ModalContext";
+import ImageCropTool from "@/components/vision/ImageCropTool";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 
@@ -22,6 +23,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showCropTool, setShowCropTool] = useState(false);
 
   // Hide bottom nav when modal opens
   useEffect(() => {
@@ -35,7 +37,17 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setForm(prev => ({ ...prev, image_url: file_url }));
+    setShowCropTool(true);
     setUploading(false);
+  };
+
+  const handleCropSave = (croppedUrl) => {
+    setForm(prev => ({ ...prev, image_url: croppedUrl }));
+    setShowCropTool(false);
+  };
+
+  const handleCropSkip = () => {
+    setShowCropTool(false);
   };
 
   const handleSave = async () => {
@@ -67,13 +79,28 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   const primaryMeta = getCategoryMeta(form.category);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-end justify-center"
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 26, stiffness: 300 }}
-        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col md:rounded-2xl"
-        style={{ height: "100dvh", maxHeight: "100dvh" }}>
+    <>
+      <AnimatePresence>
+        {showCropTool && form.image_url && (
+          <ImageCropTool
+            imageUrl={form.image_url}
+            onSave={handleCropSave}
+            onCancel={() => {
+              setShowCropTool(false);
+              setForm(prev => ({ ...prev, image_url: "" }));
+            }}
+            onSkip={handleCropSkip}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-end justify-center"
+        onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 26, stiffness: 300 }}
+          className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col md:rounded-2xl"
+          style={{ height: "100dvh", maxHeight: "100dvh" }}>
 
         {/* Header */}
         <div className="px-5 pb-4 border-b border-border flex items-start justify-between gap-4 shrink-0"
@@ -97,9 +124,22 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
             form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
           }`}>
             {form.image_url ? (
-              <div className="relative w-full h-full">
+              <div className="relative w-full h-full group">
                 <img src={form.image_url} alt="Vision" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowCropTool(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
+                  >
+                    <Crop className="w-3.5 h-3.5" />
+                    Crop Image
+                  </button>
+                </div>
                 <p className="absolute bottom-2 left-3 text-[10px] text-white/70">Tap to change</p>
               </div>
             ) : (
@@ -112,7 +152,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
             )}
           </div>
           <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-        </label>
+          </label>
 
           {/* Priority toggle */}
           <div className="flex items-center justify-between glass-card border border-border rounded-xl px-4 py-3 mb-5">
@@ -217,6 +257,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </button>
         </div>
       </motion.div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }

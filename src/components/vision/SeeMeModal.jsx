@@ -121,23 +121,37 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [uploadingSelf, setUploadingSelf] = useState(false);
 
   const handleVisionFile = async (file) => {
-    setUploadingVision(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setVisionPreview(file_url);
-    setVisionFile(file);
-    setCropType("vision");
-    setShowCropTool(true);
-    setUploadingVision(false);
+    try {
+      setUploadingVision(true);
+      const res = await base44.integrations.Core.UploadFile({ file });
+      const file_url = res?.file_url || res?.url;
+      if (!file_url) throw new Error('No file URL in response');
+      setVisionPreview(file_url);
+      setVisionFile(file);
+      setCropType("vision");
+      setShowCropTool(true);
+    } catch (error) {
+      console.error('Vision upload error:', error);
+    } finally {
+      setUploadingVision(false);
+    }
   };
 
   const handleSelfFile = async (file) => {
-    setUploadingSelf(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setSelfPreview(file_url);
-    setSelfFile(file);
-    setCropType("self");
-    setShowCropTool(true);
-    setUploadingSelf(false);
+    try {
+      setUploadingSelf(true);
+      const res = await base44.integrations.Core.UploadFile({ file });
+      const file_url = res?.file_url || res?.url;
+      if (!file_url) throw new Error('No file URL in response');
+      setSelfPreview(file_url);
+      setSelfFile(file);
+      setCropType("self");
+      setShowCropTool(true);
+    } catch (error) {
+      console.error('Self upload error:', error);
+    } finally {
+      setUploadingSelf(false);
+    }
   };
 
   const handleCropSave = (croppedUrl) => {

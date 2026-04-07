@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon } from "lucide-react";
+import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useModalState } from "@/lib/ModalContext";
+import ImageCropTool from "@/components/vision/ImageCropTool";
 
 const SCENE_OPTIONS = [
   { id: "standing_front", label: "Standing in front", icon: "🧍" },
@@ -65,9 +66,9 @@ function UploadZone({ label, hint, onFile, preview, icon }) {
       {preview ? (
         <>
           <img src={preview} alt={label} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
             <div className="text-center text-white">
-              <Upload className="w-5 h-5 mx-auto mb-1" />
+              <Upload className="w-4 h-4 mx-auto mb-1" />
               <p className="text-xs font-medium">Change</p>
             </div>
           </div>
@@ -98,6 +99,8 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [setAsFocus, setSetAsFocus] = useState(false);
   const [savedFileUrl, setSavedFileUrl] = useState(null);
   const [step, setStep] = useState(1); // 1=setup, 2=result
+  const [showCropTool, setShowCropTool] = useState(false);
+  const [cropType, setCropType] = useState(null); // "vision" or "self"
 
   // Hide bottom nav when modal opens
   useEffect(() => {
@@ -108,11 +111,31 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const handleVisionFile = (file) => {
     setVisionFile(file);
     setVisionPreview(URL.createObjectURL(file));
+    setCropType("vision");
+    setShowCropTool(true);
   };
 
   const handleSelfFile = (file) => {
     setSelfFile(file);
     setSelfPreview(URL.createObjectURL(file));
+    setCropType("self");
+    setShowCropTool(true);
+  };
+
+  const handleCropSave = (croppedUrl) => {
+    if (cropType === "vision") {
+      setVisionPreview(croppedUrl);
+      // Convert blob URL back to File for upload later
+      fetch(croppedUrl)
+        .then(r => r.blob())
+        .then(blob => setVisionFile(new File([blob], "vision.jpg", { type: "image/jpeg" })));
+    } else if (cropType === "self") {
+      setSelfPreview(croppedUrl);
+      fetch(croppedUrl)
+        .then(r => r.blob())
+        .then(blob => setSelfFile(new File([blob], "self.jpg", { type: "image/jpeg" })));
+    }
+    setShowCropTool(false);
   };
 
   const canGenerate = (visionPreview || visionFile) && selfFile;
@@ -217,13 +240,33 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-end justify-center"
-    >
+    <>
+      <AnimatePresence>
+        {showCropTool && cropType && (
+          <ImageCropTool
+            imageUrl={cropType === "vision" ? visionPreview : selfPreview}
+            onSave={handleCropSave}
+            onCancel={() => {
+              setShowCropTool(false);
+              if (cropType === "vision") {
+                setVisionFile(null);
+                setVisionPreview(vision?.image_url || null);
+              } else {
+                setSelfFile(null);
+                setSelfPreview(null);
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-end justify-center"
+      >
       <motion.div
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
@@ -426,6 +469,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           </div>
         )}
       </motion.div>
-    </motion.div>
+      </motion.div>
+    </>
   );
 }

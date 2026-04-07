@@ -106,11 +106,9 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
           break;
         case "left":
           newBox.width = Math.max(minSize, cropBox.width - deltaX);
-          setImagePosition((prev) => ({ ...prev, x: prev.x + deltaX }));
           break;
         case "top":
           newBox.height = Math.max(minSize, cropBox.height - deltaY);
-          setImagePosition((prev) => ({ ...prev, y: prev.y + deltaY }));
           break;
         case "bottom-right":
           newBox.width = Math.max(minSize, cropBox.width + deltaX);
@@ -119,20 +117,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         case "bottom-left":
           newBox.width = Math.max(minSize, cropBox.width - deltaX);
           newBox.height = Math.max(minSize, cropBox.height + deltaY);
-          setImagePosition((prev) => ({ ...prev, x: prev.x + deltaX }));
           break;
         case "top-right":
           newBox.width = Math.max(minSize, cropBox.width + deltaX);
           newBox.height = Math.max(minSize, cropBox.height - deltaY);
-          setImagePosition((prev) => ({ ...prev, y: prev.y + deltaY }));
           break;
         case "top-left":
           newBox.width = Math.max(minSize, cropBox.width - deltaX);
           newBox.height = Math.max(minSize, cropBox.height - deltaY);
-          setImagePosition((prev) => ({
-            x: prev.x + deltaX,
-            y: prev.y + deltaY,
-          }));
           break;
       }
 

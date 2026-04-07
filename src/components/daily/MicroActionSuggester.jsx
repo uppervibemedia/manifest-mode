@@ -6,7 +6,8 @@ import { getLocalToday } from "@/lib/dateUtils";
 
 // Cache keys are user-scoped to prevent cross-account data leakage
 function cacheKey(userEmail, today) { return `emotion-alignment-${userEmail}-${today}`; }
-const COMPLETION_KEY_PREFIX = "emotion-completed-";
+// Completion keys are also user-scoped to prevent cross-account state leakage
+function completionKey(userEmail, today) { return `emotion-completed-${userEmail}-${today}`; }
 
 // Time windows in local hours (24h)
 // Morning: 3:00 – 11:59
@@ -27,18 +28,18 @@ function isStepAvailable(key, hour) {
   return false;
 }
 
-function loadCompletions(today) {
+function loadCompletions(userEmail, today) {
   try {
-    const raw = localStorage.getItem(`${COMPLETION_KEY_PREFIX}${today}`);
+    const raw = localStorage.getItem(completionKey(userEmail, today));
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
 
-function saveCompletions(today, completions) {
+function saveCompletions(userEmail, today, completions) {
   try {
-    localStorage.setItem(`${COMPLETION_KEY_PREFIX}${today}`, JSON.stringify(completions));
+    localStorage.setItem(completionKey(userEmail, today), JSON.stringify(completions));
   } catch {}
 }
 
@@ -56,10 +57,10 @@ export default function MicroActionSuggester({ userEmail }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Load persisted completions for today
+  // Load persisted completions for today (user-scoped)
   useEffect(() => {
-    setCompleted(loadCompletions(today));
-  }, [today]);
+    if (userEmail) setCompleted(loadCompletions(userEmail, today));
+  }, [userEmail, today]);
 
   useEffect(() => {
     if (userEmail) loadAlignment();
@@ -162,7 +163,7 @@ Return ONLY valid JSON:
   const markComplete = (key) => {
     const updated = { ...completed, [key]: true };
     setCompleted(updated);
-    saveCompletions(today, updated);
+    saveCompletions(userEmail, today, updated);
   };
 
   if (loading) {

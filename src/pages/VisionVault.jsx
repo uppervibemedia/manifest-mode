@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -10,6 +10,7 @@ import FutureSelfSceneModal from "@/components/vision/FutureSelfSceneModal";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
+import { useScrollContainer } from "@/lib/ScrollContext";
 
 const FILTER_CATS = [{ id: "all", label: "All", icon: "✦", color: "#fbbf24" }, ...CATEGORIES];
 
@@ -24,10 +25,9 @@ export default function VisionVault() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const { containerRef, isRefreshing, setIsRefreshing } = usePullToRefresh(async () => {
-    await loadData();
-    setIsRefreshing(false);
-  });
+  const scrollContainer = useScrollContainer();
+  const handleRefresh = useCallback(async () => { await loadData(); }, []);
+  const { isRefreshing } = usePullToRefresh(scrollContainer, handleRefresh);
 
   // Auth guard
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function VisionVault() {
   };
 
   const tier = profile?.subscription_tier || "free";
-  const uploadLimit = tier === "free" ? 5 : tier === "supporter" ? 20 : 999;
+  const uploadLimit = tier === "free" ? 3 : tier === "supporter" ? 15 : 999;
   const canUpload = visions.length < uploadLimit;
 
   const filtered = activeCategory === "all"
@@ -97,7 +97,7 @@ export default function VisionVault() {
 
   return (
     <AppLayout>
-      <div ref={containerRef} className="px-5 pt-12 pb-32 safe-area-inset-bottom" style={{ overflowY: 'auto' }}>
+      <div className="px-5 pt-12 pb-32">
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div>

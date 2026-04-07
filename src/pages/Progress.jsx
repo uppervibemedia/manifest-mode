@@ -10,6 +10,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "rec
 import ShiftGamificationPanel from "@/components/daily/ShiftGamificationPanel";
 import WeeklyPatternPanel from "@/components/progress/WeeklyPatternPanel";
 import { useScrollContainer } from "@/lib/ScrollContext";
+import { usePullToRefresh } from "@/lib/usePullToRefresh";
 import { loadShiftStats } from "@/lib/shiftGamification";
 
 export default function Progress() {
@@ -32,24 +33,8 @@ export default function Progress() {
     setLoading(false);
   };
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  useEffect(() => {
-    try {
-      const scrollContainer = useScrollContainer();
-      if (!scrollContainer.current) return;
-      const handleWheel = (e) => {
-        if (scrollContainer.current.scrollTop === 0 && e.deltaY < 0) {
-          setIsRefreshing(true);
-          loadData().then(() => setIsRefreshing(false));
-        }
-      };
-      scrollContainer.current.addEventListener('wheel', handleWheel);
-      return () => scrollContainer.current?.removeEventListener('wheel', handleWheel);
-    } catch {
-      // ScrollProvider may not be available
-    }
-  }, [loadData]);
+  const scrollContainer = useScrollContainer();
+  const { isRefreshing } = usePullToRefresh(scrollContainer, loadData);
 
   useEffect(() => {
     if (profileLoading) return;

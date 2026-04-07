@@ -10,7 +10,8 @@ export function clearUserSessionState() {
     if (
       key?.startsWith('last_visit_date_') ||
       key?.startsWith('last_visited_page_') ||
-      key?.startsWith('emotion-completed-')
+      key?.startsWith('emotion-completed-') ||
+      key?.startsWith('emotion-alignment-')
     ) {
       keysToRemove.push(key);
     }

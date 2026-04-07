@@ -4,34 +4,44 @@ import { ChevronLeft, Check, RotateCcw } from "lucide-react";
 
 export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const containerRef = useRef(null);
+  const cropContainerRef = useRef(null);
   const imageRef = useRef(null);
   const [image, setImage] = useState(null);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [imageScale, setImageScale] = useState(1);
-  const [cropBox, setCropBox] = useState({ width: 300, height: 400 });
+  const [cropBox, setCropBox] = useState({ width: 0, height: 0 });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isDraggingEdge, setIsDraggingEdge] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 400, height: 600 });
+  const lastTouchDistanceRef = useRef(0);
 
-  // Load image
+  // Load image and set initial state
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       imageRef.current = img;
       setImage(img);
-      
-      // Initial scale: fit image to crop area
+
+      // Calculate initial crop box size (portrait by default, responsive)
       const container = containerRef.current;
       if (container) {
-        const maxWidth = container.offsetWidth - 40;
-        const maxHeight = container.offsetHeight - 120;
-        setContainerSize({ width: maxWidth, height: maxHeight });
-        
-        const scale = Math.min(maxWidth / img.width, maxHeight / img.height) * 1.2;
-        setImageScale(scale);
-        setCropBox({ width: maxWidth, height: 400 });
+        const padding = 40;
+        const maxWidth = container.offsetWidth - padding;
+        const maxHeight = container.offsetHeight - 180; // Account for header/footer
+
+        // Crop box is portrait-oriented
+        const cropWidth = Math.min(maxWidth, 300);
+        const cropHeight = Math.min(maxHeight, 400);
+
+        setCropBox({ width: cropWidth, height: cropHeight });
+
+        // Calculate initial image scale to fit inside crop box nicely
+        const scaleX = cropWidth / img.width;
+        const scaleY = cropHeight / img.height;
+        const initialScale = Math.min(scaleX, scaleY) * 1.1; // Slightly zoomed for better composition
+
+        setImageScale(initialScale);
         setImagePosition({ x: 0, y: 0 });
       }
     };
@@ -39,18 +49,32 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     img.src = imageUrl;
   }, [imageUrl]);
 
-  // Handle image dragging
-  const handleImageMouseDown = (e) => {
+  // Lock body scroll while crop tool is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  // Handle image drag
+  const handleImagePointerDown = (e) => {
+    // Only allow left mouse button or touch
+    if (e.button !== undefined && e.button !== 0) return;
+    
     const touch = e.touches?.[0];
     const clientX = touch?.clientX || e.clientX;
     const clientY = touch?.clientY || e.clientY;
-    
+
     setIsDraggingImage(true);
     setDragStart({ x: clientX - imagePosition.x, y: clientY - imagePosition.y });
   };
 
-  const handleMouseMove = (e) => {
+  // Handle all pointer movement
+  const handlePointerMove = (e) => {
     if (!isDraggingImage && !isDraggingEdge) return;
+
+    e.preventDefault();
 
     const touch = e.touches?.[0];
     const clientX = touch?.clientX || e.clientX;
@@ -61,57 +85,59 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         x: clientX - dragStart.x,
         y: clientY - dragStart.y,
       });
+      return;
     }
 
     if (isDraggingEdge) {
       const deltaX = clientX - dragStart.x;
       const deltaY = clientY - dragStart.y;
+      const minSize = 150;
 
       switch (isDraggingEdge) {
         case "right":
-          setCropBox((prev) => ({ ...prev, width: Math.max(200, prev.width + deltaX) }));
+          setCropBox((prev) => ({ ...prev, width: Math.max(minSize, prev.width + deltaX) }));
           break;
         case "bottom":
-          setCropBox((prev) => ({ ...prev, height: Math.max(200, prev.height + deltaY) }));
+          setCropBox((prev) => ({ ...prev, height: Math.max(minSize, prev.height + deltaY) }));
           break;
         case "left":
           setCropBox((prev) => ({
             ...prev,
-            width: Math.max(200, prev.width - deltaX),
+            width: Math.max(minSize, prev.width - deltaX),
           }));
           setImagePosition((prev) => ({ ...prev, x: prev.x + deltaX }));
           break;
         case "top":
           setCropBox((prev) => ({
             ...prev,
-            height: Math.max(200, prev.height - deltaY),
+            height: Math.max(minSize, prev.height - deltaY),
           }));
           setImagePosition((prev) => ({ ...prev, y: prev.y + deltaY }));
           break;
         case "bottom-right":
           setCropBox((prev) => ({
-            width: Math.max(200, prev.width + deltaX),
-            height: Math.max(200, prev.height + deltaY),
+            width: Math.max(minSize, prev.width + deltaX),
+            height: Math.max(minSize, prev.height + deltaY),
           }));
           break;
         case "bottom-left":
           setCropBox((prev) => ({
-            width: Math.max(200, prev.width - deltaX),
-            height: Math.max(200, prev.height + deltaY),
+            width: Math.max(minSize, prev.width - deltaX),
+            height: Math.max(minSize, prev.height + deltaY),
           }));
           setImagePosition((prev) => ({ ...prev, x: prev.x + deltaX }));
           break;
         case "top-right":
           setCropBox((prev) => ({
-            width: Math.max(200, prev.width + deltaX),
-            height: Math.max(200, prev.height - deltaY),
+            width: Math.max(minSize, prev.width + deltaX),
+            height: Math.max(minSize, prev.height - deltaY),
           }));
           setImagePosition((prev) => ({ ...prev, y: prev.y + deltaY }));
           break;
         case "top-left":
           setCropBox((prev) => ({
-            width: Math.max(200, prev.width - deltaX),
-            height: Math.max(200, prev.height - deltaY),
+            width: Math.max(minSize, prev.width - deltaX),
+            height: Math.max(minSize, prev.height - deltaY),
           }));
           setImagePosition((prev) => ({
             x: prev.x + deltaX,
@@ -124,52 +150,61 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     }
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = () => {
     setIsDraggingImage(false);
     setIsDraggingEdge(null);
+    lastTouchDistanceRef.current = 0;
   };
 
-  const handleWheel = (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setImageScale((prev) => Math.max(0.5, Math.min(3, prev * delta)));
-  };
-
-  // Pinch zoom
+  // Handle touch events with gesture prevention
   const handleTouchStart = (e) => {
     if (e.touches.length === 2) {
+      // Pinch gesture
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch2.clientX - touch1.clientX,
         touch2.clientY - touch1.clientY
       );
-      setDragStart({ ...dragStart, distance });
+      lastTouchDistanceRef.current = distance;
     } else if (e.touches.length === 1) {
-      handleImageMouseDown(e);
+      // Single touch drag
+      handleImagePointerDown(e);
     }
   };
 
   const handleTouchMove = (e) => {
+    e.preventDefault(); // Prevent page scroll
+    
     if (e.touches.length === 2) {
+      // Pinch zoom
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       const distance = Math.hypot(
         touch2.clientX - touch1.clientX,
         touch2.clientY - touch1.clientY
       );
-      if (dragStart.distance) {
-        const delta = distance / dragStart.distance;
-        setImageScale((prev) => Math.max(0.5, Math.min(3, prev * delta)));
+
+      if (lastTouchDistanceRef.current > 0) {
+        const scaleFactor = distance / lastTouchDistanceRef.current;
+        setImageScale((prev) => Math.max(0.5, Math.min(4, prev * scaleFactor)));
       }
-      setDragStart({ ...dragStart, distance });
-    } else {
-      handleMouseMove(e);
+
+      lastTouchDistanceRef.current = distance;
+    } else if (e.touches.length === 1) {
+      // Single touch drag
+      handlePointerMove(e);
     }
   };
 
+  const handleTouchEnd = (e) => {
+    e.preventDefault();
+    handlePointerUp();
+  };
+
+  // Save cropped image
   const handleSave = () => {
-    if (!image || !containerRef.current) return;
+    if (!image) return;
 
     const canvas = document.createElement("canvas");
     canvas.width = cropBox.width;
@@ -197,42 +232,46 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     );
   };
 
+  // Reset to initial state
   const handleReset = () => {
-    if (image) {
-      const scale = Math.min(containerSize.width / image.width, containerSize.height / image.height) * 1.2;
-      setImageScale(scale);
-      setImagePosition({ x: 0, y: 0 });
-      setCropBox({ width: containerSize.width, height: 400 });
-    }
+    if (!image || !cropBox.width) return;
+
+    const scaleX = cropBox.width / image.width;
+    const scaleY = cropBox.height / image.height;
+    const initialScale = Math.min(scaleX, scaleY) * 1.1;
+
+    setImageScale(initialScale);
+    setImagePosition({ x: 0, y: 0 });
   };
 
+  // Resize handle component
   const Handle = ({ position, cursor }) => (
     <div
       onMouseDown={(e) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDraggingEdge(position);
         setDragStart({ x: e.clientX, y: e.clientY });
       }}
       onTouchStart={(e) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDraggingEdge(position);
         const touch = e.touches[0];
         setDragStart({ x: touch.clientX, y: touch.clientY });
       }}
-      className={`absolute ${cursor} touch-none group`}
+      className={`absolute ${cursor} touch-none z-10`}
       style={{
-        ...(position === "top" && { top: -8, left: 0, right: 0, height: 16 }),
-        ...(position === "bottom" && { bottom: -8, left: 0, right: 0, height: 16 }),
-        ...(position === "left" && { left: -8, top: 0, bottom: 0, width: 16 }),
-        ...(position === "right" && { right: -8, top: 0, bottom: 0, width: 16 }),
-        ...(position === "top-left" && { top: -8, left: -8, width: 24, height: 24 }),
-        ...(position === "top-right" && { top: -8, right: -8, width: 24, height: 24 }),
-        ...(position === "bottom-left" && { bottom: -8, left: -8, width: 24, height: 24 }),
-        ...(position === "bottom-right" && { bottom: -8, right: -8, width: 24, height: 24 }),
+        ...(position === "top" && { top: -10, left: 0, right: 0, height: 20 }),
+        ...(position === "bottom" && { bottom: -10, left: 0, right: 0, height: 20 }),
+        ...(position === "left" && { left: -10, top: 0, bottom: 0, width: 20 }),
+        ...(position === "right" && { right: -10, top: 0, bottom: 0, width: 20 }),
+        ...(position === "top-left" && { top: -10, left: -10, width: 30, height: 30 }),
+        ...(position === "top-right" && { top: -10, right: -10, width: 30, height: 30 }),
+        ...(position === "bottom-left" && { bottom: -10, left: -10, width: 30, height: 30 }),
+        ...(position === "bottom-right" && { bottom: -10, right: -10, width: 30, height: 30 }),
       }}
-    >
-      <div className="absolute inset-0 rounded-full bg-primary opacity-0 group-active:opacity-100 transition-opacity" />
-    </div>
+    />
   );
 
   return (
@@ -240,66 +279,116 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/95 z-[9999] flex flex-col"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      className="fixed inset-0 bg-black/95 z-[9999] flex flex-col select-none"
+      onMouseMove={handlePointerMove}
+      onMouseUp={handlePointerUp}
+      onMouseLeave={handlePointerUp}
       onTouchMove={handleTouchMove}
-      onTouchEnd={handleMouseUp}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border/30">
+      <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/10">
         <button
           onClick={onCancel}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
           Cancel
         </button>
-        <p className="text-sm font-semibold text-foreground">Crop Image</p>
-        <div className="w-12" />
+        <p className="text-sm font-semibold text-foreground">Crop</p>
+        <div className="w-14" />
       </div>
 
-      {/* Crop Container */}
+      {/* Crop Area */}
       <div
         ref={containerRef}
-        className="flex-1 flex items-center justify-center overflow-hidden p-5 relative"
+        className="flex-1 flex items-center justify-center overflow-hidden relative"
       >
-        {image && (
+        {image ? (
           <>
-            {/* Darkened overlay outside crop area */}
-            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black/50 pointer-events-none" />
 
-            {/* Crop Box Container */}
+            {/* Crop Container */}
             <div
-              className="relative"
+              ref={cropContainerRef}
+              className="relative z-20"
               style={{
                 width: cropBox.width,
                 height: cropBox.height,
                 overflow: "hidden",
+                boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
               }}
-              onMouseDown={handleImageMouseDown}
+              onPointerDown={handleImagePointerDown}
               onTouchStart={handleTouchStart}
             >
-              {/* Image */}
+              {/* Image Container */}
               <div
-                className="absolute cursor-grab active:cursor-grabbing select-none"
+                className="absolute inset-0"
                 style={{
-                  width: image.width * imageScale,
-                  height: image.height * imageScale,
-                  backgroundImage: `url(${imageUrl})`,
-                  backgroundSize: "contain",
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "center",
-                  transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imageScale})`,
-                  transformOrigin: "0 0",
+                  transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                  touchAction: "none",
                 }}
-              />
+              >
+                {/* Actual Image */}
+                <div
+                  style={{
+                    width: image.width,
+                    height: image.height,
+                    backgroundImage: `url(${imageUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    transform: `scale(${imageScale})`,
+                    transformOrigin: "0 0",
+                    willChange: "transform",
+                  }}
+                />
+              </div>
 
               {/* Crop Frame Border */}
-              <div className="absolute inset-0 border-2 border-primary pointer-events-none" />
+              <div className="absolute inset-0 border-[1.5px] border-primary pointer-events-none" />
 
-              {/* Corner & Edge Handles */}
+              {/* Grid Overlay */}
+              <div className="absolute inset-0 pointer-events-none opacity-20">
+                <div
+                  className="absolute"
+                  style={{
+                    width: "33.33%",
+                    height: "100%",
+                    left: "33.33%",
+                    borderLeft: "1px solid rgba(212, 175, 55, 0.4)",
+                  }}
+                />
+                <div
+                  className="absolute"
+                  style={{
+                    width: "33.33%",
+                    height: "100%",
+                    left: "66.66%",
+                    borderLeft: "1px solid rgba(212, 175, 55, 0.4)",
+                  }}
+                />
+                <div
+                  className="absolute"
+                  style={{
+                    width: "100%",
+                    height: "33.33%",
+                    top: "33.33%",
+                    borderTop: "1px solid rgba(212, 175, 55, 0.4)",
+                  }}
+                />
+                <div
+                  className="absolute"
+                  style={{
+                    width: "100%",
+                    height: "33.33%",
+                    top: "66.66%",
+                    borderTop: "1px solid rgba(212, 175, 55, 0.4)",
+                  }}
+                />
+              </div>
+
+              {/* Resize Handles */}
               <Handle position="top" cursor="cursor-ns-resize" />
               <Handle position="bottom" cursor="cursor-ns-resize" />
               <Handle position="left" cursor="cursor-ew-resize" />
@@ -310,15 +399,19 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
               <Handle position="bottom-right" cursor="cursor-nwse-resize" />
             </div>
           </>
+        ) : (
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
+          </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-border/30 space-y-3">
+      <div className="shrink-0 px-5 py-4 border-t border-white/10 space-y-3">
         <div className="flex gap-3">
           <button
             onClick={handleReset}
-            className="flex-1 py-3 text-sm font-medium border border-border rounded-xl hover:border-primary/30 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 text-sm font-medium border border-border rounded-xl hover:border-primary/50 transition-colors flex items-center justify-center gap-2"
           >
             <RotateCcw className="w-4 h-4" />
             Reset
@@ -328,12 +421,12 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
             className="flex-1 py-3 text-sm font-semibold gold-gradient text-background rounded-xl flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
-            Save Crop
+            Save
           </button>
         </div>
         <button
           onClick={onSkip}
-          className="w-full py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full py-2.5 text-xs text-muted-foreground hover:text-foreground transition-colors font-medium"
         >
           Skip Crop
         </button>

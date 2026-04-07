@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop } from "lucide-react";
+import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useModalState } from "@/lib/ModalContext";
 import ImageCropTool from "@/components/vision/ImageCropTool";
@@ -34,36 +34,60 @@ function buildPrompt(sceneOption, visionTitle, category) {
   return `Create a photorealistic, aspirational portrait of a person ${sceneDesc} ${visionTitle || "their dream vision"}. The scene should feel ${categoryContext}. The composition should be cinematic, with rich colors, perfect natural lighting, and an emotionally powerful mood that makes the viewer feel they have already achieved this. The image should look like a genuine photograph, not a composite. Premium, magazine-quality, aspirational lifestyle photography.`;
 }
 
-function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange, onImageLoad }) {
+// ═══════════════════════════════════════════════════════════════════════════════
+// PHASE 1: FILE ACQUISITION — UploadZone Component
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoaded, onCropStart, uploading }) {
   const inputRef = useRef();
 
-  const handleChange = async (e) => {
+  const handleChange = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    onChange(file);
+    if (!file) {
+      console.log(`[${boxId}] Upload cancelled`);
+      return;
+    }
+    
+    console.log(`[${boxId}] File selected:`, file.name, file.size, file.type);
+    
+    // PHASE 1: Store file immediately
+    onFileSelected(boxId, file);
+    
     // Reset input so same file can be selected again
-    e.target.value = null;
+    e.target.value = '';
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file) onChange(file);
+    if (file) {
+      console.log(`[${boxId}] File dropped:`, file.name);
+      onFileSelected(boxId, file);
+    }
   };
+
+  const preview = boxState.croppedUrl || boxState.sourceUrl;
+  const showLoading = uploading && !preview;
 
   return (
     <label className="block cursor-pointer">
-      <div className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
-        preview ? "border-transparent" : "border-border hover:border-primary/40"
-      }`}
+      <div
+        className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
+          preview ? "border-transparent" : "border-border hover:border-primary/40"
+        }`}
         onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); }}
-        onDragLeave={() => {}}
+        onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
         {preview ? (
           <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
-            <img src={preview} alt={label} className="w-full h-full object-cover pointer-events-none" onLoad={onImageLoad} />
+            <img
+              src={preview}
+              alt={label}
+              className="w-full h-full object-cover pointer-events-none"
+              onLoad={() => onImageLoaded(boxId)}
+              onError={() => console.error(`[${boxId}] Preview image failed to load`)}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <button
@@ -71,7 +95,8 @@ function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange, o
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onCrop();
+                  console.log(`[${boxId}] Crop button clicked`);
+                  onCropStart(boxId);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
               >
@@ -83,26 +108,66 @@ function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange, o
           </div>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/20 min-h-[140px]">
-            {uploading
-              ? <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              : <><Upload className="w-6 h-6" /><p className="text-xs">{label}</p><p className="text-[10px] text-muted-foreground/50">{hint}</p></>
-            }
+            {showLoading ? (
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            ) : (
+              <>
+                <Upload className="w-6 h-6" />
+                <p className="text-xs">{label}</p>
+                <p className="text-[10px] text-muted-foreground/50">{hint}</p>
+              </>
+            )}
           </div>
         )}
       </div>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} disabled={uploading} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleChange}
+        disabled={uploading}
+      />
     </label>
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN MODAL COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const { setActiveFullscreenModal } = useModalState();
-  const [visionFile, setVisionFile] = useState(null);
-  const [selfFile, setSelfFile] = useState(null);
-  const [visionPreview, setVisionPreview] = useState(vision?.image_url || null);
-  const [selfPreview, setSelfPreview] = useState(null);
-  const [visionImageLoaded, setVisionImageLoaded] = useState(false);
-  const [selfImageLoaded, setSelfImageLoaded] = useState(false);
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // STATE: Separate objects for each box (PHASE 1, 2, 3)
+  // ───────────────────────────────────────────────────────────────────────────
+  
+  const [visionBox, setVisionBox] = useState({
+    sourceFile: null,      // Raw selected file
+    sourceUrl: null,       // Object URL preview
+    croppedFile: null,     // Output from cropper
+    croppedUrl: null,      // Data URL from cropper
+    isImageLoaded: false,  // Preview img tag fired onLoad
+    status: 'idle',        // idle | uploading | preview-ready | crop-open | complete | error
+    error: null,
+  });
+
+  const [selfBox, setSelfBox] = useState({
+    sourceFile: null,
+    sourceUrl: null,
+    croppedFile: null,
+    croppedUrl: null,
+    isImageLoaded: false,
+    status: 'idle',
+    error: null,
+  });
+
+  // Global crop session state
+  const [activeCropBoxId, setActiveCropBoxId] = useState(null); // 'vision' | 'self' | null
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
+
+  // Generation state
   const [scene, setScene] = useState("standing_front");
   const [result, setResult] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -112,122 +177,184 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [setAsFocus, setSetAsFocus] = useState(false);
   const [savedFileUrl, setSavedFileUrl] = useState(null);
   const [step, setStep] = useState(1); // 1=setup, 2=result
-  const [showCropTool, setShowCropTool] = useState(false);
-  const [cropType, setCropType] = useState(null); // "vision" or "self"
 
-  // Hide bottom nav when modal opens
   useEffect(() => {
     setActiveFullscreenModal("see-me-vision");
     return () => setActiveFullscreenModal(null);
   }, [setActiveFullscreenModal]);
 
-  const [uploadingVision, setUploadingVision] = useState(false);
-  const [uploadingSelf, setUploadingSelf] = useState(false);
+  // ───────────────────────────────────────────────────────────────────────────
+  // PHASE 1: FILE ACQUISITION
+  // ───────────────────────────────────────────────────────────────────────────
 
-  // When vision preview is set, wait for image to load before allowing crop
-  const handleVisionImageLoad = () => {
-    setVisionImageLoaded(true);
+  const handleFileSelected = (boxId, file) => {
+    console.log(`[${boxId}] PHASE 1 START: File acquisition`);
+    
+    // Create object URL for preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    console.log(`[${boxId}] Preview URL created:`, previewUrl);
+
+    const newBoxState = {
+      sourceFile: file,
+      sourceUrl: previewUrl,
+      croppedFile: null,
+      croppedUrl: null,
+      isImageLoaded: false,
+      status: 'uploading',
+      error: null,
+    };
+
+    if (boxId === 'vision') {
+      setVisionBox(newBoxState);
+    } else if (boxId === 'self') {
+      setSelfBox(newBoxState);
+    }
+
+    console.log(`[${boxId}] File stored in state, waiting for preview to load`);
   };
 
-  // When self preview is set, wait for image to load before allowing crop
-  const handleSelfImageLoad = () => {
-    setSelfImageLoaded(true);
+  const handleImageLoaded = (boxId) => {
+    console.log(`[${boxId}] Preview image loaded successfully`);
+    
+    if (boxId === 'vision') {
+      setVisionBox(prev => ({ ...prev, isImageLoaded: true, status: 'preview-ready' }));
+    } else if (boxId === 'self') {
+      setSelfBox(prev => ({ ...prev, isImageLoaded: true, status: 'preview-ready' }));
+    }
   };
 
-  const handleVisionFile = async (file) => {
+  // ───────────────────────────────────────────────────────────────────────────
+  // PHASE 2: CROP SESSION
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const handleCropStart = (boxId) => {
+    const boxState = boxId === 'vision' ? visionBox : selfBox;
+    
+    if (!boxState.sourceUrl) {
+      console.error(`[${boxId}] Cannot start crop: no source URL`);
+      return;
+    }
+    
+    if (!boxState.isImageLoaded) {
+      console.error(`[${boxId}] Cannot start crop: image not loaded`);
+      return;
+    }
+
+    console.log(`[${boxId}] PHASE 2 START: Opening crop modal`);
+    setActiveCropBoxId(boxId);
+    setIsCropModalOpen(true);
+    console.log(`[${boxId}] Crop modal opened, activeBoxId =`, boxId);
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // PHASE 3: COMMIT (Crop Done → Save Output)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const handleCropSave = async (croppedUrl, metadata) => {
+    if (!activeCropBoxId) {
+      console.error('CRITICAL: handleCropSave called but activeCropBoxId is null');
+      return;
+    }
+
+    console.log(`[${activeCropBoxId}] PHASE 3 START: Committing cropped output`);
+
     try {
-      setUploadingVision(true);
-      // Store raw file immediately
-      setVisionFile(file);
-      // Create local preview URL from file
-      const previewUrl = URL.createObjectURL(file);
-      setVisionPreview(previewUrl);
-      // Reset image loaded state - will be set to true when image tag fires onLoad
-      setVisionImageLoaded(false);
-      // Set crop type but do NOT open crop modal yet - wait for onLoad
-      setCropType("vision");
-    } catch (error) {
-      console.error('Vision file selection error:', error);
-      setUploadingVision(false);
-    }
-  };
+      // Fetch cropped blob from data URL
+      const blob = await fetch(croppedUrl).then(r => r.blob());
+      const croppedFile = new File([blob], `${activeCropBoxId}-cropped.jpg`, { type: "image/jpeg" });
 
-  const handleSelfFile = async (file) => {
-    try {
-      setUploadingSelf(true);
-      // Store raw file immediately
-      setSelfFile(file);
-      // Create local preview URL from file
-      const previewUrl = URL.createObjectURL(file);
-      setSelfPreview(previewUrl);
-      // Reset image loaded state - will be set to true when image tag fires onLoad
-      setSelfImageLoaded(false);
-      // Set crop type but do NOT open crop modal yet - wait for onLoad
-      setCropType("self");
-    } catch (error) {
-      console.error('Self file selection error:', error);
-      setUploadingSelf(false);
-    }
-  };
+      console.log(`[${activeCropBoxId}] Cropped file created:`, croppedFile.size, 'bytes');
 
-  // Effect: open crop modal only when the image is fully loaded
-  useEffect(() => {
-    if (cropType === "vision" && visionImageLoaded && visionPreview) {
-      setShowCropTool(true);
-      setUploadingVision(false);
-    }
-  }, [cropType, visionImageLoaded, visionPreview]);
-
-  useEffect(() => {
-    if (cropType === "self" && selfImageLoaded && selfPreview) {
-      setShowCropTool(true);
-      setUploadingSelf(false);
-    }
-  }, [cropType, selfImageLoaded, selfPreview]);
-
-  const handleCropSave = async (croppedUrl) => {
-    try {
-      if (cropType === "vision") {
-        setVisionPreview(croppedUrl);
-        setVisionImageLoaded(true);
-        const blob = await fetch(croppedUrl).then(r => r.blob());
-        setVisionFile(new File([blob], "vision.jpg", { type: "image/jpeg" }));
-      } else if (cropType === "self") {
-        setSelfPreview(croppedUrl);
-        setSelfImageLoaded(true);
-        const blob = await fetch(croppedUrl).then(r => r.blob());
-        setSelfFile(new File([blob], "self.jpg", { type: "image/jpeg" }));
+      // Update the correct box
+      if (activeCropBoxId === 'vision') {
+        setVisionBox(prev => ({
+          ...prev,
+          croppedFile,
+          croppedUrl,
+          status: 'complete',
+        }));
+        console.log(`[vision] Cropped output committed to vision box`);
+      } else if (activeCropBoxId === 'self') {
+        setSelfBox(prev => ({
+          ...prev,
+          croppedFile,
+          croppedUrl,
+          status: 'complete',
+        }));
+        console.log(`[self] Cropped output committed to self box`);
       }
+
+      console.log(`[${activeCropBoxId}] PHASE 3 COMPLETE: Output saved, closing crop modal`);
+      setIsCropModalOpen(false);
+      setActiveCropBoxId(null);
     } catch (error) {
-      console.error('Crop save error:', error);
-    } finally {
-      setShowCropTool(false);
-      setCropType(null);
+      console.error(`[${activeCropBoxId}] PHASE 3 FAILED:`, error);
+      
+      // FAILSAFE: Use original if crop fails
+      console.log(`[${activeCropBoxId}] FAILSAFE: Saving original instead of cropped`);
+      const boxState = activeCropBoxId === 'vision' ? visionBox : selfBox;
+      
+      if (activeCropBoxId === 'vision') {
+        setVisionBox(prev => ({
+          ...prev,
+          croppedFile: prev.sourceFile,
+          croppedUrl: prev.sourceUrl,
+          status: 'complete',
+          error: `Crop processing failed, saved original. Retry crop later.`,
+        }));
+      } else if (activeCropBoxId === 'self') {
+        setSelfBox(prev => ({
+          ...prev,
+          croppedFile: prev.sourceFile,
+          croppedUrl: prev.sourceUrl,
+          status: 'complete',
+          error: `Crop processing failed, saved original. Retry crop later.`,
+        }));
+      }
+
+      console.log(`[${activeCropBoxId}] Original saved as fallback`);
+      setIsCropModalOpen(false);
+      setActiveCropBoxId(null);
     }
   };
 
-  const canGenerate = (visionPreview || visionFile) && selfFile;
+  const handleCropCancel = () => {
+    console.log(`[${activeCropBoxId}] Crop cancelled, keeping original`);
+    setIsCropModalOpen(false);
+    setActiveCropBoxId(null);
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // GENERATION & SAVE
+  // ───────────────────────────────────────────────────────────────────────────
+
+  const canGenerate = (visionBox.croppedUrl || visionBox.sourceUrl) && (selfBox.croppedUrl || selfBox.sourceUrl);
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
     setGenerating(true);
     setResult(null);
 
-    // Upload images for AI reference
     const uploads = [];
-    if (visionFile) {
-      const res = await base44.integrations.Core.UploadFile({ file: visionFile });
+    
+    // Use cropped if available, else source
+    if (visionBox.croppedFile) {
+      const res = await base44.integrations.Core.UploadFile({ file: visionBox.croppedFile });
       uploads.push(res.file_url);
-    } else if (visionPreview) {
-      uploads.push(visionPreview);
+    } else if (visionBox.sourceFile) {
+      const res = await base44.integrations.Core.UploadFile({ file: visionBox.sourceFile });
+      uploads.push(res.file_url);
     }
-    if (selfFile) {
-      const res = await base44.integrations.Core.UploadFile({ file: selfFile });
+
+    if (selfBox.croppedFile) {
+      const res = await base44.integrations.Core.UploadFile({ file: selfBox.croppedFile });
+      uploads.push(res.file_url);
+    } else if (selfBox.sourceFile) {
+      const res = await base44.integrations.Core.UploadFile({ file: selfBox.sourceFile });
       uploads.push(res.file_url);
     }
 
     const prompt = buildPrompt(scene, vision?.title, vision?.category);
-
     const generated = await base44.integrations.Core.GenerateImage({
       prompt,
       existing_image_urls: uploads,
@@ -238,7 +365,6 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     setGenerating(false);
   };
 
-  // Upload once and reuse the permanent URL
   const uploadResult = async () => {
     if (savedFileUrl) return savedFileUrl;
     const blob = await fetch(result).then(r => r.blob());
@@ -251,8 +377,6 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const handleSave = async () => {
     if (!result) return;
     setSaving(true);
-
-    // Optimistically mark as saved right away for snappy feel
     setSaved(true);
     setSaving(false);
 
@@ -310,21 +434,11 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   return (
     <>
       <AnimatePresence>
-        {showCropTool && cropType && (
+        {isCropModalOpen && activeCropBoxId && (
           <ImageCropTool
-            imageUrl={cropType === "vision" ? visionPreview : selfPreview}
+            imageUrl={activeCropBoxId === 'vision' ? visionBox.sourceUrl : selfBox.sourceUrl}
             onSave={handleCropSave}
-            onCancel={() => {
-              setShowCropTool(false);
-              if (cropType === "vision") {
-                setVisionFile(null);
-                setVisionPreview(vision?.image_url || null);
-              } else {
-                setSelfFile(null);
-                setSelfPreview(null);
-              }
-              setCropType(null);
-            }}
+            onCancel={handleCropCancel}
           />
         )}
       </AnimatePresence>
@@ -336,220 +450,269 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         onClick={onClose}
         className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-end justify-center"
       >
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col md:h-auto md:rounded-2xl"
-        style={{ height: "100dvh", maxHeight: "100dvh" }}
-      >
-        {/* Header */}
-        <div className="px-5 pb-4 border-b border-border flex items-start justify-between gap-4 shrink-0"
-          style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-              <Sparkles className="w-4 h-4 text-primary shrink-0" />
-              <h2 className="font-playfair text-lg font-semibold gold-text">See Me In This Vision</h2>
-              <span className="text-[9px] uppercase tracking-widest font-bold text-foreground bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5 shrink-0">Premium Only</span>
-            </div>
-            <p className="text-xs text-muted-foreground">Place yourself inside your dream life</p>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-border flex items-center justify-center shrink-0 flex-none touch-target" aria-label="Close">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
-
-            {/* STEP 1 — Setup */}
-            {step === 1 && (
-              <motion.div key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 py-5">
-
-                {/* Upload row */}
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Step 1 — Upload Images</p>
-                <div className="grid grid-cols-2 gap-3 mb-5">
-                  <div>
-                    <UploadZone
-                      label="Vision Image"
-                      hint="Dream car, house, vacation, lifestyle…"
-                      icon="🌟"
-                      onChange={handleVisionFile}
-                      preview={visionPreview}
-                      uploading={uploadingVision}
-                      onImageLoad={handleVisionImageLoad}
-                      onCrop={() => {
-                        setCropType("vision");
-                        setShowCropTool(true);
-                      }}
-                    />
-                    <p className="text-[10px] text-muted-foreground text-center mt-1.5">The scene you want</p>
-                  </div>
-                  <div>
-                    <UploadZone
-                      label="Your Photo"
-                      hint="Clear face, solo, good lighting"
-                      icon="🪞"
-                      onChange={handleSelfFile}
-                      preview={selfPreview}
-                      uploading={uploadingSelf}
-                      onImageLoad={handleSelfImageLoad}
-                      onCrop={() => {
-                        setCropType("self");
-                        setShowCropTool(true);
-                      }}
-                    />
-                    <p className="text-[10px] text-muted-foreground text-center mt-1.5">A clear photo of you</p>
-                  </div>
-                </div>
-
-                {/* Best results tip */}
-                <div className="glass-card border border-primary/15 rounded-xl p-3 mb-5">
-                  <p className="text-[10px] text-primary font-semibold uppercase tracking-widest mb-1.5">Best Results</p>
-                  <ul className="space-y-1">
-                    {["Use a high-quality vision image with clear subject", "Your photo: solo, well-lit, facing forward", "Avoid blurry or dark images"].map((tip, i) => (
-                      <li key={i} className="flex items-start gap-1.5">
-                        <span className="text-primary text-[10px] mt-0.5">✦</span>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed">{tip}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Scene selection */}
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Step 2 — Choose Your Scene</p>
-                <div className="grid grid-cols-2 gap-2 mb-6">
-                  {SCENE_OPTIONS.map(opt => (
-                    <button key={opt.id} onClick={() => setScene(opt.id)}
-                      className={`rounded-xl p-3 text-left border transition-all ${
-                        scene === opt.id
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-background hover:border-primary/30"
-                      }`}>
-                      <span className="text-xl block mb-1">{opt.icon}</span>
-                      <p className="text-xs font-semibold text-foreground leading-tight">{opt.label}</p>
-                    </button>
-                  ))}
-                </div>
-
-
-              </motion.div>
-            )}
-
-            {/* STEP 2 — Result */}
-            {step === 2 && result && (
-              <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 py-5">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">Your Vision, Made Real</p>
-
-                {/* Result image */}
-                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 20 }}
-                  className="rounded-2xl overflow-hidden mb-4 border border-primary/25 glow-gold">
-                  <img src={result} alt="Your vision" className="w-full h-auto" />
-                </motion.div>
-
-                {/* Reference row */}
-                <div className="flex gap-2 mb-5">
-                 {visionPreview && (
-                   <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
-                     <img src={visionPreview} alt="Vision" className="w-full h-full object-cover opacity-60" />
-                   </div>
-                 )}
-                 <div className="flex items-center justify-center text-muted-foreground text-lg">+</div>
-                 {selfPreview && (
-                   <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
-                     <img src={selfPreview} alt="You" className="w-full h-full object-cover opacity-60" />
-                   </div>
-                 )}
-                 <div className="flex items-center justify-center text-muted-foreground text-lg">→</div>
-                 <div className="flex-1 rounded-xl overflow-hidden border border-primary/30" style={{ aspectRatio: "1/1" }}>
-                   <img src={result} alt="Result" className="w-full h-full object-cover" />
-                 </div>
-                </div>
-              </motion.div>
-            )}
-
-          </AnimatePresence>
-        </div>
-
-        {/* Action buttons footer — fixed above tab bar */}
-        {step === 1 && (
-          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2">
-            <button
-              onClick={handleGenerate}
-              disabled={!canGenerate || generating}
-              className="w-full py-4 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-30 text-sm"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating your vision…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  Generate — See Me In This Vision
-                </>
-              )}
-            </button>
-            {generating && (
-              <p className="text-[10px] text-muted-foreground/60 text-center">This takes about 10–15 seconds</p>
-            )}
-          </div>
-        )}
-
-        {step === 2 && result && (
-          <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2.5">
-
-            {/* Primary: Save to Vision Vault */}
-            {saved ? (
-              <div className="w-full py-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm font-semibold text-emerald-400">Saved to Vision Vault ✦</span>
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 300 }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-md bg-card rounded-t-3xl overflow-hidden flex flex-col md:h-auto md:rounded-2xl"
+          style={{ height: "100dvh", maxHeight: "100dvh" }}
+        >
+          {/* Header */}
+          <div
+            className="px-5 pb-4 border-b border-border flex items-start justify-between gap-4 shrink-0"
+            style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                <Sparkles className="w-4 h-4 text-primary shrink-0" />
+                <h2 className="font-playfair text-lg font-semibold gold-text">See Me In This Vision</h2>
+                <span className="text-[9px] uppercase tracking-widest font-bold text-foreground bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5 shrink-0">
+                  Premium Only
+                </span>
               </div>
-            ) : (
-              <button onClick={handleSave} disabled={saving}
-                className="w-full py-3.5 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
-                {saving ? "Saving…" : "Save to Vision Vault"}
-              </button>
-            )}
+              <p className="text-xs text-muted-foreground">Place yourself inside your dream life</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-border flex items-center justify-center shrink-0 flex-none touch-target"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            {/* Secondary row: Download + Set as Focus */}
-            <div className="flex gap-2">
+          <div className="flex-1 overflow-y-auto">
+            <AnimatePresence mode="wait">
+              {/* STEP 1 — Setup */}
+              {step === 1 && (
+                <motion.div
+                  key="setup"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="px-5 py-5"
+                >
+                  {/* Upload row */}
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
+                    Step 1 — Upload Images
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 mb-5">
+                    <div>
+                      <UploadZone
+                        boxId="vision"
+                        label="Vision Image"
+                        hint="Dream car, house, vacation, lifestyle…"
+                        boxState={visionBox}
+                        onFileSelected={handleFileSelected}
+                        onImageLoaded={handleImageLoaded}
+                        onCropStart={handleCropStart}
+                        uploading={visionBox.status === 'uploading'}
+                      />
+                      <p className="text-[10px] text-muted-foreground text-center mt-1.5">The scene you want</p>
+                      {visionBox.error && (
+                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-destructive/80">
+                          <AlertCircle className="w-3 h-3" />
+                          {visionBox.error}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <UploadZone
+                        boxId="self"
+                        label="Your Photo"
+                        hint="Clear face, solo, good lighting"
+                        boxState={selfBox}
+                        onFileSelected={handleFileSelected}
+                        onImageLoaded={handleImageLoaded}
+                        onCropStart={handleCropStart}
+                        uploading={selfBox.status === 'uploading'}
+                      />
+                      <p className="text-[10px] text-muted-foreground text-center mt-1.5">A clear photo of you</p>
+                      {selfBox.error && (
+                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-destructive/80">
+                          <AlertCircle className="w-3 h-3" />
+                          {selfBox.error}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Best results tip */}
+                  <div className="glass-card border border-primary/15 rounded-xl p-3 mb-5">
+                    <p className="text-[10px] text-primary font-semibold uppercase tracking-widest mb-1.5">
+                      Best Results
+                    </p>
+                    <ul className="space-y-1">
+                      {[
+                        "Use a high-quality vision image with clear subject",
+                        "Your photo: solo, well-lit, facing forward",
+                        "Avoid blurry or dark images",
+                      ].map((tip, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="text-primary text-[10px] mt-0.5">✦</span>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">{tip}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Scene selection */}
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
+                    Step 2 — Choose Your Scene
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-6">
+                    {SCENE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        onClick={() => setScene(opt.id)}
+                        className={`rounded-xl p-3 text-left border transition-all ${
+                          scene === opt.id ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/30"
+                        }`}
+                      >
+                        <span className="text-xl block mb-1">{opt.icon}</span>
+                        <p className="text-xs font-semibold text-foreground leading-tight">{opt.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 2 — Result */}
+              {step === 2 && result && (
+                <motion.div
+                  key="result"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="px-5 py-5"
+                >
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3">
+                    Your Vision, Made Real
+                  </p>
+
+                  {/* Result image */}
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", damping: 20 }}
+                    className="rounded-2xl overflow-hidden mb-4 border border-primary/25 glow-gold"
+                  >
+                    <img src={result} alt="Your vision" className="w-full h-auto" />
+                  </motion.div>
+
+                  {/* Reference row */}
+                  <div className="flex gap-2 mb-5">
+                    {(visionBox.croppedUrl || visionBox.sourceUrl) && (
+                      <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
+                        <img src={visionBox.croppedUrl || visionBox.sourceUrl} alt="Vision" className="w-full h-full object-cover opacity-60" />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-center text-muted-foreground text-lg">+</div>
+                    {(selfBox.croppedUrl || selfBox.sourceUrl) && (
+                      <div className="flex-1 rounded-xl overflow-hidden border border-border" style={{ aspectRatio: "1/1" }}>
+                        <img src={selfBox.croppedUrl || selfBox.sourceUrl} alt="You" className="w-full h-full object-cover opacity-60" />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-center text-muted-foreground text-lg">→</div>
+                    <div className="flex-1 rounded-xl overflow-hidden border border-primary/30" style={{ aspectRatio: "1/1" }}>
+                      <img src={result} alt="Result" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Action buttons footer */}
+          {step === 1 && (
+            <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2">
               <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="flex-1 py-3 rounded-xl border border-border bg-background text-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/40 transition-colors text-sm disabled:opacity-50">
-                {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {downloading ? "…" : "Download"}
+                onClick={handleGenerate}
+                disabled={!canGenerate || generating}
+                className="w-full py-4 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-30 text-sm"
+              >
+                {generating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating your vision…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate — See Me In This Vision
+                  </>
+                )}
               </button>
+              {generating && (
+                <p className="text-[10px] text-muted-foreground/60 text-center">This takes about 10–15 seconds</p>
+              )}
+            </div>
+          )}
 
-              {vision?.id && (
+          {step === 2 && result && (
+            <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2.5">
+              {/* Primary: Save to Vision Vault */}
+              {saved ? (
+                <div className="w-full py-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-semibold text-emerald-400">Saved to Vision Vault ✦</span>
+                </div>
+              ) : (
                 <button
-                  onClick={handleSetAsFocus}
-                  disabled={setAsFocus || saving}
-                  className={`flex-1 py-3 rounded-xl border font-semibold flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-50 ${
-                    setAsFocus
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground hover:border-primary/40"
-                  }`}>
-                  {setAsFocus ? <Check className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
-                  {setAsFocus ? "Set ✦" : "Set as Focus"}
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full py-3.5 gold-gradient text-background font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
+                  {saving ? "Saving…" : "Save to Vision Vault"}
                 </button>
               )}
-            </div>
 
-            {/* Tertiary: Regenerate */}
-            <button
-              onClick={() => { setStep(1); setResult(null); setSaved(false); setSetAsFocus(false); setSavedFileUrl(null); }}
-              className="w-full py-3 rounded-xl border border-border/60 text-muted-foreground font-medium flex items-center justify-center gap-2 hover:border-primary/20 transition-colors text-sm">
-              <RefreshCw className="w-4 h-4" /> Regenerate
-            </button>
-          </div>
-        )}
-      </motion.div>
+              {/* Secondary row: Download + Set as Focus */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="flex-1 py-3 rounded-xl border border-border bg-background text-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/40 transition-colors text-sm disabled:opacity-50"
+                >
+                  {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {downloading ? "…" : "Download"}
+                </button>
+
+                {vision?.id && (
+                  <button
+                    onClick={handleSetAsFocus}
+                    disabled={setAsFocus || saving}
+                    className={`flex-1 py-3 rounded-xl border font-semibold flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-50 ${
+                      setAsFocus
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-background text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {setAsFocus ? <Check className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+                    {setAsFocus ? "Set ✦" : "Set as Focus"}
+                  </button>
+                )}
+              </div>
+
+              {/* Tertiary: Regenerate */}
+              <button
+                onClick={() => {
+                  setStep(1);
+                  setResult(null);
+                  setSaved(false);
+                  setSetAsFocus(false);
+                  setSavedFileUrl(null);
+                }}
+                className="w-full py-3 rounded-xl border border-border/60 text-muted-foreground font-medium flex items-center justify-center gap-2 hover:border-primary/20 transition-colors text-sm"
+              >
+                <RefreshCw className="w-4 h-4" /> Regenerate
+              </button>
+            </div>
+          )}
+        </motion.div>
       </motion.div>
     </>
   );

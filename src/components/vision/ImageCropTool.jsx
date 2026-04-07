@@ -202,30 +202,34 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
   // Save cropped image with export data
   const handleSave = () => {
-    if (!image) return;
+    if (!image || !imageRef.current) return;
 
     const cropWidth = cropBox.right - cropBox.left;
     const cropHeight = cropBox.bottom - cropBox.top;
 
     const canvas = document.createElement("canvas");
-    canvas.width = cropWidth;
-    canvas.height = cropHeight;
+    canvas.width = Math.max(1, cropWidth);
+    canvas.height = Math.max(1, cropHeight);
     const ctx = canvas.getContext("2d");
+    
+    if (!ctx) return;
 
     const scaledWidth = image.width * zoomScale;
     const scaledHeight = image.height * zoomScale;
 
-    // Draw the visible cropped portion
+    // Draw the visible cropped portion by translating the canvas
+    // and drawing the scaled image at the correct offset
     ctx.drawImage(
-      image,
-      -imageOffset.x - cropBox.left,
-      -imageOffset.y - cropBox.top,
+      imageRef.current,
+      imageOffset.x - cropBox.left,
+      imageOffset.y - cropBox.top,
       scaledWidth,
       scaledHeight
     );
 
     canvas.toBlob(
       (blob) => {
+        if (!blob) return;
         const croppedUrl = URL.createObjectURL(blob);
         // Export metadata
         onSave(croppedUrl, {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { ChevronRight, Sparkles, Eye, Brain, BarChart3, Zap, Star } from "lucide-react";
+import { ChevronRight, Sparkles, Eye, Brain, BarChart3, Zap, Star, Crown, Check } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 
 const SLIDES = [
@@ -32,8 +32,15 @@ const SLIDES = [
   },
 ];
 
+const UPSELL_FEATURES = [
+  { icon: "🧠", text: "Full AI Reality Match assessment" },
+  { icon: "📊", text: "Score history & progress tracking" },
+  { icon: "🔮", text: "Future Self Blueprint & AI coach" },
+  { icon: "🖼️", text: "Up to 15 vision board items" },
+];
+
 export default function Onboarding() {
-  const [step, setStep] = useState(0); // 0=slides, 1=categories
+  const [step, setStep] = useState(0); // 0=slides, 1=categories, 2=upsell
   const [slideIndex, setSlideIndex] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -45,15 +52,12 @@ export default function Onboarding() {
     );
   };
 
-  const handleFinish = async () => {
-    if (selectedCategories.length === 0) return;
+  const saveAndProceed = async () => {
     setLoading(true);
     const user = await base44.auth.me();
     const existing = await base44.entities.UserProfile.filter({ user_email: user.email });
     if (existing.length > 0) {
-      await base44.entities.UserProfile.update(existing[0].id, {
-        goal_categories: selectedCategories,
-      });
+      await base44.entities.UserProfile.update(existing[0].id, { goal_categories: selectedCategories });
     } else {
       await base44.entities.UserProfile.create({
         user_email: user.email,
@@ -63,8 +67,11 @@ export default function Onboarding() {
         streak_count: 0,
       });
     }
-    navigate("/assessment"); // Proceed to assessment, not back to vision board
+    setLoading(false);
+    setStep(2);
   };
+
+  const handleFinish = () => navigate("/assessment");
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-5 py-10 pb-32 relative overflow-hidden">
@@ -176,14 +183,59 @@ export default function Onboarding() {
             </div>
 
             <button
-              onClick={handleFinish}
+              onClick={saveAndProceed}
               disabled={selectedCategories.length === 0 || loading}
               className="w-full py-4 font-semibold gold-gradient text-background rounded-xl disabled:opacity-40 flex items-center justify-center gap-2">
               {loading ? (
                 <div className="w-5 h-5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
               ) : (
-                <>Continue to Assessment <ChevronRight className="w-4 h-4" /></>
+                <>Continue <ChevronRight className="w-4 h-4" /></>
               )}
+            </button>
+          </motion.div>
+        )}
+
+        {step === 2 && (
+          <motion.div
+            key="upsell"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="w-full max-w-sm"
+          >
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 gold-gradient rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Crown className="w-7 h-7 text-background" />
+              </div>
+              <p className="text-xs uppercase tracking-widest text-primary/70 mb-2 font-medium">Unlock Your Potential</p>
+              <h2 className="font-playfair text-2xl font-semibold text-foreground mb-2">
+                Start with Plus — Free for 7 Days
+              </h2>
+              <p className="text-muted-foreground text-sm">Get the full experience. No charge today.</p>
+            </div>
+
+            <div className="glass-card rounded-2xl p-5 border border-primary/20 glow-gold mb-5">
+              <div className="space-y-3">
+                {UPSELL_FEATURES.map((f, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-lg">{f.icon}</span>
+                    <span className="text-sm text-foreground">{f.text}</span>
+                    <Check className="w-4 h-4 text-primary ml-auto shrink-0" />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-4 text-center">Then $7.99/month · Cancel anytime</p>
+            </div>
+
+            <button
+              onClick={() => navigate("/pricing")}
+              className="w-full py-4 font-semibold gold-gradient text-background rounded-xl flex items-center justify-center gap-2 mb-3">
+              Start Free Trial <ChevronRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleFinish}
+              className="w-full py-3 text-sm text-muted-foreground border border-border rounded-xl">
+              Continue with Free Plan
             </button>
           </motion.div>
         )}

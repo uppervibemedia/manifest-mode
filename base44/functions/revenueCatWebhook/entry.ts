@@ -45,10 +45,17 @@ function entitlementToTier(entitlementId) {
 }
 
 function resolveHighestTier(entitlements = {}) {
-  // entitlements is a map of { id: { expires_date, product_identifier, ... } }
+  // In RC webhook payloads, entitlements is a map of { id: { expires_date, product_identifier, ... } }
+  // A key being present means it's currently active (RC only sends active entitlements)
   if (entitlements['premium']) return 'premium';
   if (entitlements['plus']) return 'supporter';
   return 'free';
+}
+
+function inferBillingCycle(productIdentifier = '') {
+  const id = productIdentifier.toLowerCase();
+  if (id.includes('annual') || id.includes('yearly') || id.includes('year')) return 'annual';
+  return 'monthly';
 }
 
 Deno.serve(async (req) => {
@@ -95,19 +102,26 @@ Deno.serve(async (req) => {
       const activeEntitlements = event.entitlements || {};
       const tier = resolveHighestTier(activeEntitlements);
 
-      const isTrialing = eventType === 'TRIAL_STARTED';
+      // RC sends expiration_at_ms on the event for the product being activated
       const expiresDate = event.expiration_at_ms
         ? new Date(event.expiration_at_ms).toISOString()
         : null;
-      const trialEndsAt = isTrialing && event.expiration_at_ms
-        ? new Date(event.expiration_at_ms).toISOString()
-        : null;
+
+      const isTrialing = eventType === 'TRIAL_STARTED';
+      // trial_ends_at = expiry of the trial period
+      const trialEndsAt = isTrialing ? expiresDate : null;
+
+      // Infer billing cycle from the product identifier on the event
+      const billingCycle = inferBillingCycle(event.product_id || '');
 
       updates = {
         subscription_tier: tier,
         billing_platform: 'apple',
+        billing_cycle: billingCycle,
         renewal_date: expiresDate,
         trial_ends_at: trialEndsAt,
+        // TRIAL_CONVERTED: clear trial_ends_at since trial became a paid subscription
+        ...(eventType === 'TRIAL_CONVERTED' ? { trial_ends_at: null } : {}),
       };
 
     } else if (DEACTIVATE_EVENTS.has(eventType)) {
@@ -123,20 +137,26 @@ Deno.serve(async (req) => {
       };
 
     } else if (CANCELLATION_EVENTS.has(eventType)) {
-      // CANCELLATION = scheduled to cancel at period end — keep tier active until expiry
-      // BILLING_ISSUE = payment failed, keep access for grace period (RevenueCat handles grace)
+      // CANCELLATION = user cancelled, but subscription still active until period end
+      //   → keep tier active, just update renewal_date to period end
+      // BILLING_ISSUE = payment failed, RevenueCat handles grace period
+      //   → keep tier active during grace period, webhook fires EXPIRATION when truly over
       const expiresDate = event.expiration_at_ms
         ? new Date(event.expiration_at_ms).toISOString()
         : null;
       const activeEntitlements = event.entitlements || {};
       const tier = resolveHighestTier(activeEntitlements);
+      const billingCycle = inferBillingCycle(event.product_id || '');
 
       updates = {
         subscription_tier: tier,
         billing_platform: 'apple',
+        billing_cycle: billingCycle,
         renewal_date: expiresDate,
+        // Don't clear trial_ends_at here — it may still be in trial when cancelled
       };
     }
+    // NON_RENEWING_PURCHASE: consumable/one-time — not applicable for subscriptions, no-op
 
     if (updates) {
       await base44.asServiceRole.entities.UserProfile.update(profileId, updates);

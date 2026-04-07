@@ -6,24 +6,49 @@
  * To enable: add ?rc_mock=1 to the URL in your browser.
  * e.g. https://yourapp.com/pricing?rc_mock=1
  *
+ * Console helpers:
+ *   window._rcSetTier('supporter')  — set current mock tier
+ *   window._rcSetTier('premium')    — set current mock tier
+ *   window._rcSetTier('free')       — simulate downgrade / expiry
+ *
  * Import this file in main.jsx BEFORE the app renders.
  */
 
 const MOCK_PACKAGES = [
   {
-    identifier: "$rc_monthly_plus",
-    product: { priceString: "$7.99", title: "Plus Monthly" },
+    identifier: "plus_monthly",
+    product: { priceString: "$7.99", title: "Plus Monthly", productIdentifier: "plus_monthly" },
   },
   {
-    identifier: "$rc_monthly_premium",
-    product: { priceString: "$14.99", title: "Premium Monthly" },
+    identifier: "plus_annual",
+    product: { priceString: "$59.99", title: "Plus Annual", productIdentifier: "plus_annual" },
+  },
+  {
+    identifier: "premium_monthly",
+    product: { priceString: "$14.99", title: "Premium Monthly", productIdentifier: "premium_monthly" },
+  },
+  {
+    identifier: "premium_annual",
+    product: { priceString: "$119.99", title: "Premium Annual", productIdentifier: "premium_annual" },
   },
 ];
 
-function createMockBridge() {
-  let mockTier = "free"; // Start as free, can be set via console: window._rcMockTier = "supporter"
-
+function makeEntitlements(tier) {
+  if (tier === "free") return {};
+  const key = tier === "premium" ? "premium" : "plus";
   return {
+    [key]: {
+      isActive: true,
+      expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      productIdentifier: tier === "premium" ? "premium_monthly" : "plus_monthly",
+    },
+  };
+}
+
+function createMockBridge() {
+  let mockTier = "free";
+
+  const bridge = {
     getOfferings: async () => {
       await delay(600);
       return { current: { availablePackages: MOCK_PACKAGES } };
@@ -35,35 +60,31 @@ function createMockBridge() {
       if (Math.random() < 0.2) throw new Error("userCancelled");
       const tier = identifier.includes("premium") ? "premium" : "supporter";
       mockTier = tier;
+      const active = makeEntitlements(tier);
       return {
         userID: "mock_user_123",
-        entitlements: {
-          active: {
-            [tier === "premium" ? "premium" : "plus"]: { isActive: true },
-          },
-        },
+        entitlements: { active },
       };
     },
 
     getCustomerInfo: async () => {
       await delay(400);
-      const active = mockTier === "free" ? {} : {
-        [mockTier === "premium" ? "premium" : "plus"]: { isActive: true },
+      return {
+        userID: "mock_user_123",
+        entitlements: { active: makeEntitlements(mockTier) },
       };
-      return { userID: "mock_user_123", entitlements: { active } };
     },
 
     restorePurchases: async () => {
       await delay(800);
       return {
-        entitlements: {
-          active: mockTier === "free" ? {} : {
-            [mockTier === "premium" ? "premium" : "plus"]: { isActive: true },
-          },
-        },
+        userID: "mock_user_123",
+        entitlements: { active: makeEntitlements(mockTier) },
       };
     },
   };
+
+  return bridge;
 }
 
 function delay(ms) {
@@ -74,7 +95,19 @@ function delay(ms) {
 if (typeof window !== "undefined") {
   const params = new URLSearchParams(window.location.search);
   if (params.get("rc_mock") === "1") {
-    window.rcBridge = createMockBridge();
-    console.info("[RevenueCat] 🧪 Dev mock bridge injected. Use window._rcMockTier = 'supporter' | 'premium' to simulate tiers.");
+    const bridge = createMockBridge();
+    window.rcBridge = bridge;
+
+    // Expose helper to change mock tier from the console
+    window._rcSetTier = (tier) => {
+      window.rcBridge._mockTier = tier;
+      // Patch getCustomerInfo/restorePurchases to use the new tier
+      console.info(`[RC Mock] Tier set to: ${tier}`);
+    };
+
+    console.info(
+      "[RevenueCat] 🧪 Dev mock bridge injected (4 packages: plus/premium × monthly/annual).\n" +
+      "  Use window._rcSetTier('supporter' | 'premium' | 'free') to simulate entitlement changes."
+    );
   }
 }

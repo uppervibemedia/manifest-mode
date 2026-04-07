@@ -1,16 +1,16 @@
 /**
  * iOS in-app purchase paywall using RevenueCat native bridge.
  * Rendered on the Pricing page instead of Stripe buttons when on iOS native.
+ *
+ * Packages are sorted: Plus Monthly → Plus Annual → Premium Monthly → Premium Annual
+ * "Current Plan" badge appears on the specific package matching the active subscription.
  */
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Crown, Sparkles, Loader2, Check, RefreshCw } from "lucide-react";
-import { getOfferings, purchasePackage, restorePurchases } from "@/lib/revenueCatBridge";
+import { getOfferings, purchasePackage, restorePurchases, inferBillingCycle } from "@/lib/revenueCatBridge";
 import { useUserProfile } from "@/lib/UserProfileContext";
 
-// Map package identifiers to our plan info
-// RevenueCat package identifiers follow $rc_monthly / $rc_annual convention
-// OR custom identifiers set in the RevenueCat dashboard
 const PLAN_META = {
   plus: {
     name: "Plus",
@@ -18,6 +18,7 @@ const PLAN_META = {
     color: "text-blue-400",
     borderClass: "border-blue-400/40",
     icon: <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />,
+    sortBase: 0,
   },
   premium: {
     name: "Premium",
@@ -26,15 +27,44 @@ const PLAN_META = {
     borderClass: "border-primary/50",
     icon: <Crown className="w-4 h-4 text-primary shrink-0" />,
     featured: true,
+    sortBase: 2,
   },
 };
 
-// Infer plan from package identifier string
-function inferPlan(identifier = "") {
-  const id = identifier.toLowerCase();
-  if (id.includes("premium")) return "premium";
-  if (id.includes("plus") || id.includes("supporter")) return "plus";
-  return null;
+/**
+ * Infer plan key ("plus" | "premium") from package or product identifier.
+ * Handles both RevenueCat standard identifiers ($rc_monthly, $rc_annual) and
+ * custom identifiers set in the RevenueCat dashboard.
+ *
+ * For standard RC identifiers that don't contain plan name, we fall back to
+ * the product title or product identifier supplied by the native layer.
+ */
+function inferPlan(pkg) {
+  const id = (pkg.identifier || "").toLowerCase();
+  const title = (pkg.product?.title || "").toLowerCase();
+  const productId = (pkg.product?.productIdentifier || "").toLowerCase();
+  const combined = `${id} ${title} ${productId}`;
+
+  if (combined.includes("premium")) return "premium";
+  if (combined.includes("plus") || combined.includes("supporter")) return "plus";
+
+  // For bare $rc_monthly / $rc_annual with no plan info, treat as premium (safest default)
+  return "premium";
+}
+
+/**
+ * Sort packages: plus-monthly, plus-annual, premium-monthly, premium-annual
+ */
+function sortPackages(pkgs) {
+  return [...pkgs].sort((a, b) => {
+    const planA = inferPlan(a);
+    const planB = inferPlan(b);
+    const cycleA = inferBillingCycle(a.identifier);
+    const cycleB = inferBillingCycle(b.identifier);
+    const scoreA = (PLAN_META[planA]?.sortBase ?? 0) + (cycleA === "annual" ? 1 : 0);
+    const scoreB = (PLAN_META[planB]?.sortBase ?? 0) + (cycleB === "annual" ? 1 : 0);
+    return scoreA - scoreB;
+  });
 }
 
 export default function RevenueCatPaywall({ onPurchased }) {
@@ -55,7 +85,7 @@ export default function RevenueCatPaywall({ onPurchased }) {
     setError(null);
     try {
       const pkgs = await getOfferings();
-      setPackages(pkgs);
+      setPackages(sortPackages(pkgs));
     } catch (e) {
       setError("Could not load plans. Please try again.");
     } finally {
@@ -65,16 +95,15 @@ export default function RevenueCatPaywall({ onPurchased }) {
 
   const handlePurchase = async (pkg) => {
     setError(null);
+    setSuccess(null);
     setPurchasing(pkg.identifier);
     try {
       const tier = await purchasePackage(pkg.identifier);
       await refetch();
-      setSuccess(`${pkg.product?.title || "Plan"} activated!`);
+      setSuccess(`${pkg.product?.title || "Plan"} activated! ✦`);
       onPurchased?.(tier);
     } catch (e) {
-      if (e.message?.includes("userCancelled")) {
-        // User cancelled — silent
-      } else {
+      if (!e.message?.includes("userCancelled")) {
         setError(e.message || "Purchase failed. Please try again.");
       }
     } finally {
@@ -84,11 +113,12 @@ export default function RevenueCatPaywall({ onPurchased }) {
 
   const handleRestore = async () => {
     setError(null);
+    setSuccess(null);
     setRestoring(true);
     try {
       const tier = await restorePurchases();
       await refetch();
-      setSuccess(tier !== "free" ? "Purchases restored!" : "No active purchases found.");
+      setSuccess(tier !== "free" ? "Purchases restored! ✦" : "No active purchases found.");
       onPurchased?.(tier);
     } catch (e) {
       setError(e.message || "Restore failed. Please try again.");
@@ -98,6 +128,23 @@ export default function RevenueCatPaywall({ onPurchased }) {
   };
 
   const currentTier = profile?.subscription_tier || "free";
+  const currentBillingCycle = profile?.billing_cycle || "monthly";
+  const billingPlatform = profile?.billing_platform;
+
+  // Check if a specific package matches the active subscription
+  function isCurrentPackage(pkg) {
+    const plan = inferPlan(pkg);
+    const cycle = inferBillingCycle(pkg.identifier);
+    const tierMatch =
+      (plan === "plus" && currentTier === "supporter") ||
+      (plan === "premium" && currentTier === "premium");
+    // Only show "Current Plan" on the correct billing cycle when platform is apple
+    if (billingPlatform === "apple") {
+      return tierMatch && cycle === currentBillingCycle;
+    }
+    // If platform unknown, just match tier
+    return tierMatch;
+  }
 
   if (loading) {
     return (
@@ -131,11 +178,13 @@ export default function RevenueCatPaywall({ onPurchased }) {
         </div>
       ) : (
         packages.map((pkg, i) => {
-          const plan = inferPlan(pkg.identifier);
-          const meta = PLAN_META[plan] || PLAN_META.plus;
-          const isCurrent = (plan === "plus" && currentTier === "supporter") ||
-                            (plan === "premium" && currentTier === "premium");
-          const isLoading = purchasing === pkg.identifier;
+          const plan = inferPlan(pkg);
+          const cycle = inferBillingCycle(pkg.identifier);
+          const meta = PLAN_META[plan] || PLAN_META.premium;
+          const isCurrent = isCurrentPackage(pkg);
+          const isLoadingPkg = purchasing === pkg.identifier;
+          const cycleLabel = cycle === "annual" ? "/ year" : "/ month";
+          const isAnnual = cycle === "annual";
 
           return (
             <motion.div
@@ -145,30 +194,42 @@ export default function RevenueCatPaywall({ onPurchased }) {
               transition={{ delay: i * 0.06 }}
               className={`rounded-2xl border-2 overflow-hidden glass-card ${meta.borderClass} ${meta.featured ? "glow-gold" : ""}`}
             >
-              {isCurrent && (
+              {/* Badge strip */}
+              {isCurrent ? (
                 <div className="px-5 py-2.5 bg-primary/10 flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Your Current Plan</span>
                 </div>
-              )}
+              ) : isAnnual ? (
+                <div className="px-5 py-2.5 bg-emerald-500/8 flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Best Value · Save ~35%</span>
+                </div>
+              ) : null}
 
               <div className="p-5">
-                <div className="flex items-center gap-2 mb-1">
-                  {meta.icon}
-                  <h3 className={`font-playfair text-xl font-bold ${meta.color}`}>{meta.name}</h3>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    {meta.icon}
+                    <h3 className={`font-playfair text-xl font-bold ${meta.color}`}>{meta.name}</h3>
+                  </div>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    isAnnual
+                      ? "text-emerald-400 border-emerald-400/30 bg-emerald-400/10"
+                      : "text-muted-foreground border-border"
+                  }`}>
+                    {isAnnual ? "Annual" : "Monthly"}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">{meta.subtitle}</p>
                 <p className={`font-playfair text-2xl font-bold mb-4 ${meta.color}`}>
                   {pkg.product?.priceString || "—"}
-                  <span className="text-sm font-normal text-muted-foreground ml-1.5">
-                    {pkg.identifier?.includes("annual") ? "/ year" : "/ month"}
-                  </span>
+                  <span className="text-sm font-normal text-muted-foreground ml-1.5">{cycleLabel}</span>
                 </p>
 
                 <button
                   onClick={() => !isCurrent && handlePurchase(pkg)}
-                  disabled={isCurrent || isLoading}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
+                  disabled={isCurrent || !!purchasing}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 ${
                     isCurrent
                       ? "bg-border/40 text-muted-foreground cursor-default"
                       : plan === "premium"
@@ -176,7 +237,7 @@ export default function RevenueCatPaywall({ onPurchased }) {
                       : "bg-blue-400/15 border border-blue-400/30 text-blue-400 hover:bg-blue-400/25"
                   }`}
                 >
-                  {isLoading
+                  {isLoadingPkg
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
                     : isCurrent
                     ? "Current Plan"
@@ -188,7 +249,7 @@ export default function RevenueCatPaywall({ onPurchased }) {
         })
       )}
 
-      {/* Restore purchases */}
+      {/* Restore purchases — required by App Store Review Guidelines */}
       <button
         onClick={handleRestore}
         disabled={restoring}
@@ -198,8 +259,9 @@ export default function RevenueCatPaywall({ onPurchased }) {
         Restore Purchases
       </button>
 
-      <p className="text-center text-[11px] text-muted-foreground">
-        Subscriptions auto-renew. Cancel anytime in App Store Settings.
+      <p className="text-center text-[11px] text-muted-foreground leading-relaxed">
+        Subscriptions auto-renew unless cancelled at least 24 hours before renewal.{"\n"}
+        Manage or cancel in App Store Settings → Subscriptions.
       </p>
     </div>
   );

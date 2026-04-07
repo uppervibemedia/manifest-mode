@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { hasRevenueCatBridge } from "@/lib/platform";
+import { syncRevenueCatStatus } from "@/lib/revenueCatBridge";
 
 const UserProfileContext = createContext();
 
@@ -68,6 +70,20 @@ export function UserProfileProvider({ children }) {
       }
       
       setProfile(userProfile || null);
+
+      // On iOS native: sync RevenueCat entitlement state on every app launch / refetch
+      // This ensures the profile reflects the real Apple subscription state
+      // even if the user renewed, cancelled, or was downgraded server-side.
+      if (hasRevenueCatBridge()) {
+        try {
+          await syncRevenueCatStatus();
+          // Re-fetch profile after sync to pick up any tier changes
+          const refreshed = await base44.entities.UserProfile.filter({ user_email: u.email });
+          if (refreshed[0]) setProfile(refreshed[0]);
+        } catch (rcError) {
+          console.warn("RevenueCat sync skipped:", rcError.message);
+        }
+      }
     } catch (error) {
       console.error("Error loading user profile:", error);
     } finally {

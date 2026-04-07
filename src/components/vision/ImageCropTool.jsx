@@ -349,6 +349,8 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 left: 0,
                 width: imageDimensions.width > 0 ? imageDimensions.width : "auto",
                 height: imageDimensions.height > 0 ? imageDimensions.height : "auto",
+                maxWidth: imageDimensions.width === 0 ? "calc(100vw - 120px)" : "none",
+                maxHeight: imageDimensions.height === 0 ? "calc(100dvh - 200px)" : "none",
                 transform: `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${zoomScale})`,
                 transformOrigin: "0 0",
                 willChange: "transform",

@@ -14,7 +14,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isDraggingEdge, setIsDraggingEdge] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const initialStateRef = useRef({ x: 0, y: 0 });
+  const initialStateRef = useRef({ x: 0, y: 0, cropBox: { width: 0, height: 0 }, imageScale: 1 });
 
   // Load image and set initial state
   useEffect(() => {
@@ -37,10 +37,10 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         // Scale image to fit crop box nicely
         const scaleX = cropWidth / img.width;
         const scaleY = cropHeight / img.height;
-        const initialScale = Math.min(scaleX, scaleY) * 1.1;
+        const initialScale = Math.min(scaleX, scaleY);
 
         setImageScale(initialScale);
-        initialStateRef.current = { x: 0, y: 0 };
+        initialStateRef.current = { x: 0, y: 0, cropBox: { width: cropWidth, height: cropHeight }, imageScale: initialScale };
         setImagePosition({ x: 0, y: 0 });
       }
     };
@@ -173,6 +173,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     const scaledWidth = image.width * imageScale;
     const scaledHeight = image.height * imageScale;
 
+    // Draw the visible portion of the image within the crop box
     ctx.drawImage(
       image,
       -imagePosition.x,
@@ -194,7 +195,9 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   // Reset to initial state
   const handleReset = () => {
     if (!image) return;
-    setImagePosition({ x: 0, y: 0 });
+    setImagePosition({ x: initialStateRef.current.x, y: initialStateRef.current.y });
+    setCropBox(initialStateRef.current.cropBox);
+    setImageScale(initialStateRef.current.imageScale);
   };
 
   // Crop frame edge handle

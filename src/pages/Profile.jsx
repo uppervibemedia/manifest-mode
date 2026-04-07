@@ -7,6 +7,7 @@ import { LogOut, Crown, ChevronRight, Zap, ExternalLink, Loader2, AlertTriangle 
 import AppLayout from "@/components/layout/AppLayout";
 import ReminderSettings from "@/components/profile/ReminderSettings";
 import { clearUserSessionState } from "@/lib/sessionStateManager";
+import { useModalState } from "@/lib/ModalContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,10 @@ export default function Profile() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+  const { setActiveFullscreenModal } = useModalState();
+
+  const openDeleteDialog = () => { setShowDeleteDialog(true); setActiveFullscreenModal("delete-account"); };
+  const closeDeleteDialog = () => { setShowDeleteDialog(false); setActiveFullscreenModal(null); };
 
   useEffect(() => {
     if (profileLoading) return;
@@ -98,7 +103,7 @@ export default function Profile() {
       console.error("Delete account error:", error);
     } finally {
       setDeleting(false);
-      setShowDeleteDialog(false);
+      closeDeleteDialog();
     }
   };
 
@@ -205,14 +210,14 @@ export default function Profile() {
 
         {/* Delete Account */}
         <motion.button initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          onClick={() => setShowDeleteDialog(true)}
+          onClick={openDeleteDialog}
           className="w-full glass-card rounded-2xl p-5 flex items-center gap-4 border border-destructive/40 bg-destructive/5 hover:bg-destructive/10 transition-colors">
           <AlertTriangle className="w-5 h-5 text-destructive/80 shrink-0" />
           <p className="text-sm font-medium text-destructive/90">Delete Account</p>
         </motion.button>
 
         {/* Delete confirmation dialog */}
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialog open={showDeleteDialog} onOpenChange={(open) => { if (!open) closeDeleteDialog(); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="text-destructive">Delete Account</AlertDialogTitle>

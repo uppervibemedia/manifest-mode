@@ -48,7 +48,7 @@ export default function AppLayout({ children }) {
   const isOnboarding = location.pathname.startsWith('/onboarding');
   
   // Hide nav for fullscreen modals
-  const hiddenModals = ["see-me-vision", "vision-upload"];
+  const hiddenModals = ["see-me-vision", "vision-upload", "delete-account"];
   const hideNav = hiddenModals.includes(activeFullscreenModal);
 
   // Track page visits for daily routing (user-scoped)

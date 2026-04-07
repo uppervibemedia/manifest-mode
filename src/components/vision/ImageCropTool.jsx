@@ -4,6 +4,7 @@ import { ChevronLeft, Check, RotateCcw } from "lucide-react";
 
 export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
   const imageRef = useRef(null);
   const [image, setImage] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0, scale: 1 });
@@ -17,8 +18,10 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     img.onload = () => {
       imageRef.current = img;
       setImage(img);
-      // Center the image initially
       setCrop({ x: 0, y: 0, scale: 1 });
+    };
+    img.onerror = () => {
+      console.error("Failed to load image:", imageUrl);
     };
     img.src = imageUrl;
   }, [imageUrl]);
@@ -31,53 +34,61 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const containerWidth = canvas.parentElement.offsetWidth;
-    const containerHeight = (containerWidth * 4) / 3; // 4:3 aspect ratio
+    const container = containerRef.current || canvas.parentElement;
+    const containerWidth = container?.offsetWidth || 400;
+    const containerHeight = (containerWidth * 4) / 3;
 
     canvas.width = containerWidth;
     canvas.height = containerHeight;
+
+    // Clear canvas
+    ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    ctx.fillRect(0, 0, containerWidth, containerHeight);
 
     // Calculate scaled image dimensions
     const scaledWidth = image.width * crop.scale;
     const scaledHeight = image.height * crop.scale;
 
-    // Draw image with positioning (source crop coordinates map to canvas)
+    // Draw image centered with crop offset
     ctx.drawImage(
       image,
       crop.x,
       crop.y,
       image.width,
       image.height,
-      0,
-      0,
+      (containerWidth - scaledWidth) / 2,
+      (containerHeight - scaledHeight) / 2,
       scaledWidth,
       scaledHeight
     );
 
     // Draw crop frame
-    ctx.strokeStyle = "rgba(212, 175, 55, 0.6)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(212, 175, 55, 0.8)";
+    ctx.lineWidth = 3;
     ctx.strokeRect(0, 0, containerWidth, containerHeight);
   }, [image, crop]);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
+    setDragStart({ x: e.clientX || e.touches?.[0]?.clientX, y: e.clientY || e.touches?.[0]?.clientY });
   };
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
 
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
+    const clientX = e.clientX || e.touches?.[0]?.clientX;
+    const clientY = e.clientY || e.touches?.[0]?.clientY;
+
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
 
     setCrop((prev) => ({
       ...prev,
-      x: prev.x - deltaX * 0.5,
-      y: prev.y - deltaY * 0.5,
+      x: prev.x - deltaX,
+      y: prev.y - deltaY,
     }));
 
-    setDragStart({ x: e.clientX, y: e.clientY });
+    setDragStart({ x: clientX, y: clientY });
   };
 
   const handleMouseUp = () => {
@@ -86,7 +97,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
 
   const handleWheel = (e) => {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
     setCrop((prev) => ({
       ...prev,
       scale: Math.max(0.5, Math.min(3, prev.scale * delta)),
@@ -97,13 +108,13 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     setCrop({ x: 0, y: 0, scale: 1 });
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!image || !canvasRef.current) return;
 
-    const containerWidth = canvasRef.current.parentElement.offsetWidth;
+    const container = containerRef.current || canvasRef.current.parentElement;
+    const containerWidth = container?.offsetWidth || 400;
     const containerHeight = (containerWidth * 4) / 3;
 
-    // Create a new canvas with the cropped image
     const croppedCanvas = document.createElement("canvas");
     croppedCanvas.width = containerWidth;
     croppedCanvas.height = containerHeight;
@@ -112,19 +123,21 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     const scaledWidth = image.width * crop.scale;
     const scaledHeight = image.height * crop.scale;
 
+    croppedCtx.fillStyle = "rgba(0, 0, 0, 0.3)";
+    croppedCtx.fillRect(0, 0, containerWidth, containerHeight);
+
     croppedCtx.drawImage(
       image,
       crop.x,
       crop.y,
       image.width,
       image.height,
-      0,
-      0,
+      (containerWidth - scaledWidth) / 2,
+      (containerHeight - scaledHeight) / 2,
       scaledWidth,
       scaledHeight
     );
 
-    // Convert to blob and call onSave
     croppedCanvas.toBlob(
       (blob) => {
         const croppedUrl = URL.createObjectURL(blob);
@@ -158,11 +171,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
       {/* Canvas */}
       <div className="flex-1 flex items-center justify-center overflow-hidden">
         <div
+          ref={containerRef}
           className="relative w-full max-w-md cursor-move select-none"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={handleMouseDown}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseUp}
           onWheel={handleWheel}
         >
           <canvas

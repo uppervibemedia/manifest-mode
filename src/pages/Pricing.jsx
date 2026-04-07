@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "@/lib/UserProfileContext";
@@ -114,6 +114,16 @@ export default function Pricing() {
   const params = new URLSearchParams(window.location.search);
   const justSucceeded = params.get("success") === "1";
   const justCanceled = params.get("canceled") === "1";
+
+  // Auto-refetch profile when returning from successful checkout
+  useEffect(() => {
+    if (justSucceeded) {
+      // Poll briefly to pick up webhook-updated subscription tier
+      const timer = setTimeout(() => refetch(), 2000);
+      const timer2 = setTimeout(() => refetch(), 5000);
+      return () => { clearTimeout(timer); clearTimeout(timer2); };
+    }
+  }, [justSucceeded]);
 
   const currentTier = profile?.subscription_tier || "free";
   const hasPaidPlan = currentTier !== "free";

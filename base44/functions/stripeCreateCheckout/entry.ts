@@ -41,6 +41,26 @@ Deno.serve(async (req) => {
       if (profile) {
         await base44.asServiceRole.entities.UserProfile.update(profile.id, { stripe_customer_id: customerId });
       }
+    } else {
+      // Verify the customer exists in the current Stripe mode (live vs test).
+      // If not, create a new one (handles mode switch from test → live).
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch (e) {
+        if (e.code === 'resource_missing') {
+          const customer = await stripe.customers.create({
+            email: user.email,
+            name: user.full_name,
+            metadata: { user_email: user.email },
+          });
+          customerId = customer.id;
+          if (profile) {
+            await base44.asServiceRole.entities.UserProfile.update(profile.id, { stripe_customer_id: customerId });
+          }
+        } else {
+          throw e;
+        }
+      }
     }
 
     // 7-day free trial for Plus monthly only

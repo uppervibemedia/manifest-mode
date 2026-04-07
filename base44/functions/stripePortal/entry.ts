@@ -18,6 +18,17 @@ Deno.serve(async (req) => {
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
+
+    // Verify customer exists in current Stripe mode (handles test → live switch)
+    try {
+      await stripe.customers.retrieve(customerId);
+    } catch (e) {
+      if (e.code === 'resource_missing') {
+        return Response.json({ error: 'No billing account found. Please subscribe first.' }, { status: 400 });
+      }
+      throw e;
+    }
+
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: return_url || `${req.headers.get('origin')}/profile`,

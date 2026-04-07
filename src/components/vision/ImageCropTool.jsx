@@ -8,6 +8,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   
   // Image and zoom state
   const [image, setImage] = useState(null);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [zoomScale, setZoomScale] = useState(1);
   const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
   
@@ -26,41 +27,45 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     img.onload = () => {
       imageRef.current = img;
       setImage(img);
+      setImageDimensions({ width: img.width, height: img.height });
 
-      const container = containerRef.current;
-      if (container) {
-        // Initial crop frame fits nicely with padding
-        const padding = 60;
-        const maxWidth = container.offsetWidth - padding;
-        const maxHeight = container.offsetHeight - padding;
+      // Delay to ensure container is measured
+      setTimeout(() => {
+        const container = containerRef.current;
+        if (container) {
+          // Initial crop frame fits nicely with padding
+          const padding = 60;
+          const maxWidth = container.offsetWidth - padding;
+          const maxHeight = container.offsetHeight - padding;
 
-        const cropWidth = Math.min(maxWidth, 300);
-        const cropHeight = Math.min(maxHeight, 400);
-        
-        const left = (container.offsetWidth - cropWidth) / 2;
-        const top = (container.offsetHeight - cropHeight) / 2;
+          const cropWidth = Math.min(maxWidth, 300);
+          const cropHeight = Math.min(maxHeight, 400);
+          
+          const left = (container.offsetWidth - cropWidth) / 2;
+          const top = (container.offsetHeight - cropHeight) / 2;
 
-        setCropBox({
-          top,
-          left,
-          right: left + cropWidth,
-          bottom: top + cropHeight,
-        });
+          setCropBox({
+            top,
+            left,
+            right: left + cropWidth,
+            bottom: top + cropHeight,
+          });
 
-        // Scale image to fit within crop box
-        const scaleX = cropWidth / img.width;
-        const scaleY = cropHeight / img.height;
-        const fitScale = Math.min(scaleX, scaleY);
-        
-        // Center the scaled image in the crop box
-        const scaledWidth = img.width * fitScale;
-        const scaledHeight = img.height * fitScale;
-        const offsetX = left + (cropWidth - scaledWidth) / 2;
-        const offsetY = top + (cropHeight - scaledHeight) / 2;
+          // Scale image to fit within crop box
+          const scaleX = cropWidth / img.width;
+          const scaleY = cropHeight / img.height;
+          const fitScale = Math.min(scaleX, scaleY);
+          
+          // Center the scaled image in the crop box
+          const scaledWidth = img.width * fitScale;
+          const scaledHeight = img.height * fitScale;
+          const offsetX = left + (cropWidth - scaledWidth) / 2;
+          const offsetY = top + (cropHeight - scaledHeight) / 2;
 
-        setZoomScale(fitScale);
-        setImageOffset({ x: offsetX, y: offsetY });
-      }
+          setZoomScale(fitScale);
+          setImageOffset({ x: offsetX, y: offsetY });
+        }
+      }, 100);
     };
     img.onerror = () => console.error("Failed to load image");
     img.src = imageUrl;
@@ -178,11 +183,21 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     if (!activeHandle && !isInteracting) return;
     const clientX = e.touches?.[0]?.clientX || e.clientX;
     const clientY = e.touches?.[0]?.clientY || e.clientY;
-    handleHandleMove(clientX, clientY);
+    
+    if (activeHandle) {
+      handleHandleMove(clientX, clientY);
+    } else if (isInteracting && !activeHandle) {
+      // Image pan during interaction
+      setImageOffset({
+        x: clientX - dragStart.x,
+        y: clientY - dragStart.y,
+      });
+    }
   };
 
   const handlePointerUp = () => {
     setActiveHandle(null);
+    setIsInteracting(false);
   };
 
   // Save cropped image with export data
@@ -254,6 +269,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
           ...positionStyles[position],
           width: handleSize,
           height: handleSize,
+          pointerEvents: "auto",
         }}
       >
         {/* Visible indicator dot */}
@@ -315,20 +331,36 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
             }} />
 
             {/* Image layer */}
-            <div
+            <img
+              src={imageUrl}
+              alt="crop"
               className="absolute cursor-grab active:cursor-grabbing"
+              onLoad={(e) => {
+                const rect = e.target.getBoundingClientRect();
+                const actualWidth = rect.width || e.target.naturalWidth;
+                const actualHeight = rect.height || e.target.naturalHeight;
+                if (imageDimensions.width === 0) {
+                  setImageDimensions({ width: actualWidth, height: actualHeight });
+                }
+              }}
               style={{
-                width: image.width,
-                height: image.height,
-                backgroundImage: `url(${imageUrl})`,
-                backgroundSize: "100% 100%",
-                backgroundPosition: "0 0",
-                backgroundRepeat: "no-repeat",
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: imageDimensions.width > 0 ? imageDimensions.width : "auto",
+                height: imageDimensions.height > 0 ? imageDimensions.height : "auto",
                 transform: `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${zoomScale})`,
                 transformOrigin: "0 0",
                 willChange: "transform",
+                pointerEvents: "auto",
               }}
               onTouchStart={handleTouchStart}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setDragStart({ x: e.clientX - imageOffset.x, y: e.clientY - imageOffset.y });
+                setIsInteracting(true);
+              }}
+              draggable={false}
             />
 
             {/* Crop frame container */}
@@ -340,7 +372,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 width: cropBox.right - cropBox.left,
                 height: cropBox.bottom - cropBox.top,
                 border: "2px solid rgba(212, 175, 55, 0.8)",
-                pointerEvents: "none",
               }}
             >
               {/* Rule of thirds grid (visible when interacting) */}

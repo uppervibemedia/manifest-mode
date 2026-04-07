@@ -1,14 +1,15 @@
 import { getLocalToday } from './dateUtils';
 
-const LAST_VISIT_KEY = 'last_visit_date';
-const LAST_PAGE_KEY = 'last_visited_page';
+// Keys are user-scoped to prevent data leakage between accounts
+function lastVisitKey(email) { return `last_visit_date_${email}`; }
+function lastPageKey(email) { return `last_visited_page_${email}`; }
 
 /**
- * Check if today is a new day compared to last app open
+ * Check if today is a new day compared to last app open for this user
  */
-export function isNewDay() {
+export function isNewDay(userEmail) {
   const today = getLocalToday();
-  const lastVisitDate = localStorage.getItem(LAST_VISIT_KEY);
+  const lastVisitDate = localStorage.getItem(lastVisitKey(userEmail));
   return lastVisitDate !== today;
 }
 
@@ -17,37 +18,37 @@ export function isNewDay() {
  * - New day: Daily Shift
  * - Same day: last visited page (or fallback to Daily Shift)
  */
-export function getInitialRoute() {
+export function getInitialRoute(userEmail) {
   const today = getLocalToday();
-  
-  if (isNewDay()) {
+
+  if (isNewDay(userEmail)) {
     // New day: always go to Daily Shift
-    localStorage.setItem(LAST_VISIT_KEY, today);
-    localStorage.removeItem(LAST_PAGE_KEY); // Clear previous day's page
+    localStorage.setItem(lastVisitKey(userEmail), today);
+    localStorage.removeItem(lastPageKey(userEmail)); // Clear previous day's page
     return '/daily-shift';
   }
-  
+
   // Same day: try to restore last visited page
-  const lastPage = localStorage.getItem(LAST_PAGE_KEY);
+  const lastPage = localStorage.getItem(lastPageKey(userEmail));
   if (lastPage && isValidPage(lastPage)) {
     return lastPage;
   }
-  
+
   // Fallback to Daily Shift
   return '/daily-shift';
 }
 
 /**
- * Track page visit (call from AppLayout or when user navigates)
+ * Track page visit (called from AppLayout on navigation)
  */
-export function trackPageVisit(pathname) {
-  if (isValidPage(pathname)) {
-    localStorage.setItem(LAST_PAGE_KEY, pathname);
+export function trackPageVisit(pathname, userEmail) {
+  if (isValidPage(pathname) && userEmail) {
+    localStorage.setItem(lastPageKey(userEmail), pathname);
   }
 }
 
 /**
- * Check if a page is a valid app page (not onboarding, auth, etc)
+ * Check if a page is a valid trackable page (not onboarding, auth, etc)
  */
 function isValidPage(pathname) {
   const validPages = [

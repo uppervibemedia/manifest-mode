@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Heart, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { getLocalToday } from "@/lib/dateUtils";
 
-const CACHE_KEY_PREFIX = "emotion-alignment-";
+// Cache keys are user-scoped to prevent cross-account data leakage
+function cacheKey(userEmail, today) { return `emotion-alignment-${userEmail}-${today}`; }
 const COMPLETION_KEY_PREFIX = "emotion-completed-";
 
 // Time windows in local hours (24h)
@@ -67,8 +68,8 @@ export default function MicroActionSuggester({ userEmail }) {
   const loadAlignment = async () => {
     setLoading(true);
     try {
-      const cacheKey = `${CACHE_KEY_PREFIX}${today}`;
-      const cached = sessionStorage.getItem(cacheKey);
+      const key = cacheKey(userEmail, today);
+      const cached = sessionStorage.getItem(key);
       if (cached) {
         setAlignment(JSON.parse(cached));
         setLoading(false);
@@ -148,7 +149,7 @@ Return ONLY valid JSON:
       });
 
       if (result) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(result));
+        sessionStorage.setItem(cacheKey(userEmail, today), JSON.stringify(result));
         setAlignment(result);
       }
     } catch (e) {

@@ -135,7 +135,7 @@ function NewUserGate() {
   }
   
   // Use smart daily routing: first open = Daily Shift, later opens = last visited page
-  const route = getInitialRoute();
+  const route = getInitialRoute(user.email);
   return <Navigate to={route} replace />;
 }
 

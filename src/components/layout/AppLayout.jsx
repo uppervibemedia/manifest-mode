@@ -3,6 +3,7 @@ import { useRef, useEffect } from "react";
 import { Zap, Image, TrendingUp, User, Sparkles } from "lucide-react";
 import { useModalState } from "@/lib/ModalContext";
 import { ScrollProvider } from "@/lib/ScrollContext";
+import { useUserProfile } from "@/lib/UserProfileContext";
 import { trackPageVisit } from "@/lib/dailyRoutingEngine";
 
 const NAV_ITEMS = [
@@ -41,6 +42,7 @@ export default function AppLayout({ children }) {
   const containerRef = useRef(null);
   const prevTabRef = useRef(getTabId(location.pathname));
   const { activeFullscreenModal } = useModalState();
+  const { user } = useUserProfile();
 
   const currentTabId = getTabId(location.pathname);
   const isOnboarding = location.pathname.startsWith('/onboarding');
@@ -49,10 +51,10 @@ export default function AppLayout({ children }) {
   const hiddenModals = ["see-me-vision", "vision-upload"];
   const hideNav = hiddenModals.includes(activeFullscreenModal);
 
-  // Track page visits for daily routing
+  // Track page visits for daily routing (user-scoped)
   useEffect(() => {
-    trackPageVisit(location.pathname);
-  }, [location.pathname]);
+    trackPageVisit(location.pathname, user?.email);
+  }, [location.pathname, user?.email]);
 
   // Save scroll of leaving tab, restore scroll of arriving tab
   useEffect(() => {

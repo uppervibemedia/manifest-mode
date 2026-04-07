@@ -63,8 +63,7 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
         style={{ maxHeight: "92dvh" }}
       >
         {/* Header */}
-        <div className="px-5 pb-4 border-b border-border flex items-center justify-between shrink-0"
-          style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top, 0px))" }}>
+        <div className="px-5 pt-5 pb-4 border-b border-border flex items-center justify-between shrink-0">
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <span className="text-base">{meta.icon}</span>
@@ -114,7 +113,8 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
         </div>
 
         {/* Actions footer */}
-        <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 py-4 space-y-2.5">
+        <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 pt-4 space-y-2.5"
+          style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
 
           {/* Download */}
           <div className="flex gap-2">

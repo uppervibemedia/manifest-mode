@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function usePullToRefresh(onRefresh) {
+/**
+ * Attaches pull-to-refresh to a scroll container element.
+ * @param {React.RefObject} containerRef - ref to the scrollable container
+ * @param {() => Promise<void>} onRefresh - async callback to run on pull
+ * @returns {{ isRefreshing: boolean }}
+ */
+export function usePullToRefresh(containerRef, onRefresh) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const startYRef = useRef(0);
-  const containerRef = useRef(null);
+  const isRefreshingRef = useRef(false);
 
   useEffect(() => {
-    const container = containerRef.current;
+    const container = containerRef?.current;
     if (!container) return;
-
-    let currentY = 0;
 
     const handleTouchStart = (e) => {
       if (container.scrollTop === 0) {
@@ -19,30 +23,31 @@ export function usePullToRefresh(onRefresh) {
 
     const handleTouchMove = (e) => {
       if (container.scrollTop !== 0) return;
-
-      currentY = e.touches[0].clientY - startYRef.current;
-
-      if (currentY > 100 && !isRefreshing) {
+      const deltaY = e.touches[0].clientY - startYRef.current;
+      if (deltaY > 80 && !isRefreshingRef.current) {
+        isRefreshingRef.current = true;
         setIsRefreshing(true);
-        onRefresh();
+        Promise.resolve(onRefresh()).finally(() => {
+          isRefreshingRef.current = false;
+          setIsRefreshing(false);
+        });
       }
     };
 
     const handleTouchEnd = () => {
       startYRef.current = 0;
-      currentY = 0;
     };
 
-    container.addEventListener('touchstart', handleTouchStart);
-    container.addEventListener('touchmove', handleTouchMove);
-    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [onRefresh, isRefreshing]);
+  }, [containerRef, onRefresh]);
 
-  return { containerRef, isRefreshing, setIsRefreshing };
+  return { isRefreshing };
 }

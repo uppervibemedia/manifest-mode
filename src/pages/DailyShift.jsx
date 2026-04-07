@@ -335,18 +335,11 @@ export default function DailyShift() {
     }
   }, [user, profileLoading, today]);
 
+  const { isRefreshing: pullRefreshing } = usePullToRefresh(scrollContainer, loadData);
+
   useEffect(() => {
-    if (!scrollContainer?.current) return;
-    
-    const { cleanupPullToRefresh } = usePullToRefresh(
-      scrollContainer.current,
-      async () => {
-        await loadData();
-        setIsRefreshing(false);
-      }
-    );
-    return cleanupPullToRefresh;
-  }, [loadData, scrollContainer]);
+    setIsRefreshing(pullRefreshing);
+  }, [pullRefreshing]);
 
   useEffect(() => {
     if (profileLoading) return;

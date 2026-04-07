@@ -6,6 +6,7 @@ import { Check, Lock, Crown, Sparkles, ChevronLeft, Loader2, ExternalLink, Image
 import AppLayout from "@/components/layout/AppLayout";
 import { base44 } from "@/api/base44Client";
 import { PLAN_LABELS } from "@/lib/subscriptionEngine";
+import AppStorePaymentNotice from "@/components/payments/AppStorePaymentNotice";
 
 const PLANS = [
   {
@@ -198,6 +199,9 @@ export default function Pricing() {
         <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Subscription</p>
         <h1 className="font-playfair text-2xl font-semibold mb-2">Choose Your Plan</h1>
         <p className="text-sm text-muted-foreground mb-7">Invest in the version of yourself you're becoming.</p>
+
+        {/* App Store compliance notice (iOS WebView only) */}
+        <AppStorePaymentNotice />
 
         {/* Post-checkout banners */}
         {justSucceeded && (

@@ -58,11 +58,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     };
   }, []);
 
-  // Image drag handler
+  // Image drag handler — only trigger if not on an edge handle
   const handleImageDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
     if (isDraggingEdge) return;
-    
+
+    // Don't start image drag if clicking on a handle
+    if (e.target.closest('[data-crop-handle]')) return;
+
     const touch = e.touches?.[0];
     const clientX = touch?.clientX || e.clientX;
     const clientY = touch?.clientY || e.clientY;
@@ -197,6 +200,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   // Crop frame edge handle
   const CropHandle = ({ position, cursor }) => (
     <div
+      data-crop-handle
       onMouseDown={(e) => {
         e.preventDefault();
         e.stopPropagation();

@@ -34,64 +34,62 @@ function buildPrompt(sceneOption, visionTitle, category) {
   return `Create a photorealistic, aspirational portrait of a person ${sceneDesc} ${visionTitle || "their dream vision"}. The scene should feel ${categoryContext}. The composition should be cinematic, with rich colors, perfect natural lighting, and an emotionally powerful mood that makes the viewer feel they have already achieved this. The image should look like a genuine photograph, not a composite. Premium, magazine-quality, aspirational lifestyle photography.`;
 }
 
-function UploadZone({ label, hint, onFile, preview, icon, onCrop }) {
+function UploadZone({ label, hint, preview, icon, onCrop, uploading, onChange }) {
   const inputRef = useRef();
-  const [dragging, setDragging] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const file = e.target.files?.[0];
-    if (file) onFile(file);
+    if (!file) return;
+    onChange(file);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    setDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) onFile(file);
+    if (file) onChange(file);
   };
 
   return (
-    <div
-      onClick={() => inputRef.current?.click()}
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={handleDrop}
-      className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all border-2 border-dashed ${
-        dragging ? "border-primary bg-primary/10" : preview ? "border-primary/30" : "border-border hover:border-primary/40"
+    <label className="block cursor-pointer">
+      <div className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
+        preview ? "border-transparent" : "border-border hover:border-primary/40"
       }`}
-      style={{ aspectRatio: "1/1" }}
-    >
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} />
-
-      {preview ? (
-        <>
-          <img src={preview} alt={label} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onCrop();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
-            >
-              <Crop className="w-3.5 h-3.5" />
-              Crop
-            </button>
-            <div className="text-center text-white">
-              <Upload className="w-4 h-4 mx-auto mb-1" />
-              <p className="text-xs font-medium">Change</p>
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => { e.preventDefault(); }}
+        onDragLeave={() => {}}
+        onDrop={handleDrop}
+      >
+        {preview ? (
+          <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
+            <img src={preview} alt={label} className="w-full h-full object-cover pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onCrop();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
+              >
+                <Crop className="w-3.5 h-3.5" />
+                Crop
+              </button>
             </div>
+            <p className="absolute bottom-2 left-3 text-[10px] text-white/70">Tap to change</p>
           </div>
-        </>
-      ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-          <span className="text-3xl mb-2">{icon}</span>
-          <p className="text-xs font-semibold text-foreground mb-1">{label}</p>
-          <p className="text-[10px] text-muted-foreground leading-relaxed">{hint}</p>
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/20 min-h-[140px]">
+            {uploading
+              ? <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              : <><Upload className="w-6 h-6" /><p className="text-xs">{label}</p><p className="text-[10px] text-muted-foreground/50">{hint}</p></>
+            }
+          </div>
+        )}
+      </div>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleChange} disabled={uploading} />
+    </label>
   );
 }
 
@@ -119,24 +117,32 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     return () => setActiveFullscreenModal(null);
   }, [setActiveFullscreenModal]);
 
-  const handleVisionFile = (file) => {
+  const [uploadingVision, setUploadingVision] = useState(false);
+  const [uploadingSelf, setUploadingSelf] = useState(false);
+
+  const handleVisionFile = async (file) => {
+    setUploadingVision(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setVisionPreview(file_url);
     setVisionFile(file);
-    setVisionPreview(URL.createObjectURL(file));
     setCropType("vision");
     setShowCropTool(true);
+    setUploadingVision(false);
   };
 
-  const handleSelfFile = (file) => {
+  const handleSelfFile = async (file) => {
+    setUploadingSelf(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setSelfPreview(file_url);
     setSelfFile(file);
-    setSelfPreview(URL.createObjectURL(file));
     setCropType("self");
     setShowCropTool(true);
+    setUploadingSelf(false);
   };
 
   const handleCropSave = (croppedUrl) => {
     if (cropType === "vision") {
       setVisionPreview(croppedUrl);
-      // Convert blob URL back to File for upload later
       fetch(croppedUrl)
         .then(r => r.blob())
         .then(blob => setVisionFile(new File([blob], "vision.jpg", { type: "image/jpeg" })));
@@ -318,8 +324,9 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                       label="Vision Image"
                       hint="Dream car, house, vacation, lifestyle…"
                       icon="🌟"
-                      onFile={handleVisionFile}
+                      onChange={handleVisionFile}
                       preview={visionPreview}
+                      uploading={uploadingVision}
                       onCrop={() => {
                         setCropType("vision");
                         setShowCropTool(true);
@@ -332,8 +339,9 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                       label="Your Photo"
                       hint="Clear face, solo, good lighting"
                       icon="🪞"
-                      onFile={handleSelfFile}
+                      onChange={handleSelfFile}
                       preview={selfPreview}
+                      uploading={uploadingSelf}
                       onCrop={() => {
                         setCropType("self");
                         setShowCropTool(true);

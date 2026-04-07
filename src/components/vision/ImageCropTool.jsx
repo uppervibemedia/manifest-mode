@@ -353,6 +353,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
             }} />
 
             {/* Clipping container - shows live preview of what's being cropped */}
+            {imageDimensions.width > 0 && (
             <div
               style={{
                 position: "absolute",
@@ -363,6 +364,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 overflow: "hidden",
                 border: "2px solid rgba(212, 175, 55, 0.8)",
                 zIndex: 15,
+                backgroundColor: "rgba(0,0,0,0.1)",
               }}
             >
               <img
@@ -372,15 +374,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                   position: "absolute",
                   left: imageOffset.x - cropBox.left,
                   top: imageOffset.y - cropBox.top,
-                  width: imageDimensions.width > 0 ? imageDimensions.width : "auto",
-                  height: imageDimensions.height > 0 ? imageDimensions.height : "auto",
-                  transform: `scale(${zoomScale})`,
-                  transformOrigin: "0 0",
+                  width: imageDimensions.width * zoomScale,
+                  height: imageDimensions.height * zoomScale,
                   pointerEvents: "none",
+                  willChange: "none",
                 }}
                 draggable={false}
               />
             </div>
+            )}
 
             {/* Image layer (for interaction) */}
             <img

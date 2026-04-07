@@ -32,6 +32,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   }, [setActiveFullscreenModal]);
 
   const handleImageUpload = async (e) => {
+    e.stopPropagation();
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
@@ -39,6 +40,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     setForm(prev => ({ ...prev, image_url: file_url }));
     setShowCropTool(true);
     setUploading(false);
+    // Reset file input to allow re-uploading same file
+    e.target.value = null;
   };
 
   const handleCropSave = (croppedUrl, metadata) => {
@@ -125,14 +128,15 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
             form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
           }`}>
             {form.image_url ? (
-              <div className="relative w-full h-full group">
-                <img src={form.image_url} alt="Vision" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
+                <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       setShowCropTool(true);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"

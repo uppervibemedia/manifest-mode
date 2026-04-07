@@ -34,7 +34,7 @@ function buildPrompt(sceneOption, visionTitle, category) {
   return `Create a photorealistic, aspirational portrait of a person ${sceneDesc} ${visionTitle || "their dream vision"}. The scene should feel ${categoryContext}. The composition should be cinematic, with rich colors, perfect natural lighting, and an emotionally powerful mood that makes the viewer feel they have already achieved this. The image should look like a genuine photograph, not a composite. Premium, magazine-quality, aspirational lifestyle photography.`;
 }
 
-function UploadZone({ label, hint, onFile, preview, icon }) {
+function UploadZone({ label, hint, onFile, preview, icon, onCrop }) {
   const inputRef = useRef();
   const [dragging, setDragging] = useState(false);
 
@@ -67,6 +67,17 @@ function UploadZone({ label, hint, onFile, preview, icon }) {
         <>
           <img src={preview} alt={label} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCrop();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
+            >
+              <Crop className="w-3.5 h-3.5" />
+              Crop
+            </button>
             <div className="text-center text-white">
               <Upload className="w-4 h-4 mx-auto mb-1" />
               <p className="text-xs font-medium">Change</p>
@@ -309,6 +320,10 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                       icon="🌟"
                       onFile={handleVisionFile}
                       preview={visionPreview}
+                      onCrop={() => {
+                        setCropType("vision");
+                        setShowCropTool(true);
+                      }}
                     />
                     <p className="text-[10px] text-muted-foreground text-center mt-1.5">The scene you want</p>
                   </div>
@@ -319,6 +334,10 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                       icon="🪞"
                       onFile={handleSelfFile}
                       preview={selfPreview}
+                      onCrop={() => {
+                        setCropType("self");
+                        setShowCropTool(true);
+                      }}
                     />
                     <p className="text-[10px] text-muted-foreground text-center mt-1.5">A clear photo of you</p>
                   </div>

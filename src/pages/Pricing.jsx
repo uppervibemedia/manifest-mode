@@ -44,6 +44,7 @@ const PLANS = [
     id: "supporter",
     name: "Plus",
     subtitle: "Build momentum with deeper structure",
+    trial: "7-day free trial",
     visionLimit: "15 images",
     monthlyPrice: 7.99,
     annualPrice: 59.99,
@@ -298,7 +299,7 @@ export default function Pricing() {
                 {!isCurrent && isPlus && (
                   <div className="px-5 py-2.5 bg-blue-400/8 flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Popular Choice</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">7-Day Free Trial · Popular Choice</span>
                   </div>
                 )}
 
@@ -317,7 +318,7 @@ export default function Pricing() {
                   </div>
 
                   {/* Price */}
-                  <div className="flex items-end gap-3 mb-5">
+                  <div className="flex items-end gap-3 mb-2">
                     <div>
                       <span className={`font-playfair text-3xl font-bold ${plan.color}`}>{price.main}</span>
                       <span className="text-xs text-muted-foreground ml-1.5">{price.sub}</span>
@@ -328,6 +329,13 @@ export default function Pricing() {
                       </span>
                     )}
                   </div>
+                  {/* Trial notice for Plus monthly */}
+                  {isPlus && billing === 'monthly' && !isCurrent && (
+                    <p className="text-[11px] text-blue-400 font-medium mb-4">
+                      Free for 7 days, then $7.99/month. Cancel anytime.
+                    </p>
+                  )}
+                  {(!isPlus || billing !== 'monthly' || isCurrent) && <div className="mb-3" />}
 
                   {/* Included features */}
                   <div className="space-y-2 mb-4">
@@ -378,8 +386,12 @@ export default function Pricing() {
                   >
                     {isLoading ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting...</>
+                    ) : isCurrent ? (
+                      "Current Plan"
+                    ) : isPlus && billing === 'monthly' ? (
+                      "Start 7-Day Free Trial"
                     ) : (
-                      isCurrent ? "Current Plan" : plan.cta
+                      plan.cta
                     )}
                   </button>
                 </div>

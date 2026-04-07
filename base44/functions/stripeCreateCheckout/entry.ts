@@ -43,6 +43,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // 7-day free trial for Plus monthly only
+    const isTrialEligible = plan_id === 'supporter' && billing_cycle === 'monthly';
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
@@ -50,6 +53,7 @@ Deno.serve(async (req) => {
       success_url: success_url || `${req.headers.get('origin')}/pricing?success=1`,
       cancel_url: cancel_url || `${req.headers.get('origin')}/pricing?canceled=1`,
       subscription_data: {
+        trial_period_days: isTrialEligible ? 7 : undefined,
         metadata: {
           user_email: user.email,
           plan_id,

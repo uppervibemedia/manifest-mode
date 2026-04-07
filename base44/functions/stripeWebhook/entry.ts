@@ -43,6 +43,10 @@ Deno.serve(async (req) => {
         // Fetch the subscription to get period end
         const subscription = await stripe.subscriptions.retrieve(session.subscription);
         const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+        const isTrialing = subscription.status === 'trialing';
+        const trialEndsAt = isTrialing && subscription.trial_end
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null;
 
         await updateUserSubscription(base44, userEmail, {
           subscription_tier: resolveTier(planId),
@@ -51,6 +55,7 @@ Deno.serve(async (req) => {
           stripe_subscription_id: subscription.id,
           stripe_customer_id: session.customer,
           billing_platform: 'stripe',
+          trial_ends_at: trialEndsAt,
         });
         break;
       }
@@ -78,12 +83,18 @@ Deno.serve(async (req) => {
         const status = subscription.status;
         // Active or trialing → keep/set tier; past_due/unpaid/canceled → downgrade
         const isActive = ['active', 'trialing'].includes(status);
+        const isTrialing = status === 'trialing';
+        const trialEndsAt = isTrialing && subscription.trial_end
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null;
 
         await updateUserSubscription(base44, userEmail, {
           subscription_tier: isActive ? resolveTier(planId) : 'free',
           billing_cycle: isActive ? resolveBillingCycle(interval) : 'monthly',
           renewal_date: renewalDate,
           stripe_subscription_id: subscription.id,
+          // Clear trial_ends_at when subscription becomes active (trial converted)
+          trial_ends_at: isTrialing ? trialEndsAt : null,
         });
         break;
       }
@@ -100,6 +111,7 @@ Deno.serve(async (req) => {
           renewal_date: null,
           stripe_subscription_id: null,
           billing_platform: 'none',
+          trial_ends_at: null,
         });
         break;
       }

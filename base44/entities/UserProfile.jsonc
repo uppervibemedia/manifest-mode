@@ -55,6 +55,7 @@
         "stripe",
         "apple",
         "google",
+        "manual",
         "none"
       ],
       "default": "none"
@@ -66,6 +67,9 @@
       "type": "string"
     },
     "renewal_date": {
+      "type": "string"
+    },
+    "trial_ends_at": {
       "type": "string"
     },
     "ai_credits": {

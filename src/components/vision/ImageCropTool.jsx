@@ -304,12 +304,33 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
           <X className="w-6 h-6" />
         </button>
         <p className="text-sm font-semibold text-white">Crop Image</p>
-        <button
-          onClick={handleSave}
-          className="text-primary hover:text-primary/80 transition-colors font-semibold text-sm px-4 py-2"
-        >
-          Done
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              const container = containerRef.current;
+              if (container) {
+                const padding = 60;
+                const maxWidth = container.offsetWidth - padding;
+                const maxHeight = container.offsetHeight - padding;
+                const cropWidth = Math.min(maxWidth, 300);
+                const cropHeight = Math.min(maxHeight, 400);
+                const left = (container.offsetWidth - cropWidth) / 2;
+                const top = (container.offsetHeight - cropHeight) / 2;
+                setCropBox({ top, left, right: left + cropWidth, bottom: top + cropHeight });
+                setImageOffset({ x: left + (cropWidth - imageDimensions.width * zoomScale) / 2, y: top + (cropHeight - imageDimensions.height * zoomScale) / 2 });
+              }
+            }}
+            className="text-muted-foreground hover:text-primary transition-colors font-semibold text-sm px-3 py-2"
+          >
+            Reset
+          </button>
+          <button
+            onClick={handleSave}
+            className="text-primary hover:text-primary/80 transition-colors font-semibold text-sm px-4 py-2"
+          >
+            Done
+          </button>
+        </div>
       </div>
 
       {/* Crop Canvas */}
@@ -317,7 +338,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
         {image ? (
           <>
             {/* Dimmed background outside crop frame */}
-            <div className="absolute inset-0 pointer-events-none" style={{
+            <div className="absolute inset-0 pointer-events-none z-5" style={{
               background: `
                 linear-gradient(to right,
                   rgba(0, 0, 0, 0.7) 0%,
@@ -327,10 +348,41 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                   rgba(0, 0, 0, 0.7) ${cropBox.right}px,
                   rgba(0, 0, 0, 0.7) 100%
                 )
-              `
+              `,
+              zIndex: 5,
             }} />
 
-            {/* Image layer */}
+            {/* Clipping container - shows live preview of what's being cropped */}
+            <div
+              style={{
+                position: "absolute",
+                left: cropBox.left,
+                top: cropBox.top,
+                width: cropBox.right - cropBox.left,
+                height: cropBox.bottom - cropBox.top,
+                overflow: "hidden",
+                border: "2px solid rgba(212, 175, 55, 0.8)",
+                zIndex: 15,
+              }}
+            >
+              <img
+                src={imageUrl}
+                alt="crop preview"
+                style={{
+                  position: "absolute",
+                  left: imageOffset.x - cropBox.left,
+                  top: imageOffset.y - cropBox.top,
+                  width: imageDimensions.width > 0 ? imageDimensions.width : "auto",
+                  height: imageDimensions.height > 0 ? imageDimensions.height : "auto",
+                  transform: `scale(${zoomScale})`,
+                  transformOrigin: "0 0",
+                  pointerEvents: "none",
+                }}
+                draggable={false}
+              />
+            </div>
+
+            {/* Image layer (for interaction) */}
             <img
               src={imageUrl}
               alt="crop"
@@ -355,6 +407,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 transformOrigin: "0 0",
                 willChange: "transform",
                 pointerEvents: "auto",
+                opacity: 0.3,
               }}
               onTouchStart={handleTouchStart}
               onMouseDown={(e) => {

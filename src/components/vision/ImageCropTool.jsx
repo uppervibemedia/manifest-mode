@@ -12,6 +12,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const [cropBox, setCropBox] = useState({ width: 0, height: 0 });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isDraggingEdge, setIsDraggingEdge] = useState(null);
+  const [isDraggingImageEdge, setIsDraggingImageEdge] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const lastTouchDistanceRef = useRef(0);
 
@@ -72,7 +73,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
 
   // Handle all pointer movement
   const handlePointerMove = (e) => {
-    if (!isDraggingImage && !isDraggingEdge) return;
+    if (!isDraggingImage && !isDraggingEdge && !isDraggingImageEdge) return;
 
     e.preventDefault();
 
@@ -85,6 +86,41 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         x: clientX - dragStart.x,
         y: clientY - dragStart.y,
       });
+      return;
+    }
+
+    if (isDraggingImageEdge) {
+      const deltaX = clientX - dragStart.x;
+      const deltaY = clientY - dragStart.y;
+
+      switch (isDraggingImageEdge) {
+        case "right":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + deltaX * 0.01)));
+          break;
+        case "left":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev - deltaX * 0.01)));
+          break;
+        case "bottom":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + deltaY * 0.01)));
+          break;
+        case "top":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev - deltaY * 0.01)));
+          break;
+        case "bottom-right":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + (deltaX + deltaY) * 0.005)));
+          break;
+        case "bottom-left":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + (deltaY - deltaX) * 0.005)));
+          break;
+        case "top-right":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev + (deltaX - deltaY) * 0.005)));
+          break;
+        case "top-left":
+          setImageScale((prev) => Math.max(0.5, Math.min(4, prev - (deltaX + deltaY) * 0.005)));
+          break;
+      }
+
+      setDragStart({ x: clientX, y: clientY });
       return;
     }
 
@@ -153,6 +189,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const handlePointerUp = () => {
     setIsDraggingImage(false);
     setIsDraggingEdge(null);
+    setIsDraggingImageEdge(null);
     lastTouchDistanceRef.current = 0;
   };
 
@@ -244,7 +281,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
     setImagePosition({ x: 0, y: 0 });
   };
 
-  // Resize handle component
+  // Crop frame resize handle
   const Handle = ({ position, cursor }) => (
     <div
       onMouseDown={(e) => {
@@ -270,6 +307,36 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         ...(position === "top-right" && { top: -10, right: -10, width: 30, height: 30 }),
         ...(position === "bottom-left" && { bottom: -10, left: -10, width: 30, height: 30 }),
         ...(position === "bottom-right" && { bottom: -10, right: -10, width: 30, height: 30 }),
+      }}
+    />
+  );
+
+  // Image edge handle for zooming
+  const ImageEdgeHandle = ({ position, cursor }) => (
+    <div
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImageEdge(position);
+        setDragStart({ x: e.clientX, y: e.clientY });
+      }}
+      onTouchStart={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingImageEdge(position);
+        const touch = e.touches[0];
+        setDragStart({ x: touch.clientX, y: touch.clientY });
+      }}
+      className={`absolute ${cursor} touch-none z-5`}
+      style={{
+        ...(position === "top" && { top: 0, left: 0, right: 0, height: 16 }),
+        ...(position === "bottom" && { bottom: 0, left: 0, right: 0, height: 16 }),
+        ...(position === "left" && { left: 0, top: 0, bottom: 0, width: 16 }),
+        ...(position === "right" && { right: 0, top: 0, bottom: 0, width: 16 }),
+        ...(position === "top-left" && { top: 0, left: 0, width: 24, height: 24 }),
+        ...(position === "top-right" && { top: 0, right: 0, width: 24, height: 24 }),
+        ...(position === "bottom-left" && { bottom: 0, left: 0, width: 24, height: 24 }),
+        ...(position === "bottom-right" && { bottom: 0, right: 0, width: 24, height: 24 }),
       }}
     />
   );
@@ -388,7 +455,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
                 />
               </div>
 
-              {/* Resize Handles */}
+              {/* Crop Frame Resize Handles */}
               <Handle position="top" cursor="cursor-ns-resize" />
               <Handle position="bottom" cursor="cursor-ns-resize" />
               <Handle position="left" cursor="cursor-ew-resize" />
@@ -397,6 +464,16 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
               <Handle position="top-right" cursor="cursor-nesw-resize" />
               <Handle position="bottom-left" cursor="cursor-nesw-resize" />
               <Handle position="bottom-right" cursor="cursor-nwse-resize" />
+
+              {/* Image Edge Zoom Handles */}
+              <ImageEdgeHandle position="top" cursor="cursor-ns-resize" />
+              <ImageEdgeHandle position="bottom" cursor="cursor-ns-resize" />
+              <ImageEdgeHandle position="left" cursor="cursor-ew-resize" />
+              <ImageEdgeHandle position="right" cursor="cursor-ew-resize" />
+              <ImageEdgeHandle position="top-left" cursor="cursor-nwse-resize" />
+              <ImageEdgeHandle position="top-right" cursor="cursor-nesw-resize" />
+              <ImageEdgeHandle position="bottom-left" cursor="cursor-nesw-resize" />
+              <ImageEdgeHandle position="bottom-right" cursor="cursor-nwse-resize" />
             </div>
           </>
         ) : (

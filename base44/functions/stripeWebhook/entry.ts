@@ -72,13 +72,19 @@ Deno.serve(async (req) => {
         const renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
         const tier = resolveTier(planId);
 
-        // Handle cancellation scheduled at period end — keep current tier active
+        // Handle cancellation scheduled at period end — keep current tier active until period ends
         if (subscription.cancel_at_period_end) {
+          const isTrialing = subscription.status === 'trialing';
+          const trialEndsAtCancel = isTrialing && subscription.trial_end
+            ? new Date(subscription.trial_end * 1000).toISOString()
+            : null;
           await updateUserSubscription(base44, userEmail, {
             subscription_tier: tier,
             billing_cycle: resolveBillingCycle(interval),
             renewal_date: renewalDate,
             stripe_subscription_id: subscription.id,
+            billing_platform: 'stripe',
+            trial_ends_at: trialEndsAtCancel,
           });
           break;
         }

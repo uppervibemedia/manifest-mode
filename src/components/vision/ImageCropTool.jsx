@@ -18,7 +18,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   // Dragging state
   const [activeHandle, setActiveHandle] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [lastTouchDistance, setLastTouchDistance] = useState(0);
 
   // Load image and initialize crop frame
   useEffect(() => {
@@ -77,22 +76,11 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     };
   }, []);
 
-  // Calculate distance between two touches
-  const getTouchDistance = (touch1, touch2) => {
-    const dx = touch1.clientX - touch2.clientX;
-    const dy = touch1.clientY - touch2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // Handle touch start (for pinch and image drag)
+  // Handle touch start (for image drag)
   const handleTouchStart = (e) => {
     if (e.target.closest('[data-handle]')) return; // Don't interfere with handle drags
 
-    if (e.touches.length === 2) {
-      // Pinch start
-      setLastTouchDistance(getTouchDistance(e.touches[0], e.touches[1]));
-      setIsInteracting(true);
-    } else if (e.touches.length === 1) {
+    if (e.touches.length === 1) {
       // Image pan start
       const touch = e.touches[0];
       setDragStart({ x: touch.clientX - imageOffset.x, y: touch.clientY - imageOffset.y });
@@ -100,19 +88,12 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     }
   };
 
-  // Handle touch move (for pinch and image drag)
+  // Handle touch move (for image drag)
   const handleTouchMove = (e) => {
-    e.preventDefault();
+    if (activeHandle) return; // Let handle dragging take priority
 
-    if (e.touches.length === 2) {
-      // Pinch zoom
-      const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
-      if (lastTouchDistance > 0) {
-        const scale = newDistance / lastTouchDistance;
-        setZoomScale((prev) => Math.max(1, Math.min(3, prev * scale)));
-      }
-      setLastTouchDistance(newDistance);
-    } else if (e.touches.length === 1 && !activeHandle) {
+    if (e.touches.length === 1) {
+      e.preventDefault();
       // Image pan
       const touch = e.touches[0];
       setImageOffset({
@@ -123,7 +104,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   };
 
   const handleTouchEnd = () => {
-    setLastTouchDistance(0);
     setIsInteracting(false);
   };
 
@@ -298,7 +278,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       onMouseLeave={handlePointerUp}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ touchAction: "none" }}
     >
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/10">
@@ -350,7 +329,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 willChange: "transform",
               }}
               onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
             />
 
             {/* Crop frame container */}

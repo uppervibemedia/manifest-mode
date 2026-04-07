@@ -14,8 +14,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isDraggingEdge, setIsDraggingEdge] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const lastTouchDistanceRef = useRef(0);
-  const initialStateRef = useRef({ scale: 1, x: 0, y: 0 });
+  const initialStateRef = useRef({ x: 0, y: 0 });
 
   // Load image and set initial state
   useEffect(() => {
@@ -41,7 +40,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
         const initialScale = Math.min(scaleX, scaleY) * 1.1;
 
         setImageScale(initialScale);
-        initialStateRef.current = { scale: initialScale, x: 0, y: 0 };
+        initialStateRef.current = { x: 0, y: 0 };
         setImagePosition({ x: 0, y: 0 });
       }
     };
@@ -145,45 +144,19 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   const handlePointerUp = () => {
     setIsDraggingImage(false);
     setIsDraggingEdge(null);
-    lastTouchDistanceRef.current = 0;
   };
 
-  // Touch start with pinch detection
+  // Single touch handler
   const handleTouchStart = (e) => {
-    if (e.touches.length === 2) {
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const distance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
-      lastTouchDistanceRef.current = distance;
-    } else if (e.touches.length === 1) {
+    if (e.touches.length === 1) {
       handleImageDown(e);
     }
   };
 
-  // Touch move with pinch and drag
+  // Single touch move
   const handleTouchMove = (e) => {
     e.preventDefault();
-
-    if (e.touches.length === 2) {
-      // Pinch zoom
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const distance = Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-      );
-
-      if (lastTouchDistanceRef.current > 0) {
-        const scaleFactor = distance / lastTouchDistanceRef.current;
-        setImageScale((prev) => Math.max(0.5, Math.min(4, prev * scaleFactor)));
-      }
-
-      lastTouchDistanceRef.current = distance;
-    } else if (e.touches.length === 1) {
-      // Single touch drag or edge resize
+    if (e.touches.length === 1) {
       handlePointerMove(e);
     }
   };
@@ -226,7 +199,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel, onSkip }) {
   // Reset to initial state
   const handleReset = () => {
     if (!image) return;
-    setImageScale(initialStateRef.current.scale);
     setImagePosition({ x: 0, y: 0 });
   };
 

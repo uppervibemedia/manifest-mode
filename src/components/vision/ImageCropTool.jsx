@@ -83,9 +83,9 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       rootRef.current.style.touchAction = "none";
     }
     
-    // Prevent all gestures during crop
+    // Prevent all gestures during crop — multi-touch only
     const preventZoom = (e) => {
-      // Block all multi-touch
+      // Block all multi-touch (pinch-to-zoom)
       if (e.touches && e.touches.length > 1) {
         console.log("[Crop] Preventing multi-touch zoom");
         e.preventDefault();
@@ -97,17 +97,8 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       e.preventDefault();
     };
     
-    const preventScroll = (e) => {
-      // Prevent page scroll/bounce
-      if (e.target.closest('[data-handle]') || activeHandleRef.current) {
-        console.log("[Crop] Preventing scroll during handle drag");
-        e.preventDefault();
-      }
-    };
-    
     document.addEventListener("touchmove", preventZoom, { passive: false });
     document.addEventListener("gesturestart", preventGesture, { passive: false });
-    document.addEventListener("touchmove", preventScroll, { passive: false });
     
     return () => {
       document.body.style.overflow = "";
@@ -115,58 +106,11 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       document.documentElement.style.touchAction = "";
       document.removeEventListener("touchmove", preventZoom);
       document.removeEventListener("gesturestart", preventGesture);
-      document.removeEventListener("touchmove", preventScroll);
     };
   }, []);
 
-  // Handle touch start (for image drag only if no handle active)
-  const handleTouchStart = (e) => {
-    // If touch is on a handle, do NOT start image pan — handle events will manage it
-    if (e.target.closest('[data-handle]')) {
-      return;
-    }
-    
-    // Prevent multi-touch while crop is open
-    if (e.touches.length > 1) {
-      e.preventDefault();
-      return;
-    }
-
-    // Only allow image pan if no handle is active
-    if (e.touches.length === 1 && !activeHandleRef.current) {
-      const touch = e.touches[0];
-      setDragStart({ x: touch.clientX - imageOffset.x, y: touch.clientY - imageOffset.y });
-      setIsInteracting(true);
-    }
-  };
-
-  // Handle touch move (for image drag only if no handle active)
-  const handleTouchMove = (e) => {
-    // Prevent multi-touch
-    if (e.touches.length > 1) {
-      e.preventDefault();
-      return;
-    }
-
-    // If a handle is active, pointer events handle the crop drag — skip image pan
-    if (activeHandleRef.current) {
-      return;
-    }
-
-    // Only pan image if no handle is active and we started image interaction
-    if (e.touches.length === 1 && isInteracting) {
-      e.preventDefault();
-      const touch = e.touches[0];
-      setImageOffset({
-        x: touch.clientX - dragStart.x,
-        y: touch.clientY - dragStart.y,
-      });
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsInteracting(false);
-  };
+  // NOTE: Image pan is DISABLED in crop mode — all touch/drag is for crop handles only
+  // This prevents accidental image movement while trying to resize crop frame
 
   // Handle crop handle drag — supports both pointer and touch events
   const handleHandleDown = (position, e) => {
@@ -317,6 +261,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     console.log(`[Crop] MOVE: handle=${activeHandleRef.current}, id=${currentIdentifier}, pos=(${currentClientX}, ${currentClientY})`);
     
     e.preventDefault();
+    e.stopPropagation();
     handleHandleMove(currentClientX, currentClientY);
   };
 
@@ -324,18 +269,32 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     if (!activeHandleRef.current) return;
     
     let currentIdentifier = null;
-    if (e.touches !== undefined) {
-      // Touch event: check if our active touch is gone
-      const touch = Array.from(e.touches).find(t => t.identifier === activeTouchIdRef.current);
+    let shouldRelease = false;
+    
+    if (e.changedTouches !== undefined) {
+      // Touch event: CRITICAL — use changedTouches, not touches
+      // changedTouches contains ONLY the touches that ended/changed
+      const touch = Array.from(e.changedTouches).find(t => t.identifier === activeTouchIdRef.current);
       if (touch) {
-        // Touch still exists, don't release
-        return;
+        // Our active touch ended
+        shouldRelease = true;
+        currentIdentifier = activeTouchIdRef.current;
       }
-      currentIdentifier = activeTouchIdRef.current;
     } else if (e.pointerId !== undefined) {
-      currentIdentifier = e.pointerId;
+      // Pointer event: matches pointerId
+      if (e.pointerId === activeTouchIdRef.current) {
+        shouldRelease = true;
+        currentIdentifier = e.pointerId;
+      }
     } else {
+      // Mouse event
+      shouldRelease = true;
       currentIdentifier = "mouse";
+    }
+    
+    if (!shouldRelease) {
+      console.log(`[Crop] UP ignored: different pointer/touch, active=${activeTouchIdRef.current}`);
+      return;
     }
     
     console.log(`[Crop] RELEASE: handle=${activeHandleRef.current}, id=${currentIdentifier}`);
@@ -474,12 +433,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       onMouseLeave={handlePointerUp}
       onTouchMove={(e) => {
         // iPhone: explicit touchmove for handle dragging
-        console.log(`[Crop] Global touchmove fired`);
-        handlePointerMove(e);
+        if (activeHandleRef.current) {
+          console.log(`[Crop] Global touchmove fired, active handle=${activeHandleRef.current}`);
+          handlePointerMove(e);
+        }
       }}
       onTouchEnd={(e) => {
         // iPhone: explicit touchend for handle release
-        console.log(`[Crop] Global touchend fired`);
+        // CRITICAL: touchend does NOT have e.touches — use e.changedTouches
+        console.log(`[Crop] Global touchend fired, changedTouches=${e.changedTouches.length}`);
         handlePointerUp(e);
       }}
       onPointerMove={handlePointerMove}
@@ -525,7 +487,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       </div>
 
       {/* Crop Canvas */}
-      <div ref={containerRef} className="flex-1 overflow-hidden relative bg-black flex items-center justify-center">
+      <div ref={containerRef} className="flex-1 overflow-hidden relative bg-black flex items-center justify-center" style={{ touchAction: "none" }}>
         {image ? (
           <>
             {/* Dimmed background outside crop frame */}
@@ -604,13 +566,6 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 touchAction: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",
-              }}
-              onTouchStart={handleTouchStart}
-              onMouseDown={(e) => {
-                if (activeHandleRef.current) return;
-                e.preventDefault();
-                setDragStart({ x: e.clientX - imageOffset.x, y: e.clientY - imageOffset.y });
-                setIsInteracting(true);
               }}
               draggable={false}
             />

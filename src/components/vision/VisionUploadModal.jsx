@@ -60,28 +60,96 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   };
 
   const handleSave = async () => {
-    if (!form.title) return;
+    console.log('[VisionUploadModal] SAVE STEP 1: Save button clicked');
+    
+    if (!form.title) {
+      console.warn('[VisionUploadModal] SAVE FAILED: No title provided');
+      return;
+    }
+    
+    console.log('[VisionUploadModal] SAVE STEP 2: Pre-save form state:', {
+      title: form.title,
+      category: form.category,
+      image_url: form.image_url?.substring(0, 50) + '...',
+      image_url_exists: !!form.image_url,
+    });
+    
     setSaving(true);
-    const data = { ...form, secondary_category: form.secondary_category || "none" };
+    
+    try {
+      const data = { ...form, secondary_category: form.secondary_category || "none" };
+      
+      console.log('[VisionUploadModal] SAVE STEP 3: Data payload to save:', {
+        title: data.title,
+        category: data.category,
+        image_url: data.image_url?.substring(0, 50) + '...',
+        image_url_exists: !!data.image_url,
+      });
 
-    if (vision) {
-      // Optimistic: call onSave immediately with merged data, then confirm with server
-      const optimistic = { ...vision, ...data };
-      onSave(optimistic);
-      base44.entities.VisionItem.update(vision.id, data).catch(() => {
-        // silent — next load will resync
-      });
-    } else {
-      // For new items we need a real id — wait for server but close immediately after
-      const saved = await base44.entities.VisionItem.create({
-        ...data,
-        user_email: userEmail,
-        is_active: true,
-        progress: 0,
-        action_steps: [],
-        proof_images: [],
-      });
-      onSave(saved);
+      if (vision) {
+        // Optimistic: call onSave immediately with merged data, then confirm with server
+        console.log('[VisionUploadModal] SAVE STEP 4A: Updating existing vision:', vision.id);
+        const optimistic = { ...vision, ...data };
+        console.log('[VisionUploadModal] SAVE STEP 4B: Optimistic object:', {
+          id: optimistic.id,
+          title: optimistic.title,
+          image_url: optimistic.image_url?.substring(0, 50) + '...',
+          image_url_exists: !!optimistic.image_url,
+        });
+        
+        console.log('[VisionUploadModal] SAVE STEP 4C: Calling onSave with optimistic data');
+        onSave(optimistic);
+        
+        console.log('[VisionUploadModal] SAVE STEP 4D: Starting server update');
+        base44.entities.VisionItem.update(vision.id, data).then((updated) => {
+          console.log('[VisionUploadModal] SAVE STEP 4E: Server update succeeded:', {
+            id: updated.id,
+            image_url: updated.image_url?.substring(0, 50) + '...',
+          });
+        }).catch((err) => {
+          console.error('[VisionUploadModal] SAVE STEP 4E: Server update failed:', err);
+        });
+      } else {
+        // For new items we need a real id — wait for server but close immediately after
+        console.log('[VisionUploadModal] SAVE STEP 4A: Creating new vision');
+        
+        const createPayload = {
+          ...data,
+          user_email: userEmail,
+          is_active: true,
+          progress: 0,
+          action_steps: [],
+          proof_images: [],
+        };
+        
+        console.log('[VisionUploadModal] SAVE STEP 4B: Create payload:', {
+          title: createPayload.title,
+          category: createPayload.category,
+          image_url: createPayload.image_url?.substring(0, 50) + '...',
+          image_url_exists: !!createPayload.image_url,
+          user_email: createPayload.user_email,
+        });
+        
+        console.log('[VisionUploadModal] SAVE STEP 4C: Calling create');
+        const saved = await base44.entities.VisionItem.create(createPayload);
+        
+        console.log('[VisionUploadModal] SAVE STEP 4D: Create succeeded with response:', {
+          id: saved.id,
+          title: saved.title,
+          image_url: saved.image_url?.substring(0, 50) + '...',
+          image_url_exists: !!saved.image_url,
+          full_response: saved,
+        });
+        
+        console.log('[VisionUploadModal] SAVE STEP 4E: Calling onSave with saved data');
+        onSave(saved);
+      }
+      
+      console.log('[VisionUploadModal] SAVE COMPLETE: Save succeeded');
+    } catch (error) {
+      console.error('[VisionUploadModal] SAVE FAILED:', error.message, error);
+    } finally {
+      setSaving(false);
     }
   };
 

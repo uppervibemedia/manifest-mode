@@ -44,7 +44,10 @@ export default function Vision() {
   }, [user?.email, profileLoading]);
 
   // Optimistic vision card click → open viewer immediately
-  const handleVisionClick = (vision) => setViewerVision(vision);
+  const handleVisionClick = (vision) => {
+    console.log('[Vision] Vision card clicked:', { id: vision.id, title: vision.title, image_url: vision.image_url?.substring(0, 50) });
+    setViewerVision(vision);
+  }
 
   const tier = profile?.subscription_tier || "free";
   const uploadLimit = tier === "free" ? 3 : tier === "supporter" ? 15 : 999;
@@ -146,6 +149,12 @@ export default function Vision() {
             <AnimatePresence>
               {visions.map((vision, i) => {
                 const cat = CATEGORIES.find(c => c.id === vision.category);
+                console.log('[Vision] Rendering vision card:', { 
+                  id: vision.id, 
+                  title: vision.title, 
+                  has_image: !!vision.image_url,
+                  image_url: vision.image_url?.substring(0, 50) + '...'
+                });
                 return (
                   <motion.div key={vision.id}
                     initial={{ opacity: 0, scale: 0.92 }}
@@ -155,6 +164,15 @@ export default function Vision() {
                     className="relative rounded-2xl overflow-hidden group cursor-pointer"
                     onClick={() => setViewerVision(vision)}
                     style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
+
+                    {(() => {
+                      console.log('[Vision] Vision card rendering img:', { 
+                        id: vision.id, 
+                        has_image_url: !!vision.image_url,
+                        image_url_value: vision.image_url?.substring(0, 50) + '...'
+                      });
+                      return null;
+                    })()}
 
                     {vision.image_url ? (
                       <motion.img
@@ -222,7 +240,23 @@ export default function Vision() {
             userEmail={user?.email}
             onClose={() => setShowUpload(false)}
             onSave={(v) => {
-              setVisions(prev => [v, ...prev]);
+              console.log('[Vision] onSave called for new vision:', { 
+                id: v.id, 
+                title: v.title, 
+                image_url: v.image_url?.substring(0, 50) + '...',
+                image_url_exists: !!v.image_url
+              });
+              console.log('[Vision] Adding vision to state, before:', visions.length);
+              setVisions(prev => {
+                const updated = [v, ...prev];
+                console.log('[Vision] Added vision to state, after:', updated.length);
+                console.log('[Vision] Updated vision object in state:', {
+                  id: updated[0].id,
+                  image_url: updated[0].image_url?.substring(0, 50) + '...',
+                  image_url_exists: !!updated[0].image_url,
+                });
+                return updated;
+              });
               setShowUpload(false);
             }}
           />
@@ -234,13 +268,24 @@ export default function Vision() {
           <VisionImageViewer
             vision={viewerVision}
             userEmail={user?.email}
-            onClose={() => setViewerVision(null)}
+            onClose={() => {
+              console.log('[Vision] Closing viewer for vision:', viewerVision.id);
+              setViewerVision(null);
+            }}
             onRegenerate={(v) => {
+              console.log('[Vision] onRegenerate called:', v.id);
               setViewerVision(null);
               setSeeMeVision(v);
               setShowSeeMe(true);
             }}
-            onUpdate={(updated) => setVisions(prev => prev.map(v => v.id === updated.id ? updated : v))}
+            onUpdate={(updated) => {
+              console.log('[Vision] onUpdate called for vision:', { 
+                id: updated.id, 
+                image_url: updated.image_url?.substring(0, 50) + '...',
+                is_priority: updated.is_priority
+              });
+              setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
+            }}
           />
         )}
       </AnimatePresence>

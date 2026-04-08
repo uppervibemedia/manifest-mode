@@ -35,13 +35,18 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     e.stopPropagation();
     const file = e.target.files[0];
     if (!file) return;
+    
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(prev => ({ ...prev, image_url: file_url }));
-    setShowCropTool(true);
-    setUploading(false);
-    // Reset file input to allow re-uploading same file
-    e.target.value = null;
+    
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setForm(prev => ({ ...prev, image_url: file_url }));
+      setShowCropTool(true);
+    } finally {
+      setUploading(false);
+      // Reset file input to allow re-uploading same file
+      e.target.value = "";
+    }
   };
 
   const handleCropSave = (croppedUrl, metadata) => {

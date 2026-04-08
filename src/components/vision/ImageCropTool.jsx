@@ -517,19 +517,26 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       <div ref={containerRef} className="flex-1 overflow-hidden relative bg-black flex items-center justify-center" style={{ touchAction: "none" }}>
         {image ? (
           <>
-            {/* Dimmed background outside crop frame */}
-            <div className="absolute inset-0 pointer-events-none z-5" style={{
-              background: `
-                linear-gradient(to right,
-                  rgba(0, 0, 0, 0.7) 0%,
-                  rgba(0, 0, 0, 0.7) ${cropBox.left}px,
-                  transparent ${cropBox.left}px,
-                  transparent ${cropBox.right}px,
-                  rgba(0, 0, 0, 0.7) ${cropBox.right}px,
-                  rgba(0, 0, 0, 0.7) 100%
-                )
-              `,
-              zIndex: 5,
+            {/* Dimmed overlays outside crop area — only 4 sides */}
+            {/* Top */}
+            <div className="absolute pointer-events-none z-5" style={{
+              top: 0, left: 0, right: 0, height: cropBox.top,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+            }} />
+            {/* Bottom */}
+            <div className="absolute pointer-events-none z-5" style={{
+              bottom: 0, left: 0, right: 0, height: `calc(100% - ${cropBox.bottom}px)`,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+            }} />
+            {/* Left */}
+            <div className="absolute pointer-events-none z-5" style={{
+              top: cropBox.top, left: 0, width: cropBox.left, height: cropBox.bottom - cropBox.top,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+            }} />
+            {/* Right */}
+            <div className="absolute pointer-events-none z-5" style={{
+              top: cropBox.top, right: 0, width: `calc(100% - ${cropBox.right}px)`, height: cropBox.bottom - cropBox.top,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
             }} />
 
             {/* Single image layer */}

@@ -271,8 +271,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (vision ? "Save Vision" : "Add to Living Vision Board ✦")}
           </button>
         </div>
-      </motion.div>
-      </motion.div>
-    </>
-  );
-}
+        </motion.div>
+        </motion.div>
+        </>
+        );
+        }

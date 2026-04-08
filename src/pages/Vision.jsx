@@ -160,7 +160,7 @@ export default function Vision() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-widest font-semibold text-primary">See Me In This Vision</p>
-              <p className="text-[10px] text-muted-foreground">Premium AI-generated manifestations</p>
+              <p className="text-[10px] text-muted-foreground">Premium AI-generated manifestations & insights</p>
             </div>
           </motion.div>
         )}

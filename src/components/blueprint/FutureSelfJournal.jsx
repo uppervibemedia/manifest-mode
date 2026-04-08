@@ -129,10 +129,8 @@ export default function FutureSelfJournal({ userEmail }) {
     })();
   }, [userEmail]);
 
-  const getExistingEntry = (promptId) => {
-    const prompt = PROMPTS.find(p => p.id === promptId);
-    return prompt ? entries.find(e => e.title?.includes(prompt.label)) : undefined;
-  };
+  const getExistingEntry = (promptId) =>
+    entries.find(e => e.title?.includes(PROMPTS.find(p => p.id === promptId)?.label || ""));
 
   if (!loaded) return null;
 

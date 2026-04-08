@@ -1,24 +1,26 @@
 import { useState, useRef, useEffect } from "react";
-import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 
 export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   const imageRef = useRef(null);
   const containerRef = useRef(null);
-
+  
+  // Image and zoom state
   const [image, setImage] = useState(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [zoomScale, setZoomScale] = useState(1);
   const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
-
+  
+  // Crop frame state (screen coordinates)
   const [cropBox, setCropBox] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
   const [isInteracting, setIsInteracting] = useState(false);
-
+  
+  // Dragging state
   const [activeHandle, setActiveHandle] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  // Load image and initialize
+  // Load image and initialize crop frame
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -27,26 +29,42 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       setImage(img);
       setImageDimensions({ width: img.width, height: img.height });
 
+      // Delay to ensure container is measured
       setTimeout(() => {
         const container = containerRef.current;
-        if (!container) return;
+        if (container) {
+          // Initial crop frame fits nicely with padding
+          const padding = 60;
+          const maxWidth = container.offsetWidth - padding;
+          const maxHeight = container.offsetHeight - padding;
 
-        const padding = 60;
-        const cropWidth = Math.min(container.offsetWidth - padding, 300);
-        const cropHeight = Math.min(container.offsetHeight - padding, 400);
-        const left = (container.offsetWidth - cropWidth) / 2;
-        const top = (container.offsetHeight - cropHeight) / 2;
+          const cropWidth = Math.min(maxWidth, 300);
+          const cropHeight = Math.min(maxHeight, 400);
+          
+          const left = (container.offsetWidth - cropWidth) / 2;
+          const top = (container.offsetHeight - cropHeight) / 2;
 
-        setCropBox({ top, left, right: left + cropWidth, bottom: top + cropHeight });
+          setCropBox({
+            top,
+            left,
+            right: left + cropWidth,
+            bottom: top + cropHeight,
+          });
 
-        const fitScale = Math.min(cropWidth / img.width, cropHeight / img.height);
-        const scaledWidth = img.width * fitScale;
-        const scaledHeight = img.height * fitScale;
-        setZoomScale(fitScale);
-        setImageOffset({
-          x: left + (cropWidth - scaledWidth) / 2,
-          y: top + (cropHeight - scaledHeight) / 2,
-        });
+          // Scale image to fit within crop box
+          const scaleX = cropWidth / img.width;
+          const scaleY = cropHeight / img.height;
+          const fitScale = Math.min(scaleX, scaleY);
+          
+          // Center the scaled image in the crop box
+          const scaledWidth = img.width * fitScale;
+          const scaledHeight = img.height * fitScale;
+          const offsetX = left + (cropWidth - scaledWidth) / 2;
+          const offsetY = top + (cropHeight - scaledHeight) / 2;
+
+          setZoomScale(fitScale);
+          setImageOffset({ x: offsetX, y: offsetY });
+        }
       }, 100);
     };
     img.onerror = () => console.error("Failed to load image");
@@ -63,94 +81,117 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     };
   }, []);
 
-  // Image pan
+  // Handle touch start (for image drag)
   const handleTouchStart = (e) => {
-    if (e.target.closest("[data-handle]")) return;
+    if (e.target.closest('[data-handle]')) return; // Don't interfere with handle drags
+
     if (e.touches.length === 1) {
+      // Image pan start
       const touch = e.touches[0];
       setDragStart({ x: touch.clientX - imageOffset.x, y: touch.clientY - imageOffset.y });
       setIsInteracting(true);
     }
   };
 
+  // Handle touch move (for image drag)
   const handleTouchMove = (e) => {
-    if (activeHandle) return;
+    if (activeHandle) return; // Let handle dragging take priority
+
     if (e.touches.length === 1) {
       e.preventDefault();
+      // Image pan
       const touch = e.touches[0];
-      setImageOffset({ x: touch.clientX - dragStart.x, y: touch.clientY - dragStart.y });
+      setImageOffset({
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y,
+      });
     }
   };
 
-  const handleTouchEnd = () => setIsInteracting(false);
+  const handleTouchEnd = () => {
+    setIsInteracting(false);
+  };
 
-  // Crop handle drag
+  // Handle crop handle drag
   const handleHandleDown = (position, e) => {
     e.preventDefault();
     e.stopPropagation();
     const touch = e.touches?.[0];
+    const clientX = touch?.clientX || e.clientX;
+    const clientY = touch?.clientY || e.clientY;
+    
     setActiveHandle(position);
-    setDragStart({ x: touch?.clientX ?? e.clientX, y: touch?.clientY ?? e.clientY });
+    setDragStart({ x: clientX, y: clientY });
     setIsInteracting(true);
   };
 
   const handleHandleMove = (clientX, clientY) => {
     if (!activeHandle) return;
-    const dx = clientX - dragStart.x;
-    const dy = clientY - dragStart.y;
-    const min = 80;
-    const pad = 10;
+
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
+    const minSize = 80; // Minimum crop width/height
+    const padding = 10; // Margin from container edges
+
     const container = containerRef.current;
     if (!container) return;
 
-    const maxR = container.offsetWidth - pad;
-    const maxB = container.offsetHeight - pad;
-    const b = { ...cropBox };
+    const maxLeft = padding;
+    const maxRight = container.offsetWidth - padding;
+    const maxTop = padding;
+    const maxBottom = container.offsetHeight - padding;
+
+    const newBox = { ...cropBox };
 
     switch (activeHandle) {
       case "top-left":
-        b.top = Math.max(pad, Math.min(b.bottom - min, b.top + dy));
-        b.left = Math.max(pad, Math.min(b.right - min, b.left + dx));
+        newBox.top = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
+        newBox.left = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
         break;
       case "top-center":
-        b.top = Math.max(pad, Math.min(b.bottom - min, b.top + dy));
+        newBox.top = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
         break;
       case "top-right":
-        b.top = Math.max(pad, Math.min(b.bottom - min, b.top + dy));
-        b.right = Math.min(maxR, Math.max(b.left + min, b.right + dx));
+        newBox.top = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
+        newBox.right = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
         break;
       case "middle-left":
-        b.left = Math.max(pad, Math.min(b.right - min, b.left + dx));
+        newBox.left = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
         break;
       case "middle-right":
-        b.right = Math.min(maxR, Math.max(b.left + min, b.right + dx));
+        newBox.right = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
         break;
       case "bottom-left":
-        b.bottom = Math.min(maxB, Math.max(b.top + min, b.bottom + dy));
-        b.left = Math.max(pad, Math.min(b.right - min, b.left + dx));
+        newBox.bottom = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
+        newBox.left = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
         break;
       case "bottom-center":
-        b.bottom = Math.min(maxB, Math.max(b.top + min, b.bottom + dy));
+        newBox.bottom = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
         break;
       case "bottom-right":
-        b.bottom = Math.min(maxB, Math.max(b.top + min, b.bottom + dy));
-        b.right = Math.min(maxR, Math.max(b.left + min, b.right + dx));
+        newBox.bottom = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
+        newBox.right = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
         break;
     }
 
-    setCropBox(b);
+    setCropBox(newBox);
     setDragStart({ x: clientX, y: clientY });
   };
 
+  // Global pointer handlers
   const handlePointerMove = (e) => {
     if (!activeHandle && !isInteracting) return;
-    const clientX = e.touches?.[0]?.clientX ?? e.clientX;
-    const clientY = e.touches?.[0]?.clientY ?? e.clientY;
-
+    const clientX = e.touches?.[0]?.clientX || e.clientX;
+    const clientY = e.touches?.[0]?.clientY || e.clientY;
+    
     if (activeHandle) {
       handleHandleMove(clientX, clientY);
-    } else {
-      setImageOffset({ x: clientX - dragStart.x, y: clientY - dragStart.y });
+    } else if (isInteracting && !activeHandle) {
+      // Image pan during interaction
+      setImageOffset({
+        x: clientX - dragStart.x,
+        y: clientY - dragStart.y,
+      });
     }
   };
 
@@ -159,30 +200,46 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     setIsInteracting(false);
   };
 
-  // Save
+  // Save cropped image with export data
   const handleSave = () => {
-    if (!imageRef.current) return;
+    if (!image || !imageRef.current) return;
+
     const cropWidth = cropBox.right - cropBox.left;
     const cropHeight = cropBox.bottom - cropBox.top;
+
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, cropWidth);
     canvas.height = Math.max(1, cropHeight);
     const ctx = canvas.getContext("2d");
+    
     if (!ctx) return;
+
+    const scaledWidth = image.width * zoomScale;
+    const scaledHeight = image.height * zoomScale;
+
+    // Draw the visible cropped portion by translating the canvas
+    // and drawing the scaled image at the correct offset
     ctx.drawImage(
       imageRef.current,
       imageOffset.x - cropBox.left,
       imageOffset.y - cropBox.top,
-      imageDimensions.width * zoomScale,
-      imageDimensions.height * zoomScale
+      scaledWidth,
+      scaledHeight
     );
+
     canvas.toBlob(
       (blob) => {
         if (!blob) return;
-        onSave(URL.createObjectURL(blob), {
-          cropTop: cropBox.top, cropLeft: cropBox.left,
-          cropRight: cropBox.right, cropBottom: cropBox.bottom,
-          zoomScale, imageOffsetX: imageOffset.x, imageOffsetY: imageOffset.y,
+        const croppedUrl = URL.createObjectURL(blob);
+        // Export metadata
+        onSave(croppedUrl, {
+          cropTop: cropBox.top,
+          cropLeft: cropBox.left,
+          cropRight: cropBox.right,
+          cropBottom: cropBox.bottom,
+          zoomScale,
+          imageOffsetX: imageOffset.x,
+          imageOffsetY: imageOffset.y,
         });
       },
       "image/jpeg",
@@ -190,34 +247,21 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     );
   };
 
-  const handleReset = () => {
-    const container = containerRef.current;
-    if (!container || !image) return;
-    const padding = 60;
-    const cropWidth = Math.min(container.offsetWidth - padding, 300);
-    const cropHeight = Math.min(container.offsetHeight - padding, 400);
-    const left = (container.offsetWidth - cropWidth) / 2;
-    const top = (container.offsetHeight - cropHeight) / 2;
-    setCropBox({ top, left, right: left + cropWidth, bottom: top + cropHeight });
-    setImageOffset({
-      x: left + (cropWidth - imageDimensions.width * zoomScale) / 2,
-      y: top + (cropHeight - imageDimensions.height * zoomScale) / 2,
-    });
-  };
-
-  // 8-handle crop control
-  const CropHandle = ({ position }) => {
-    const s = 40;
-    const posStyle = {
-      "top-left":      { top: -s/2, left: -s/2 },
-      "top-center":    { top: -s/2, left: "50%", transform: "translateX(-50%)" },
-      "top-right":     { top: -s/2, right: -s/2 },
-      "middle-left":   { top: "50%", left: -s/2, transform: "translateY(-50%)" },
-      "middle-right":  { top: "50%", right: -s/2, transform: "translateY(-50%)" },
-      "bottom-left":   { bottom: -s/2, left: -s/2 },
-      "bottom-center": { bottom: -s/2, left: "50%", transform: "translateX(-50%)" },
-      "bottom-right":  { bottom: -s/2, right: -s/2 },
-    }[position];
+  // Crop handle component with 8 positions
+  const CropHandle = ({ position, handleSize = 40 }) => {
+    const isActive = activeHandle === position;
+    
+    // Position styles for each handle
+    const positionStyles = {
+      "top-left": { top: -handleSize / 2, left: -handleSize / 2 },
+      "top-center": { top: -handleSize / 2, left: "50%", transform: "translateX(-50%)" },
+      "top-right": { top: -handleSize / 2, right: -handleSize / 2 },
+      "middle-left": { top: "50%", left: -handleSize / 2, transform: "translateY(-50%)" },
+      "middle-right": { top: "50%", right: -handleSize / 2, transform: "translateY(-50%)" },
+      "bottom-left": { bottom: -handleSize / 2, left: -handleSize / 2 },
+      "bottom-center": { bottom: -handleSize / 2, left: "50%", transform: "translateX(-50%)" },
+      "bottom-right": { bottom: -handleSize / 2, right: -handleSize / 2 },
+    };
 
     return (
       <div
@@ -225,20 +269,23 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
         onMouseDown={(e) => handleHandleDown(position, e)}
         onTouchStart={(e) => handleHandleDown(position, e)}
         className="absolute z-30 touch-none"
-        style={{ ...posStyle, width: s, height: s, pointerEvents: "auto" }}
+        style={{
+          ...positionStyles[position],
+          width: handleSize,
+          height: handleSize,
+          pointerEvents: "auto",
+        }}
       >
+        {/* Visible indicator dot */}
         <div
-          className={`absolute top-1/2 left-1/2 w-3 h-3 rounded-full border-2 border-white transition-all ${
-            activeHandle === position ? "bg-primary scale-125" : "bg-white/80"
+          className={`absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full transition-all ${
+            isActive ? "bg-primary scale-125" : "bg-white/80"
           }`}
           style={{ transform: "translate(-50%, -50%)" }}
         />
       </div>
     );
   };
-
-  const cw = cropBox.right - cropBox.left;
-  const ch = cropBox.bottom - cropBox.top;
 
   return (
     <motion.div
@@ -254,90 +301,151 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     >
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-white/10">
-        <button onClick={onCancel} className="text-white hover:text-primary transition-colors p-2 -ml-2">
+        <button
+          onClick={onCancel}
+          className="text-white hover:text-primary transition-colors p-2 -ml-2"
+        >
           <X className="w-6 h-6" />
         </button>
         <p className="text-sm font-semibold text-white">Crop Image</p>
         <div className="flex items-center gap-2">
-          <button onClick={handleReset} className="text-white/50 hover:text-primary transition-colors font-semibold text-sm px-3 py-2">
+          <button
+            onClick={() => {
+              const container = containerRef.current;
+              if (container) {
+                const padding = 60;
+                const maxWidth = container.offsetWidth - padding;
+                const maxHeight = container.offsetHeight - padding;
+                const cropWidth = Math.min(maxWidth, 300);
+                const cropHeight = Math.min(maxHeight, 400);
+                const left = (container.offsetWidth - cropWidth) / 2;
+                const top = (container.offsetHeight - cropHeight) / 2;
+                setCropBox({ top, left, right: left + cropWidth, bottom: top + cropHeight });
+                setImageOffset({ x: left + (cropWidth - imageDimensions.width * zoomScale) / 2, y: top + (cropHeight - imageDimensions.height * zoomScale) / 2 });
+              }
+            }}
+            className="text-muted-foreground hover:text-primary transition-colors font-semibold text-sm px-3 py-2"
+          >
             Reset
           </button>
-          <button onClick={handleSave} className="text-primary hover:text-primary/80 transition-colors font-semibold text-sm px-4 py-2">
+          <button
+            onClick={handleSave}
+            className="text-primary hover:text-primary/80 transition-colors font-semibold text-sm px-4 py-2"
+          >
             Done
           </button>
         </div>
       </div>
 
       {/* Crop Canvas */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden relative bg-black"
-        onMouseDown={(e) => {
-          if (e.target.closest("[data-handle]")) return;
-          setDragStart({ x: e.clientX - imageOffset.x, y: e.clientY - imageOffset.y });
-          setIsInteracting(true);
-        }}
-        onTouchStart={handleTouchStart}
-      >
+      <div ref={containerRef} className="flex-1 overflow-hidden relative bg-black flex items-center justify-center">
         {image ? (
           <>
-            {/* ── SINGLE IMAGE SOURCE ── */}
+            {/* Dimmed background outside crop frame */}
+            <div className="absolute inset-0 pointer-events-none z-5" style={{
+              background: `
+                linear-gradient(to right,
+                  rgba(0, 0, 0, 0.7) 0%,
+                  rgba(0, 0, 0, 0.7) ${cropBox.left}px,
+                  transparent ${cropBox.left}px,
+                  transparent ${cropBox.right}px,
+                  rgba(0, 0, 0, 0.7) ${cropBox.right}px,
+                  rgba(0, 0, 0, 0.7) 100%
+                )
+              `,
+              zIndex: 5,
+            }} />
+
+            {/* Clipping container - shows live preview of what's being cropped */}
+            {imageDimensions.width > 0 && (
+            <div
+              style={{
+                position: "absolute",
+                left: cropBox.left,
+                top: cropBox.top,
+                width: cropBox.right - cropBox.left,
+                height: cropBox.bottom - cropBox.top,
+                overflow: "hidden",
+                border: "2px solid rgba(212, 175, 55, 0.8)",
+                zIndex: 15,
+                backgroundColor: "rgba(0,0,0,0.1)",
+              }}
+            >
+              <img
+                src={imageUrl}
+                alt="crop preview"
+                style={{
+                  position: "absolute",
+                  left: imageOffset.x - cropBox.left,
+                  top: imageOffset.y - cropBox.top,
+                  width: imageDimensions.width * zoomScale,
+                  height: imageDimensions.height * zoomScale,
+                  pointerEvents: "none",
+                  willChange: "none",
+                }}
+                draggable={false}
+              />
+            </div>
+            )}
+
+            {/* Image layer (for interaction) */}
             <img
               src={imageUrl}
               alt="crop"
-              draggable={false}
-              className="absolute pointer-events-none"
-              style={{
-                top: imageOffset.y,
-                left: imageOffset.x,
-                width: imageDimensions.width * zoomScale,
-                height: imageDimensions.height * zoomScale,
+              className="absolute cursor-grab active:cursor-grabbing"
+              onLoad={(e) => {
+                const rect = e.target.getBoundingClientRect();
+                const actualWidth = rect.width || e.target.naturalWidth;
+                const actualHeight = rect.height || e.target.naturalHeight;
+                if (imageDimensions.width === 0) {
+                  setImageDimensions({ width: actualWidth, height: actualHeight });
+                }
               }}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: imageDimensions.width > 0 ? imageDimensions.width : "auto",
+                height: imageDimensions.height > 0 ? imageDimensions.height : "auto",
+                maxWidth: imageDimensions.width === 0 ? "calc(100vw - 120px)" : "none",
+                maxHeight: imageDimensions.height === 0 ? "calc(100dvh - 200px)" : "none",
+                transform: `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${zoomScale})`,
+                transformOrigin: "0 0",
+                willChange: "transform",
+                pointerEvents: "auto",
+                opacity: 0.3,
+              }}
+              onTouchStart={handleTouchStart}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setDragStart({ x: e.clientX - imageOffset.x, y: e.clientY - imageOffset.y });
+                setIsInteracting(true);
+              }}
+              draggable={false}
             />
 
-            {/* ── DIM OVERLAY: 4 rects around the crop box ── */}
-            {/* Top */}
-            <div className="absolute pointer-events-none bg-black/65"
-              style={{ top: 0, left: 0, right: 0, height: cropBox.top }} />
-            {/* Bottom */}
-            <div className="absolute pointer-events-none bg-black/65"
-              style={{ top: cropBox.bottom, left: 0, right: 0, bottom: 0 }} />
-            {/* Left */}
-            <div className="absolute pointer-events-none bg-black/65"
-              style={{ top: cropBox.top, left: 0, width: cropBox.left, height: ch }} />
-            {/* Right */}
-            <div className="absolute pointer-events-none bg-black/65"
-              style={{ top: cropBox.top, left: cropBox.right, right: 0, height: ch }} />
-
-            {/* ── CROP FRAME ── */}
+            {/* Crop frame container */}
             <div
-              className="absolute"
+              className="absolute z-20"
               style={{
                 left: cropBox.left,
                 top: cropBox.top,
-                width: cw,
-                height: ch,
-                border: "2px solid rgba(212, 175, 55, 0.9)",
-                pointerEvents: "none",
-                zIndex: 10,
+                width: cropBox.right - cropBox.left,
+                height: cropBox.bottom - cropBox.top,
+                border: "2px solid rgba(212, 175, 55, 0.8)",
               }}
             >
-              {/* Rule of thirds grid */}
+              {/* Rule of thirds grid (visible when interacting) */}
               {isInteracting && (
                 <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute w-full h-px top-1/3 bg-white/25" />
-                  <div className="absolute w-full h-px top-2/3 bg-white/25" />
-                  <div className="absolute h-full w-px left-1/3 bg-white/25" />
-                  <div className="absolute h-full w-px left-2/3 bg-white/25" />
+                  <div className="absolute w-full h-px top-1/3 left-0 bg-white/20" />
+                  <div className="absolute w-full h-px top-2/3 left-0 bg-white/20" />
+                  <div className="absolute h-full w-px left-1/3 top-0 bg-white/20" />
+                  <div className="absolute h-full w-px left-2/3 top-0 bg-white/20" />
                 </div>
               )}
-            </div>
 
-            {/* ── HANDLES (pointer-events on, above frame) ── */}
-            <div
-              className="absolute"
-              style={{ left: cropBox.left, top: cropBox.top, width: cw, height: ch, zIndex: 20 }}
-            >
+              {/* 8 Crop handles */}
               <CropHandle position="top-left" />
               <CropHandle position="top-center" />
               <CropHandle position="top-right" />
@@ -349,7 +457,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         )}

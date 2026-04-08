@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { X, Upload, Loader2, Star, Crop } from "lucide-react";
@@ -25,9 +24,6 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showCropTool, setShowCropTool] = useState(false);
-  const fileInputRef = useRef(null);
-  const formRef = useRef(form);
-  useEffect(() => { formRef.current = form; }, [form]);
 
   // Hide bottom nav when modal opens
   useEffect(() => {
@@ -36,29 +32,16 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   }, [setActiveFullscreenModal]);
 
   const handleImageUpload = async (e) => {
+    e.stopPropagation();
     const file = e.target.files[0];
     if (!file) return;
-    e.target.value = null;
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    // Read from ref to avoid stale closure
-    const f = formRef.current;
-    const categoryLabel = CATEGORIES.find(c => c.id === f.category)?.label || "Vision";
-    const autoTitle = f.title || `My ${categoryLabel} Vision`;
-    const saved = await base44.entities.VisionItem.create({
-      user_email: userEmail,
-      title: autoTitle,
-      category: f.category,
-      image_url: file_url,
-      secondary_category: f.secondary_category || "none",
-      is_priority: f.is_priority,
-      is_active: true,
-      progress: 0,
-      action_steps: [],
-      proof_images: [],
-    });
+    setForm(prev => ({ ...prev, image_url: file_url }));
+    setShowCropTool(true);
     setUploading(false);
-    onSave(saved);
+    // Reset file input to allow re-uploading same file
+    e.target.value = null;
   };
 
   const handleCropSave = (croppedUrl, metadata) => {
@@ -140,30 +123,41 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         <div className="flex-1 overflow-y-auto px-5 py-5">
 
           {/* Image Upload */}
-          <div className="mb-5">
-            <div
-              className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all cursor-pointer ${
-                form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
-              }`}
-              onClick={() => !uploading && fileInputRef.current?.click()}
-            >
-              {form.image_url ? (
-                <div className="relative w-full h-full group">
-                  <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-                  <p className="absolute bottom-2 left-3 text-[10px] text-white/70">Tap to change</p>
+          <label className="block mb-5 cursor-pointer">
+          <div className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
+            form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
+          }`}>
+            {form.image_url ? (
+              <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
+                <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCropTool(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
+                  >
+                    <Crop className="w-3.5 h-3.5" />
+                    Crop Image
+                  </button>
                 </div>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/20 min-h-[140px]">
-                  {uploading
-                    ? <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                    : <><Upload className="w-6 h-6" /><p className="text-xs">Upload your vision image</p><p className="text-[10px] text-muted-foreground/50">The clearer the image, the stronger the intention</p></>
-                  }
-                </div>
-              )}
-            </div>
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                <p className="absolute bottom-2 left-3 text-[10px] text-white/70">Tap to change</p>
+              </div>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/20 min-h-[140px]">
+                {uploading
+                  ? <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  : <><Upload className="w-6 h-6" /><p className="text-xs">Upload your vision image</p><p className="text-[10px] text-muted-foreground/50">The clearer the image, the stronger the intention</p></>
+                }
+              </div>
+            )}
           </div>
+          <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+          </label>
 
           {/* Priority toggle */}
           <div className="flex items-center justify-between glass-card border border-border rounded-xl px-4 py-3 mb-5">

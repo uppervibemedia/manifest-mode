@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop, AlertCircle } from "lucide-react";
@@ -72,17 +71,17 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
   const showLoading = uploading && !preview;
 
   return (
-    <div>
+    <label className="block cursor-pointer">
       <div
-        className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all cursor-pointer ${
+        className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
           preview ? "border-transparent" : "border-border hover:border-primary/40"
         }`}
-        onClick={() => !uploading && inputRef.current?.click()}
+        onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
         {preview ? (
-          <div className="relative w-full h-full group">
+          <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
             <img
               src={preview}
               alt={label}
@@ -97,6 +96,7 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  console.log(`[${boxId}] Crop button clicked`);
                   onCropStart(boxId);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
@@ -129,7 +129,7 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
         onChange={handleChange}
         disabled={uploading}
       />
-    </div>
+    </label>
   );
 }
 

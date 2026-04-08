@@ -124,6 +124,9 @@
     "read": {
       "user_email": "{{current_user.email}}"
     },
+    "create": {
+      "user_email": "{{current_user.email}}"
+    },
     "update": {
       "user_email": "{{current_user.email}}"
     },

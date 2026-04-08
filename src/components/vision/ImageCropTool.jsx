@@ -349,14 +349,24 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     const scaledWidth = image.width * zoomScale;
     const scaledHeight = image.height * zoomScale;
 
-    // Draw the visible cropped portion by translating the canvas
-    // and drawing the scaled image at the correct offset
+    // Extract the source image coordinates that correspond to the visible crop area
+    // Account for the fact that the image might be zoomed and offset
+    const sourceX = Math.max(0, (cropBox.left - imageOffset.x) / zoomScale);
+    const sourceY = Math.max(0, (cropBox.top - imageOffset.y) / zoomScale);
+    const sourceWidth = cropWidth / zoomScale;
+    const sourceHeight = cropHeight / zoomScale;
+
+    // Draw only the cropped portion to fill the entire canvas
     ctx.drawImage(
       imageRef.current,
-      imageOffset.x - cropBox.left,
-      imageOffset.y - cropBox.top,
-      scaledWidth,
-      scaledHeight
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
+      0,
+      0,
+      cropWidth,
+      cropHeight
     );
 
     canvas.toBlob(

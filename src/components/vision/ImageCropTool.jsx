@@ -54,16 +54,20 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
       const cw = container.offsetWidth;
       const ch = container.offsetHeight;
+      const pad = 32;
 
-      // Crop box fills the full canvas area
-      const box = { top: 0, left: 0, right: cw, bottom: ch };
+      // Crop box: padded on all sides
+      const box = { top: pad, left: pad, right: cw - pad, bottom: ch - pad };
+      const cropW = cw - pad * 2;
+      const cropH = ch - pad * 2;
 
-      // Scale image to COVER the full canvas (fill, not fit)
-      const coverScale = Math.max(cw / nw, ch / nh);
+      // Scale image to COVER the crop box
+      const coverScale = Math.max(cropW / nw, cropH / nh);
       const scaledW = nw * coverScale;
       const scaledH = nh * coverScale;
-      const offsetX = (cw - scaledW) / 2;
-      const offsetY = (ch - scaledH) / 2;
+      // Center image over the crop box
+      const offsetX = pad + (cropW - scaledW) / 2;
+      const offsetY = pad + (cropH - scaledH) / 2;
 
       zoomScaleRef.current = coverScale;
       setZoomScale(coverScale);
@@ -208,14 +212,17 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     if (!container || !naturalSize.w) return;
     const cw = container.offsetWidth;
     const ch = container.offsetHeight;
-    const box = { top: 0, left: 0, right: cw, bottom: ch };
-    const coverScale = Math.max(cw / naturalSize.w, ch / naturalSize.h);
+    const pad = 32;
+    const box = { top: pad, left: pad, right: cw - pad, bottom: ch - pad };
+    const cropW = cw - pad * 2;
+    const cropH = ch - pad * 2;
+    const coverScale = Math.max(cropW / naturalSize.w, cropH / naturalSize.h);
     const scaledW = naturalSize.w * coverScale;
     const scaledH = naturalSize.h * coverScale;
     zoomScaleRef.current = coverScale;
     setZoomScale(coverScale);
     syncCropBox(box);
-    syncImageOffset({ x: (cw - scaledW) / 2, y: (ch - scaledH) / 2 });
+    syncImageOffset({ x: pad + (cropW - scaledW) / 2, y: pad + (cropH - scaledH) / 2 });
   };
 
   const cw = cropBox.right - cropBox.left;

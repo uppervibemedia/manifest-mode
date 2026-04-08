@@ -381,76 +381,75 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     }
 
     console.log(`[${activeCropBoxId}] PHASE 3 START: Committing cropped output`);
+    const cropBoxId = activeCropBoxId; // Capture to avoid closure issues
 
     try {
       // Fetch cropped blob from data URL
       const blob = await fetch(croppedUrl).then(r => r.blob());
-      const croppedFile = new File([blob], `${activeCropBoxId}-cropped.jpg`, { type: "image/jpeg" });
+      const croppedFile = new File([blob], `${cropBoxId}-cropped.jpg`, { type: "image/jpeg" });
 
-      console.log(`[${activeCropBoxId}] Cropped file created:`, croppedFile.size, 'bytes');
+      console.log(`[${cropBoxId}] Cropped file created:`, croppedFile.size, 'bytes');
+      
+      // Keep the blob URL as backup while uploading
+      const blobUrlBackup = croppedUrl;
       
       // Upload cropped file to persistent storage immediately
-      console.log(`[${activeCropBoxId}] Uploading cropped file to persistent storage`);
-      const { file_url: persistentUrl } = await base44.integrations.Core.UploadFile({ file: croppedFile });
-      console.log(`[${activeCropBoxId}] Cropped file persisted:`, persistentUrl);
+      console.log(`[${cropBoxId}] Uploading cropped file to persistent storage`);
+      const uploadResult = await base44.integrations.Core.UploadFile({ file: croppedFile });
+      const persistentUrl = uploadResult?.file_url;
+      
+      if (!persistentUrl) {
+        throw new Error('Upload returned no URL');
+      }
+      
+      console.log(`[${cropBoxId}] Cropped file persisted:`, persistentUrl);
 
-      // Update box with both temporary blob URL and persistent URL
-      if (activeCropBoxId === 'vision') {
+      // Update box with persistent URL
+      if (cropBoxId === 'vision') {
         setVisionBox(prev => ({
           ...prev,
           croppedFile,
-          croppedUrl: persistentUrl,  // Use persistent URL, not blob URL
+          croppedUrl: persistentUrl,
+          sourceUrl: blobUrlBackup,  // Keep blob URL as fallback
           status: 'preview-ready',
         }));
-        console.log(`[vision] Cropped output committed with persistent URL`);
-      } else if (activeCropBoxId === 'self') {
+        console.log(`[vision] Cropped output committed`);
+      } else if (cropBoxId === 'self') {
         setSelfBox(prev => ({
           ...prev,
           croppedFile,
-          croppedUrl: persistentUrl,  // Use persistent URL, not blob URL
+          croppedUrl: persistentUrl,
+          sourceUrl: blobUrlBackup,  // Keep blob URL as fallback
           status: 'preview-ready',
         }));
-        console.log(`[self] Cropped output committed with persistent URL`);
+        console.log(`[self] Cropped output committed`);
       }
 
-      console.log(`[${activeCropBoxId}] PHASE 3 COMPLETE: Crop process finished, closing modal`);
+      console.log(`[${cropBoxId}] PHASE 3 COMPLETE: Crop process finished`);
       setIsCropModalOpen(false);
       setActiveCropBoxId(null);
     } catch (error) {
-      console.error(`[${activeCropBoxId}] PHASE 3 FAILED - Crop processing error:`, error);
+      console.error(`[${cropBoxId}] PHASE 3 FAILED:`, error);
       
-      // FALLBACK: Save original uncropped to persistent storage
-      console.log(`[${activeCropBoxId}] FALLBACK: Uploading original image to persistent storage`);
-      const boxState = activeCropBoxId === 'vision' ? visionBox : selfBox;
+      // FALLBACK: Use blob URL if upload fails (better than losing image)
+      console.log(`[${cropBoxId}] FALLBACK: Keeping blob URL since upload failed`);
       
-      try {
-        const { file_url: persistentUrl } = await base44.integrations.Core.UploadFile({ file: boxState.sourceFile });
-        console.log(`[${activeCropBoxId}] Original file persisted as fallback:`, persistentUrl);
-        
-        if (activeCropBoxId === 'vision') {
-          setVisionBox(prev => ({
-            ...prev,
-            croppedFile: prev.sourceFile,
-            croppedUrl: persistentUrl,
-            status: 'preview-ready',
-            error: `Crop processing error - saved original.`,
-          }));
-        } else if (activeCropBoxId === 'self') {
-          setSelfBox(prev => ({
-            ...prev,
-            croppedFile: prev.sourceFile,
-            croppedUrl: persistentUrl,
-            status: 'preview-ready',
-            error: `Crop processing error - saved original.`,
-          }));
-        }
-      } catch (fallbackError) {
-        console.error(`[${activeCropBoxId}] Fallback upload failed:`, fallbackError);
-        if (activeCropBoxId === 'vision') {
-          setVisionBox(prev => ({ ...prev, error: 'Upload failed. Please try again.' }));
-        } else if (activeCropBoxId === 'self') {
-          setSelfBox(prev => ({ ...prev, error: 'Upload failed. Please try again.' }));
-        }
+      if (cropBoxId === 'vision') {
+        setVisionBox(prev => ({
+          ...prev,
+          croppedFile: prev.croppedFile || prev.sourceFile,
+          croppedUrl: croppedUrl, // Keep the blob URL
+          status: 'preview-ready',
+          error: 'Upload failed, using local preview. Try generating.',
+        }));
+      } else if (cropBoxId === 'self') {
+        setSelfBox(prev => ({
+          ...prev,
+          croppedFile: prev.croppedFile || prev.sourceFile,
+          croppedUrl: croppedUrl, // Keep the blob URL
+          status: 'preview-ready',
+          error: 'Upload failed, using local preview. Try generating.',
+        }));
       }
 
       setIsCropModalOpen(false);
@@ -459,24 +458,30 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   };
 
   const handleCropCancel = async () => {
-    console.log(`[${activeCropBoxId}] Crop cancelled, keeping original and uploading to persistent storage`);
-    
-    const boxState = activeCropBoxId === 'vision' ? visionBox : selfBox;
+    console.log(`[${activeCropBoxId}] Crop cancelled, keeping original`);
+    const cropBoxId = activeCropBoxId;
+    const boxState = cropBoxId === 'vision' ? visionBox : selfBox;
     
     try {
-      // Upload original to persistent storage when user cancels crop
-      console.log(`[${activeCropBoxId}] Uploading original (uncropped) to persistent storage`);
-      const { file_url: persistentUrl } = await base44.integrations.Core.UploadFile({ file: boxState.sourceFile });
-      console.log(`[${activeCropBoxId}] Original file persisted:`, persistentUrl);
+      // Try to upload original to persistent storage
+      console.log(`[${cropBoxId}] Uploading original (uncropped) to persistent storage`);
+      const uploadResult = await base44.integrations.Core.UploadFile({ file: boxState.sourceFile });
+      const persistentUrl = uploadResult?.file_url;
       
-      if (activeCropBoxId === 'vision') {
+      if (!persistentUrl) {
+        throw new Error('Upload returned no URL');
+      }
+      
+      console.log(`[${cropBoxId}] Original file persisted:`, persistentUrl);
+      
+      if (cropBoxId === 'vision') {
         setVisionBox(prev => ({
           ...prev,
           croppedFile: prev.sourceFile,
           croppedUrl: persistentUrl,
           status: 'preview-ready',
         }));
-      } else if (activeCropBoxId === 'self') {
+      } else if (cropBoxId === 'self') {
         setSelfBox(prev => ({
           ...prev,
           croppedFile: prev.sourceFile,
@@ -485,23 +490,23 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         }));
       }
     } catch (error) {
-      console.error(`[${activeCropBoxId}] Failed to upload on cancel:`, error);
-      // Graceful fallback: keep blob URL if upload fails (won't survive refresh but generation can proceed)
-      if (activeCropBoxId === 'vision') {
+      console.error(`[${cropBoxId}] Upload failed on cancel, using blob URL fallback:`, error);
+      // CRITICAL: Fall back to blob URL — better to have a blob URL than lose the image
+      if (cropBoxId === 'vision') {
         setVisionBox(prev => ({
           ...prev,
           croppedFile: prev.sourceFile,
-          croppedUrl: prev.sourceUrl,
+          croppedUrl: prev.sourceUrl, // Use blob URL
           status: 'preview-ready',
-          error: 'Upload failed but image is ready for generation.',
+          error: 'Using local preview (won\'t survive refresh).',
         }));
-      } else if (activeCropBoxId === 'self') {
+      } else if (cropBoxId === 'self') {
         setSelfBox(prev => ({
           ...prev,
           croppedFile: prev.sourceFile,
-          croppedUrl: prev.sourceUrl,
+          croppedUrl: prev.sourceUrl, // Use blob URL
           status: 'preview-ready',
-          error: 'Upload failed but image is ready for generation.',
+          error: 'Using local preview (won\'t survive refresh).',
         }));
       }
     }

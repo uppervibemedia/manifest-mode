@@ -102,14 +102,9 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
           )}
 
           {/* Details */}
-          {(vision.emotional_goal || vision.desired_timeline) && (
-            <div className="px-5 py-4 space-y-2">
-              {vision.emotional_goal && (
-                <p className="text-sm text-foreground/70 italic leading-relaxed">"{vision.emotional_goal}"</p>
-              )}
-              {vision.desired_timeline && (
-                <p className="text-xs text-muted-foreground">Timeline: {vision.desired_timeline}</p>
-              )}
+          {vision.emotional_goal && (
+            <div className="px-5 py-4">
+              <p className="text-sm text-foreground/70 italic leading-relaxed">"{vision.emotional_goal}"</p>
             </div>
           )}
         </div>

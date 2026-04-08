@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import { Plus, Lock, Sparkles } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useUserProfile } from "@/lib/UserProfileContext";
@@ -46,6 +47,17 @@ export default function Vision() {
 
   // Optimistic vision card click → open viewer immediately
   const handleVisionClick = (vision) => setViewerVision(vision);
+
+  const handleDeleteVision = async (visionId) => {
+    try {
+      await base44.entities.VisionItem.delete(visionId);
+      setVisions(prev => prev.filter(v => v.id !== visionId));
+      toast.success("Vision deleted");
+    } catch (error) {
+      toast.error("Failed to delete vision");
+      console.error(error);
+    }
+  };
 
   const tier = profile?.subscription_tier || "free";
   const uploadLimit = tier === "free" ? 3 : tier === "supporter" ? 15 : 999;
@@ -151,6 +163,7 @@ export default function Vision() {
                   vision={vision}
                   index={i}
                   onClick={() => setViewerVision(vision)}
+                  onDelete={handleDeleteVision}
                 />
               ))}
             </AnimatePresence>

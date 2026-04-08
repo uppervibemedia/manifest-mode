@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Trash2 } from "lucide-react";
 import { isValidImageUrl, logImageUrlStatus } from "@/lib/imageUrlValidator";
 
 const CATEGORIES = [
@@ -13,14 +13,22 @@ const CATEGORIES = [
   { id: "spiritual", label: "Spiritual", icon: "🌙" },
 ];
 
-export default function VisionCard({ vision, index, onClick }) {
+export default function VisionCard({ vision, index, onClick, onDelete }) {
   const cat = CATEGORIES.find(c => c.id === vision.category);
   const validImageUrl = isValidImageUrl(vision.image_url);
+  const [deleting, setDeleting] = useState(false);
 
   // Log image URL status for debugging
   useEffect(() => {
     logImageUrlStatus(vision.id, vision.image_url);
   }, [vision.id, vision.image_url]);
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!confirm("Delete this vision?")) return;
+    setDeleting(true);
+    await onDelete(vision.id);
+  };
 
   return (
     <motion.div
@@ -48,22 +56,34 @@ export default function VisionCard({ vision, index, onClick }) {
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
 
-      <div className="absolute inset-0 left-0 right-0 p-4 flex flex-col justify-end">
-        <div className="mb-2 h-1 bg-white/20 rounded-full overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${vision.progress || 0}%` }}
-            transition={{ duration: 0.8 }}
-            className="h-full rounded-full"
-            style={{ backgroundColor: cat?.icon ? "hsl(45 80% 60%)" : "#fbbf24" }}
-          />
+      <div className="absolute inset-0 left-0 right-0 p-4 flex flex-col justify-between">
+        <div className="flex justify-end">
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="w-8 h-8 rounded-lg bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+            aria-label="Delete vision"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
-        <div className="flex items-end justify-between gap-1">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white line-clamp-2">{vision.title}</p>
-            <p className="text-[9px] text-white/60 mt-0.5">{cat?.label || "Vision"}</p>
+        <div>
+          <div className="mb-2 h-1 bg-white/20 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${vision.progress || 0}%` }}
+              transition={{ duration: 0.8 }}
+              className="h-full rounded-full"
+              style={{ backgroundColor: cat?.icon ? "hsl(45 80% 60%)" : "#fbbf24" }}
+            />
           </div>
-          <span className="text-lg shrink-0">{cat?.icon}</span>
+          <div className="flex items-end justify-between gap-1">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-white line-clamp-2">{vision.title}</p>
+              <p className="text-[9px] text-white/60 mt-0.5">{cat?.label || "Vision"}</p>
+            </div>
+            <span className="text-lg shrink-0">{cat?.icon}</span>
+          </div>
         </div>
       </div>
     </motion.div>

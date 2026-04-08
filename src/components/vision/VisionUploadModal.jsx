@@ -50,31 +50,28 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
 
   const handleCropSave = async (croppedUrl) => {
     setShowCropTool(false);
+    // Keep showing the local blob preview while uploading
     setUploading(true);
-    // Convert the cropped blob URL to a file and upload
     const blob = await fetch(croppedUrl).then(r => r.blob());
     const file = new File([blob], "vision-cropped.jpg", { type: "image/jpeg" });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    // Replace blob URL with real server URL
     setForm(prev => ({ ...prev, image_url: file_url }));
     setUploading(false);
   };
 
-  const handleCropSkip = async () => {
-    // Skip crop — upload the original local blob as-is
-    const localUrl = formRef.current.image_url;
+  const handleCropCancel = () => {
+    // Restore the image that was there before picking a new file
+    setForm(prev => ({ ...prev, image_url: prevImageUrlRef.current }));
     setShowCropTool(false);
-    setUploading(true);
-    const blob = await fetch(localUrl).then(r => r.blob());
-    const file = new File([blob], "vision.jpg", { type: "image/jpeg" });
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(prev => ({ ...prev, image_url: file_url }));
-    setUploading(false);
   };
 
   const handleSave = async () => {
     if (!form.title) return;
+    // SAFETY: Never persist a local blob URL — if image_url is a blob, strip it
+    const safeImageUrl = form.image_url?.startsWith("blob:") ? (vision?.image_url || "") : form.image_url;
     setSaving(true);
-    const data = { ...form, secondary_category: form.secondary_category || "none" };
+    const data = { ...form, image_url: safeImageUrl, secondary_category: form.secondary_category || "none" };
 
     if (vision) {
       // Optimistic: call onSave immediately with merged data, then confirm with server
@@ -106,12 +103,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           <ImageCropTool
             imageUrl={form.image_url}
             onSave={handleCropSave}
-            onCancel={() => {
-              // Restore whatever image was there before — never blank it out
-              setForm(prev => ({ ...prev, image_url: prevImageUrlRef.current }));
-              setShowCropTool(false);
-            }}
-            onSkip={handleCropSkip}
+            onCancel={handleCropCancel}
           />
         )}
       </AnimatePresence>
@@ -158,10 +150,13 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
                     </div>
                   ) : (
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); prevImageUrlRef.current = formRef.current.image_url; setShowCropTool(true); }}
-                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary text-background rounded-xl">
-                        <Crop className="w-3.5 h-3.5" /> Crop
-                      </button>
+                      {/* Only show Crop for local blob URLs (freshly picked files) — not for already-uploaded https:// URLs which would taint the canvas */}
+                      {form.image_url?.startsWith("blob:") && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); prevImageUrlRef.current = formRef.current.image_url; setShowCropTool(true); }}
+                          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary text-background rounded-xl">
+                          <Crop className="w-3.5 h-3.5" /> Crop
+                        </button>
+                      )}
                       <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                         className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-black/60 text-white rounded-xl">
                         <Upload className="w-3.5 h-3.5" /> Change

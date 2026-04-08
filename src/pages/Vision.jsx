@@ -216,6 +216,16 @@ export default function Vision() {
                     {/* Tap to open detail */}
                     <div className="absolute inset-0" onClick={() => setViewerVision(vision)} />
 
+                    {/* Top-left: See Me badge */}
+                    {vision.title === "See Me In This Vision" && (
+                      <div className="absolute top-2.5 left-2.5 z-10">
+                        <span className="text-[9px] uppercase tracking-widest font-bold text-background bg-primary rounded-full px-2 py-1 inline-flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          See Me AI
+                        </span>
+                      </div>
+                    )}
+
                     {/* Top-right: pin + priority */}
                     <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-10">
                       <button onClick={(e) => { e.stopPropagation(); handlePin(vision); }}

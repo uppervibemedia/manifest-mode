@@ -152,6 +152,19 @@ export default function Vision() {
           </div>
         )}
 
+        {/* See Me AI Section Headline */}
+        {visions.some(v => v.title === "See Me In This Vision") && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-widest font-semibold text-primary">See Me In This Vision</p>
+              <p className="text-[10px] text-muted-foreground">Premium AI-generated manifestations</p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Grid */}
         {loading ? (
           <div className="grid grid-cols-2 gap-3">
@@ -215,16 +228,6 @@ export default function Vision() {
 
                     {/* Tap to open detail */}
                     <div className="absolute inset-0" onClick={() => setViewerVision(vision)} />
-
-                    {/* Top-left: See Me badge */}
-                    {vision.title === "See Me In This Vision" && (
-                      <div className="absolute top-2.5 left-2.5 z-10">
-                        <span className="text-[9px] uppercase tracking-widest font-bold text-background bg-primary rounded-full px-2 py-1 inline-flex items-center gap-1">
-                          <Sparkles className="w-2.5 h-2.5" />
-                          See Me AI
-                        </span>
-                      </div>
-                    )}
 
                     {/* Top-right: pin + priority */}
                     <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-10">

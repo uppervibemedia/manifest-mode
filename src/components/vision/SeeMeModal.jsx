@@ -43,18 +43,22 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
   const inputRef = useRef();
 
   const handleChange = (e) => {
+    console.log(`[${boxId}] Upload box clicked - file picker opened`);
     const file = e.target.files?.[0];
+    
     if (!file) {
-      console.log(`[${boxId}] Upload cancelled`);
+      console.log(`[${boxId}] No file selected or cancelled`);
       return;
     }
     
-    console.log(`[${boxId}] File selected:`, file.name, file.size, file.type);
+    console.log(`[${boxId}] File picker returned file:`, file.name, file.size, file.type);
+    console.log(`[${boxId}] File captured from event immediately`);
     
-    // PHASE 1: Store file immediately
+    // CRITICAL: Call handler with file immediately while event is active
     onFileSelected(boxId, file);
     
-    // Reset input so same file can be selected again
+    // Reset input AFTER file is passed to handler so same file can be selected again
+    console.log(`[${boxId}] Resetting input value to allow re-selection`);
     e.target.value = '';
   };
 
@@ -68,7 +72,7 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
   };
 
   const preview = boxState.croppedUrl || boxState.sourceUrl;
-  const showLoading = uploading && !preview;
+  const showLoading = boxState.status === 'loading-preview' && !preview;
 
   return (
     <label className="block cursor-pointer">
@@ -127,7 +131,7 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
         accept="image/*"
         className="hidden"
         onChange={handleChange}
-        disabled={uploading}
+        disabled={false}
       />
     </label>
   );
@@ -189,9 +193,10 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   // ───────────────────────────────────────────────────────────────────────────
 
   const handleFileSelected = (boxId, file) => {
-    console.log(`[${boxId}] PHASE 1 START: File acquisition`);
+    console.log(`[${boxId}] PHASE 1 START: File acquisition - storing immediately`);
     
     // Create object URL for preview immediately
+    console.log(`[${boxId}] Creating preview URL from selected file`);
     const previewUrl = URL.createObjectURL(file);
     console.log(`[${boxId}] Preview URL created:`, previewUrl);
 
@@ -201,25 +206,29 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       croppedFile: null,
       croppedUrl: null,
       isImageLoaded: false,
-      status: 'preview-ready',  // Changed from 'uploading' - file is ready to use
+      status: 'loading-preview',  // Preload in progress
       error: null,
     };
 
     if (boxId === 'vision') {
+      console.log(`[${boxId}] File stored in vision box state`);
       setVisionBox(newBoxState);
     } else if (boxId === 'self') {
+      console.log(`[${boxId}] File stored in self box state`);
       setSelfBox(newBoxState);
     }
 
-    console.log(`[${boxId}] File stored in state, ready for use`);
+    console.log(`[${boxId}] File and preview URL ready, waiting for image preload`);
   };
 
   const handleImageLoaded = (boxId) => {
-    console.log(`[${boxId}] Preview image loaded successfully`);
+    console.log(`[${boxId}] Image preload success - image is confirmed and usable`);
     
     if (boxId === 'vision') {
+      console.log(`[vision] Marking as preview-ready - now can proceed to crop or save`);
       setVisionBox(prev => ({ ...prev, isImageLoaded: true, status: 'preview-ready' }));
     } else if (boxId === 'self') {
+      console.log(`[self] Marking as preview-ready - now can proceed to crop or save`);
       setSelfBox(prev => ({ ...prev, isImageLoaded: true, status: 'preview-ready' }));
     }
   };
@@ -229,22 +238,46 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   // ───────────────────────────────────────────────────────────────────────────
 
   const handleCropStart = (boxId) => {
+    console.log(`[${boxId}] Crop button clicked - checking file readiness`);
     const boxState = boxId === 'vision' ? visionBox : selfBox;
     
+    if (!boxState.sourceFile) {
+      console.error(`[${boxId}] CRITICAL: Cannot start crop - sourceFile is null or missing`);
+      if (boxId === 'vision') {
+        setVisionBox(prev => ({ ...prev, error: 'File missing. Please re-upload.' }));
+      } else {
+        setSelfBox(prev => ({ ...prev, error: 'File missing. Please re-upload.' }));
+      }
+      return;
+    }
+    
     if (!boxState.sourceUrl) {
-      console.error(`[${boxId}] Cannot start crop: no source URL`);
+      console.error(`[${boxId}] CRITICAL: Cannot start crop - sourceUrl is null or missing`);
+      if (boxId === 'vision') {
+        setVisionBox(prev => ({ ...prev, error: 'Preview URL missing. Please re-upload.' }));
+      } else {
+        setSelfBox(prev => ({ ...prev, error: 'Preview URL missing. Please re-upload.' }));
+      }
       return;
     }
     
     if (!boxState.isImageLoaded) {
-      console.error(`[${boxId}] Cannot start crop: image not loaded`);
+      console.error(`[${boxId}] Cannot start crop: image preload not yet complete`);
+      if (boxId === 'vision') {
+        setVisionBox(prev => ({ ...prev, error: 'Image still loading. Please wait.' }));
+      } else {
+        setSelfBox(prev => ({ ...prev, error: 'Image still loading. Please wait.' }));
+      }
       return;
     }
 
-    console.log(`[${boxId}] PHASE 2 START: Opening crop modal`);
+    console.log(`[${boxId}] PHASE 2 START: All checks passed, opening crop modal`);
+    console.log(`[${boxId}] sourceFile exists: yes (${boxState.sourceFile.name})`);
+    console.log(`[${boxId}] sourceUrl exists: yes`);
+    console.log(`[${boxId}] isImageLoaded: yes`);
     setActiveCropBoxId(boxId);
     setIsCropModalOpen(true);
-    console.log(`[${boxId}] Crop modal opened, activeBoxId =`, boxId);
+    console.log(`[${boxId}] Crop modal opened`);
   };
 
   // ───────────────────────────────────────────────────────────────────────────
@@ -265,6 +298,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       const croppedFile = new File([blob], `${activeCropBoxId}-cropped.jpg`, { type: "image/jpeg" });
 
       console.log(`[${activeCropBoxId}] Cropped file created:`, croppedFile.size, 'bytes');
+      console.log(`[${activeCropBoxId}] Crop saved - updating box state`);
 
       // Update the correct box
       if (activeCropBoxId === 'vision') {
@@ -285,14 +319,14 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         console.log(`[self] Cropped output committed to self box`);
       }
 
-      console.log(`[${activeCropBoxId}] PHASE 3 COMPLETE: Output saved, closing crop modal`);
+      console.log(`[${activeCropBoxId}] PHASE 3 COMPLETE: Crop process finished, closing modal`);
       setIsCropModalOpen(false);
       setActiveCropBoxId(null);
     } catch (error) {
-      console.error(`[${activeCropBoxId}] PHASE 3 FAILED:`, error);
+      console.error(`[${activeCropBoxId}] PHASE 3 FAILED - Crop processing error:`, error);
       
-      // FAILSAFE: Use original if crop fails
-      console.log(`[${activeCropBoxId}] FAILSAFE: Saving original instead of cropped`);
+      // FALLBACK RULE: Save original if crop fails - first upload must never fail
+      console.log(`[${activeCropBoxId}] FALLBACK: Saving original image to preserve first upload`);
       const boxState = activeCropBoxId === 'vision' ? visionBox : selfBox;
       
       if (activeCropBoxId === 'vision') {
@@ -301,7 +335,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           croppedFile: prev.sourceFile,
           croppedUrl: prev.sourceUrl,
           status: 'complete',
-          error: `Crop processing failed, saved original. Retry crop later.`,
+          error: `Crop processing error - saved original. You can retry crop later.`,
         }));
       } else if (activeCropBoxId === 'self') {
         setSelfBox(prev => ({
@@ -309,11 +343,11 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           croppedFile: prev.sourceFile,
           croppedUrl: prev.sourceUrl,
           status: 'complete',
-          error: `Crop processing failed, saved original. Retry crop later.`,
+          error: `Crop processing error - saved original. You can retry crop later.`,
         }));
       }
 
-      console.log(`[${activeCropBoxId}] Original saved as fallback`);
+      console.log(`[${activeCropBoxId}] Original image saved as fallback - upload will still proceed`);
       setIsCropModalOpen(false);
       setActiveCropBoxId(null);
     }
@@ -329,38 +363,51 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   // GENERATION & SAVE
   // ───────────────────────────────────────────────────────────────────────────
 
-  const canGenerate = (visionBox.croppedUrl || visionBox.sourceUrl) && (selfBox.croppedUrl || selfBox.sourceUrl);
+  const canGenerate = visionBox.status === 'preview-ready' && selfBox.status === 'preview-ready';
 
   const handleGenerate = async () => {
-    if (!canGenerate) return;
+    if (!canGenerate) {
+      console.error('Generate button called but files not ready');
+      return;
+    }
+    
+    console.log('[generate] Starting image generation flow');
     setGenerating(true);
     setResult(null);
 
     const uploads = [];
     
-    // Use cropped if available, else source
+    console.log('[generate] Uploading vision image - using cropped if available');
+    // Use cropped if available, else source - both should be available at this point
     if (visionBox.croppedFile) {
+      console.log('[generate] Vision: uploading cropped file');
       const res = await base44.integrations.Core.UploadFile({ file: visionBox.croppedFile });
       uploads.push(res.file_url);
     } else if (visionBox.sourceFile) {
+      console.log('[generate] Vision: uploading original file');
       const res = await base44.integrations.Core.UploadFile({ file: visionBox.sourceFile });
       uploads.push(res.file_url);
     }
 
+    console.log('[generate] Uploading self image - using cropped if available');
     if (selfBox.croppedFile) {
+      console.log('[generate] Self: uploading cropped file');
       const res = await base44.integrations.Core.UploadFile({ file: selfBox.croppedFile });
       uploads.push(res.file_url);
     } else if (selfBox.sourceFile) {
+      console.log('[generate] Self: uploading original file');
       const res = await base44.integrations.Core.UploadFile({ file: selfBox.sourceFile });
       uploads.push(res.file_url);
     }
 
+    console.log('[generate] Both files uploaded, calling AI image generation');
     const prompt = buildPrompt(scene, vision?.title, vision?.category);
     const generated = await base44.integrations.Core.GenerateImage({
       prompt,
       existing_image_urls: uploads,
     });
 
+    console.log('[generate] AI generation complete, displaying result');
     setResult(generated.url);
     setStep(2);
     setGenerating(false);

@@ -1,0 +1,79 @@
+{
+  "name": "SeeMeGeneratedImage",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who generated this image"
+    },
+    "vision_id": {
+      "type": "string",
+      "description": "ID of the associated VisionItem (optional, if generated from a specific vision)"
+    },
+    "generated_image_url": {
+      "type": "string",
+      "description": "Permanent URL of the generated image asset"
+    },
+    "source_vision_image_url": {
+      "type": "string",
+      "description": "URL of the source vision/scene image used in generation"
+    },
+    "source_self_image_url": {
+      "type": "string",
+      "description": "URL of the source self photo used in generation"
+    },
+    "scene_option": {
+      "type": "string",
+      "enum": [
+        "standing_front",
+        "inside",
+        "beside",
+        "walking_into"
+      ],
+      "description": "Which scene composition was selected"
+    },
+    "vision_title": {
+      "type": "string",
+      "description": "Title of the vision at time of generation (for context)"
+    },
+    "vision_category": {
+      "type": "string",
+      "description": "Category of the vision at time of generation"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this is the current/latest generated image for this vision"
+    },
+    "ai_generation_metadata": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "generation_time_ms": {
+          "type": "number"
+        }
+      },
+      "description": "Metadata about the AI generation process"
+    }
+  },
+  "required": [
+    "user_email",
+    "generated_image_url",
+    "source_vision_image_url",
+    "source_self_image_url",
+    "scene_option"
+  ],
+  "rls": {
+    "read": {
+      "user_email": "{{current_user.email}}"
+    },
+    "update": {
+      "user_email": "{{current_user.email}}"
+    },
+    "delete": {
+      "user_email": "{{current_user.email}}"
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useModalState } from "@/lib/ModalContext";
+import { useSeeMeGeneratedAsset } from "@/hooks/useSeeMeGeneratedAsset";
 import ImageCropTool from "@/components/vision/ImageCropTool";
 
 const SCENE_OPTIONS = [
@@ -193,10 +194,24 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const [savedFileUrl, setSavedFileUrl] = useState(null);
   const [step, setStep] = useState(1); // 1=setup, 2=result
 
+  // Load previously saved generated image from persistent storage
+  const { asset: savedAsset, loading: loadingSavedAsset } = useSeeMeGeneratedAsset(userEmail, vision?.id);
+
   useEffect(() => {
     setActiveFullscreenModal("see-me-vision");
     return () => setActiveFullscreenModal(null);
   }, [setActiveFullscreenModal]);
+
+  // If a saved asset exists, load it immediately
+  useEffect(() => {
+    if (savedAsset && savedAsset.generated_image_url) {
+      console.log('[SeeMeModal] Loading saved generated image:', savedAsset.generated_image_url);
+      setResult(savedAsset.generated_image_url);
+      setSavedFileUrl(savedAsset.generated_image_url);
+      setSaved(true);
+      setStep(2);
+    }
+  }, [savedAsset]);
 
   // DEBUG: Log state after every render
   useEffect(() => {
@@ -600,46 +615,66 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     setGenerating(false);
   };
 
+  // File is already uploaded via handleSave, just return the URL
   const uploadResult = async () => {
     if (savedFileUrl) return savedFileUrl;
-    const blob = await fetch(result).then(r => r.blob());
-    const file = new File([blob], "see-me-vision.jpg", { type: "image/jpeg" });
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setSavedFileUrl(file_url);
-    return file_url;
+    // This should never be called if handleSave succeeded
+    console.warn('[uploadResult] Called but file should already be saved');
+    return result;
   };
 
   const handleSave = async () => {
     if (!result) return;
     setSaving(true);
-    setSaved(true);
-    setSaving(false);
 
-    const file_url = await uploadResult();
+    try {
+      // Upload the generated image to permanent storage
+      const blob = await fetch(result).then(r => r.blob());
+      const file = new File([blob], "see-me-vision.jpg", { type: "image/jpeg" });
+      const { file_url: generatedImageUrl } = await base44.integrations.Core.UploadFile({ file });
 
-    if (vision?.id) {
-      const currentProof = vision.proof_images || [];
-      const aiNotes = vision.notes ? vision.notes : "";
-      const aiMarker = `[ai_generated:${file_url}]`;
-      const notesUpdated = aiNotes.includes(aiMarker) ? aiNotes : `${aiNotes}\n${aiMarker}`.trim();
-      base44.entities.VisionItem.update(vision.id, {
-        proof_images: [...currentProof, file_url],
-        notes: notesUpdated,
-      }).then(() => {
-        onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url], notes: notesUpdated });
-      });
-    } else {
-      base44.entities.VisionItem.create({
+      console.log('[handleSave] Generated image uploaded:', generatedImageUrl);
+
+      // Save as a persistent SeeMeGeneratedImage asset
+      const generatedAsset = await base44.entities.SeeMeGeneratedImage.create({
         user_email: userEmail,
-        title: "See Me In This Vision",
-        category: "lifestyle",
-        image_url: file_url,
-        notes: `[ai_generated:${file_url}]`,
+        vision_id: vision?.id || null,
+        generated_image_url: generatedImageUrl,
+        source_vision_image_url: visionBox.croppedUrl || visionBox.sourceUrl,
+        source_self_image_url: selfBox.croppedUrl || selfBox.sourceUrl,
+        scene_option: scene,
+        vision_title: vision?.title || null,
+        vision_category: vision?.category || null,
         is_active: true,
-        progress: 0,
-      }).then((newVision) => {
-        onSave && onSave(newVision);
+        ai_generation_metadata: {
+          model: "default",
+          generation_time_ms: Date.now(),
+        },
       });
+
+      console.log('[handleSave] Generated asset saved to database:', generatedAsset.id);
+
+      // Mark any previous versions as inactive
+      if (vision?.id) {
+        const previousAssets = await base44.entities.SeeMeGeneratedImage.filter({
+          user_email: userEmail,
+          vision_id: vision.id,
+          is_active: true,
+        });
+        for (const asset of previousAssets) {
+          if (asset.id !== generatedAsset.id) {
+            await base44.entities.SeeMeGeneratedImage.update(asset.id, { is_active: false });
+          }
+        }
+      }
+
+      setSaved(true);
+      onSave && onSave({ ...vision, generated_image_asset_id: generatedAsset.id });
+    } catch (error) {
+      console.error('[handleSave] Failed to save generated image:', error);
+      setSaved(false);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -718,6 +753,14 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           </div>
 
           <div className="flex-1 overflow-y-auto">
+            {loadingSavedAsset ? (
+              <div className="flex items-center justify-center min-h-screen">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  <p className="text-xs text-muted-foreground">Loading your saved vision...</p>
+                </div>
+              </div>
+            ) : (
             <AnimatePresence mode="wait">
               {/* STEP 1 — Setup */}
               {step === 1 && (
@@ -856,8 +899,9 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </div>
+              </AnimatePresence>
+              )}
+              </div>
 
           {/* Action buttons footer */}
           {step === 1 && (
@@ -934,6 +978,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
               {/* Tertiary: Regenerate */}
               <button
                 onClick={() => {
+                  console.log('[Regenerate] Clearing current result to allow new generation');
                   setStep(1);
                   setResult(null);
                   setSaved(false);

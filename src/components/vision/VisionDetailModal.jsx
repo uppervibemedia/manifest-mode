@@ -190,24 +190,24 @@ Return as JSON: { "insight": "...", "daily_action": "..." }`;
             </div>
           </div>
 
-          {/* See Me In This Vision — AI Creation (Premium only) */}
-          {isPremium && (
-            <button
-              onClick={() => onGenerateScene?.(vision)}
-              className="w-full glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-left hover:border-primary/50 transition-colors flex items-center gap-3"
-            >
-              <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shrink-0 text-background">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
-                  <span className="text-[9px] font-bold text-background bg-primary rounded-full px-1.5 py-0.5">AI</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">Place yourself inside this vision using AI. Upload a photo of yourself to begin.</p>
-              </div>
-            </button>
-          )}
+          {/* See Me In This Realty — AI Creation (Premium only) */}
+           {isPremium && (
+             <button
+               onClick={() => onGenerateScene?.(vision)}
+               className="w-full glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-left hover:border-primary/50 transition-colors flex items-center gap-3"
+             >
+               <div className="w-10 h-10 gold-gradient rounded-xl flex items-center justify-center shrink-0 text-background">
+                 <Sparkles className="w-5 h-5" />
+               </div>
+               <div className="flex-1">
+                 <div className="flex items-center gap-2">
+                   <p className="text-sm font-semibold text-foreground">See Me In This Realty</p>
+                   <span className="text-[9px] font-bold text-background bg-primary rounded-full px-1.5 py-0.5">AI</span>
+                 </div>
+                 <p className="text-xs text-muted-foreground mt-0.5">Place yourself inside this vision using AI. Upload a photo of yourself to begin.</p>
+               </div>
+             </button>
+           )}
 
           {/* AI Insight block */}
           <div className="glass-card border rounded-2xl p-4" style={{ borderColor: meta.color + "30" }}>

@@ -12,7 +12,7 @@ function getAiGeneratedUrls(vision) {
   return new Set([...matches].map(m => m[1]));
 }
 
-export default function VisionImageViewer({ vision, userEmail, tier, onClose, onGenerateSeeMe, onUpdate }) {
+export default function VisionImageViewer({ vision, userEmail, onClose, onRegenerate, onUpdate }) {
   const meta = getCategoryMeta(vision.category);
   const [downloading, setDownloading] = useState(false);
   const [settingFocus, setSettingFocus] = useState(false);
@@ -22,8 +22,8 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
   const imageUrl = vision.image_url;
   const validImageUrl = isValidImageUrl(imageUrl);
   const aiGeneratedUrls = getAiGeneratedUrls(vision);
-  // Image is AI-generated if its URL appears in the notes markers OR if the vision title is the default AI title OR if it's in proof_images from See Me
-  const isAiGenerated = validImageUrl && (aiGeneratedUrls.has(imageUrl) || vision.title === "See Me In This Vision" || vision.proof_images?.includes(imageUrl));
+  // Image is AI-generated if its URL appears in the notes markers OR if the vision title is the default AI title
+  const isAiGenerated = validImageUrl && (aiGeneratedUrls.has(imageUrl) || vision.title === "See Me In This Vision");
 
   const handleDownload = async () => {
     if (!validImageUrl) return;
@@ -105,125 +105,6 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
           {vision.emotional_goal && (
             <div className="px-5 py-4">
               <p className="text-sm text-foreground/70 italic leading-relaxed">"{vision.emotional_goal}"</p>
-            </div>
-          )}
-
-          {/* AI Roadmap & Insights Section */}
-          {tier === "premium" && (
-            <div className="px-5 py-4 space-y-4 border-t border-border/50">
-              {isAiGenerated ? (
-                <>
-                  {/* AI Scene Badge */}
-                  <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <p className="text-sm font-semibold text-foreground">Your AI Vision</p>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">Manifested with See Me In This Vision</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Generate See Me Button for non-AI images */}
-                  <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">AI places you inside your dream</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={onGenerateSeeMe}
-                      className="w-full py-2 rounded-lg gold-gradient text-background text-xs font-semibold flex items-center justify-center gap-1.5">
-                      <Sparkles className="w-3 h-3" />
-                      Generate Now
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Vision Context & Roadmap */}
-              <div className="space-y-3">
-                {vision.why_i_want_this && (
-                  <div className="glass-card rounded-xl p-3 border border-border/50">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1">Why I Want This</p>
-                    <p className="text-xs text-foreground/80 leading-relaxed">{vision.why_i_want_this}</p>
-                  </div>
-                )}
-                {vision.desired_timeline && (
-                  <div className="glass-card rounded-xl p-3 border border-border/50">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1">Timeline</p>
-                    <p className="text-xs text-foreground/80">{vision.desired_timeline}</p>
-                  </div>
-                )}
-                {vision.action_steps && vision.action_steps.length > 0 && (
-                  <div className="glass-card rounded-xl p-3 border border-border/50">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Action Roadmap</p>
-                    <ul className="space-y-1.5">
-                      {vision.action_steps.slice(0, 4).map((step, i) => (
-                        <li key={i} className="text-xs text-foreground flex gap-2">
-                          <span className="text-primary shrink-0 font-bold">{i + 1}.</span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                      {vision.action_steps.length > 4 && (
-                        <li className="text-xs text-muted-foreground italic">+ {vision.action_steps.length - 4} more steps</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Premium Feature Teaser for non-premium users */}
-          {!isAiGenerated && tier !== "premium" && (
-            <div className="px-5 py-4 space-y-3 border-t border-border/50">
-              {/* Premium Teaser */}
-              <div className="glass-card border border-primary/30 rounded-2xl p-4 bg-primary/5">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-primary">See Me In This Vision</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Premium Feature — AI places you inside your dream</p>
-                  </div>
-                </div>
-                <div className="space-y-2 mb-3 p-3 bg-black/20 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary text-xs">✦</span>
-                    <p className="text-[10px] text-foreground/80">Upload your photo</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary text-xs">✦</span>
-                    <p className="text-[10px] text-foreground/80">AI generates aspirational scene</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary text-xs">✦</span>
-                    <p className="text-[10px] text-foreground/80">View your AI roadmap</p>
-                  </div>
-                </div>
-                <button
-                  onClick={onGenerateSeeMe}
-                  className="w-full py-2.5 rounded-lg border border-primary/40 bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-2 hover:bg-primary/15 transition-colors">
-                  <Sparkles className="w-3 h-3" />
-                  Upgrade to Unlock
-                </button>
-              </div>
-
-              {/* AI Roadmap Preview */}
-              <div className="glass-card rounded-xl p-3 border border-border/50 opacity-60">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Premium Only: Your AI Roadmap</p>
-                <div className="space-y-1 blur-sm">
-                  <p className="text-xs text-foreground/50">Why you want this…</p>
-                  <p className="text-xs text-foreground/50">Your timeline…</p>
-                  <p className="text-xs text-foreground/50">Step-by-step action plan…</p>
-                </div>
-              </div>
             </div>
           )}
         </div>

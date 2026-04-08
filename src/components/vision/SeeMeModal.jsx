@@ -467,7 +467,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                 <Sparkles className="w-4 h-4 text-primary shrink-0" />
-                <h2 className="font-playfair text-lg font-semibold gold-text">See Me In This Realty</h2>
+                <h2 className="font-playfair text-lg font-semibold gold-text">See Me In This Vision</h2>
                 <span className="text-[9px] uppercase tracking-widest font-bold text-foreground bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5 shrink-0">
                   Premium Only
                 </span>

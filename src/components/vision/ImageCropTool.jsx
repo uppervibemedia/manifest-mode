@@ -5,6 +5,7 @@ import { X, Check } from "lucide-react";
 export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   const imageRef = useRef(null);
   const containerRef = useRef(null);
+  const rootRef = useRef(null);
   
   // Image and zoom state
   const [image, setImage] = useState(null);
@@ -19,6 +20,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   // Dragging state
   const [activeHandle, setActiveHandle] = useState(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const activeHandleRef = useRef(null);
 
   // Load image and initialize crop frame
   useEffect(() => {
@@ -71,21 +73,47 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     img.src = imageUrl;
   }, [imageUrl]);
 
-  // Lock body scroll
+  // Lock body scroll and disable pinch-to-zoom
   useEffect(() => {
     document.body.style.overflow = "hidden";
     document.body.style.touchAction = "none";
+    if (rootRef.current) {
+      rootRef.current.style.touchAction = "none";
+    }
+    
+    const preventZoom = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    
+    const preventGesture = (e) => {
+      e.preventDefault();
+    };
+    
+    document.addEventListener("touchmove", preventZoom, { passive: false });
+    document.addEventListener("gesturestart", preventGesture, { passive: false });
+    
     return () => {
       document.body.style.overflow = "";
       document.body.style.touchAction = "";
+      document.removeEventListener("touchmove", preventZoom);
+      document.removeEventListener("gesturestart", preventGesture);
     };
   }, []);
 
   // Handle touch start (for image drag)
   const handleTouchStart = (e) => {
-    if (e.target.closest('[data-handle]')) return; // Don't interfere with handle drags
+    // If touch is on a handle, do NOT start image pan
+    if (e.target.closest('[data-handle]')) return;
+    
+    // Only single finger allowed for image pan
+    if (e.touches.length > 1) {
+      e.preventDefault();
+      return;
+    }
 
-    if (e.touches.length === 1) {
+    if (e.touches.length === 1 && !activeHandleRef.current) {
       // Image pan start
       const touch = e.touches[0];
       setDragStart({ x: touch.clientX - imageOffset.x, y: touch.clientY - imageOffset.y });
@@ -95,9 +123,16 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
   // Handle touch move (for image drag)
   const handleTouchMove = (e) => {
-    if (activeHandle) return; // Let handle dragging take priority
+    // Prevent multi-touch and zooming
+    if (e.touches.length > 1) {
+      e.preventDefault();
+      return;
+    }
 
-    if (e.touches.length === 1) {
+    // If a handle is active, let pointer events handle it
+    if (activeHandleRef.current) return;
+
+    if (e.touches.length === 1 && isInteracting) {
       e.preventDefault();
       // Image pan
       const touch = e.touches[0];
@@ -121,6 +156,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     const clientY = touch?.clientY || e.clientY;
     
     setActiveHandle(position);
+    activeHandleRef.current = position;
     setDragStart({ x: clientX, y: clientY });
     setIsInteracting(true);
   };
@@ -180,13 +216,19 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
   // Global pointer handlers
   const handlePointerMove = (e) => {
-    if (!activeHandle && !isInteracting) return;
+    // Prevent multi-touch zooming
+    if (e.touches && e.touches.length > 1) {
+      e.preventDefault();
+      return;
+    }
+
+    if (!activeHandleRef.current && !isInteracting) return;
     const clientX = e.touches?.[0]?.clientX || e.clientX;
     const clientY = e.touches?.[0]?.clientY || e.clientY;
     
-    if (activeHandle) {
+    if (activeHandleRef.current) {
       handleHandleMove(clientX, clientY);
-    } else if (isInteracting && !activeHandle) {
+    } else if (isInteracting && !activeHandleRef.current) {
       // Image pan during interaction
       setImageOffset({
         x: clientX - dragStart.x,
@@ -197,6 +239,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
   const handlePointerUp = () => {
     setActiveHandle(null);
+    activeHandleRef.current = null;
     setIsInteracting(false);
   };
 
@@ -247,9 +290,10 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     );
   };
 
-  // Crop handle component with 8 positions
+  // Crop handle component with 8 positions — larger hit area on mobile
   const CropHandle = ({ position, handleSize = 40 }) => {
     const isActive = activeHandle === position;
+    const touchHitSize = 56; // Larger invisible touch target
     
     // Position styles for each handle
     const positionStyles = {
@@ -265,20 +309,23 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
     return (
       <div
-        data-handle
+        data-handle={position}
         onMouseDown={(e) => handleHandleDown(position, e)}
         onTouchStart={(e) => handleHandleDown(position, e)}
-        className="absolute z-30 touch-none"
+        className="absolute z-40 touch-none"
         style={{
           ...positionStyles[position],
-          width: handleSize,
-          height: handleSize,
+          width: touchHitSize,
+          height: touchHitSize,
           pointerEvents: "auto",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitTouchCallout: "none",
         }}
       >
-        {/* Visible indicator dot */}
+        {/* Visible indicator dot (smaller than hit area) */}
         <div
-          className={`absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full transition-all ${
+          className={`absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full transition-all pointer-events-none ${
             isActive ? "bg-primary scale-125" : "bg-white/80"
           }`}
           style={{ transform: "translate(-50%, -50%)" }}
@@ -289,10 +336,12 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
   return (
     <motion.div
+      ref={rootRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black z-[99999] flex flex-col select-none"
+      style={{ touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }}
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}
       onMouseLeave={handlePointerUp}
@@ -392,7 +441,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
             <img
               src={imageUrl}
               alt="crop"
-              className="absolute cursor-grab active:cursor-grabbing"
+              className="absolute cursor-grab active:cursor-grabbing select-none"
               onLoad={(e) => {
                 const rect = e.target.getBoundingClientRect();
                 const actualWidth = rect.width || e.target.naturalWidth;
@@ -412,11 +461,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 transform: `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${zoomScale})`,
                 transformOrigin: "0 0",
                 willChange: "transform",
-                pointerEvents: "auto",
+                pointerEvents: activeHandleRef.current ? "none" : "auto",
                 opacity: 0.3,
+                touchAction: "none",
+                WebkitUserSelect: "none",
+                userSelect: "none",
               }}
               onTouchStart={handleTouchStart}
               onMouseDown={(e) => {
+                if (activeHandleRef.current) return;
                 e.preventDefault();
                 setDragStart({ x: e.clientX - imageOffset.x, y: e.clientY - imageOffset.y });
                 setIsInteracting(true);

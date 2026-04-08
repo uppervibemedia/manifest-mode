@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { X, Check } from "lucide-react";
-import CropHandle from "./CropHandle";
 
 export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   const imageRef = useRef(null);
@@ -350,24 +349,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     const scaledWidth = image.width * zoomScale;
     const scaledHeight = image.height * zoomScale;
 
-    // Extract the source image coordinates that correspond to the visible crop area
-    // Account for the fact that the image might be zoomed and offset
-    const sourceX = Math.max(0, (cropBox.left - imageOffset.x) / zoomScale);
-    const sourceY = Math.max(0, (cropBox.top - imageOffset.y) / zoomScale);
-    const sourceWidth = cropWidth / zoomScale;
-    const sourceHeight = cropHeight / zoomScale;
-
-    // Draw only the cropped portion to fill the entire canvas
+    // Draw the visible cropped portion by translating the canvas
+    // and drawing the scaled image at the correct offset
     ctx.drawImage(
       imageRef.current,
-      sourceX,
-      sourceY,
-      sourceWidth,
-      sourceHeight,
-      0,
-      0,
-      cropWidth,
-      cropHeight
+      imageOffset.x - cropBox.left,
+      imageOffset.y - cropBox.top,
+      scaledWidth,
+      scaledHeight
     );
 
     canvas.toBlob(
@@ -390,7 +379,67 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     );
   };
 
+  // Crop handle component with 8 positions — HUGE hit area for real iPhone touch
+  const CropHandle = ({ position, handleSize = 40 }) => {
+    const isActive = activeHandle === position;
+    const touchHitSize = 88; // Massive invisible touch target for real finger use (thumb-friendly)
+    
+    // Position styles for each handle (center the large invisible area around the actual corner/edge)
+    const positionStyles = {
+      "top-left": { top: -touchHitSize / 2, left: -touchHitSize / 2 },
+      "top-center": { top: -touchHitSize / 2, left: "50%", marginLeft: -touchHitSize / 2 },
+      "top-right": { top: -touchHitSize / 2, right: -touchHitSize / 2 },
+      "middle-left": { top: "50%", marginTop: -touchHitSize / 2, left: -touchHitSize / 2 },
+      "middle-right": { top: "50%", marginTop: -touchHitSize / 2, right: -touchHitSize / 2 },
+      "bottom-left": { bottom: -touchHitSize / 2, left: -touchHitSize / 2 },
+      "bottom-center": { bottom: -touchHitSize / 2, left: "50%", marginLeft: -touchHitSize / 2 },
+      "bottom-right": { bottom: -touchHitSize / 2, right: -touchHitSize / 2 },
+    };
 
+    return (
+      <div
+        data-handle={position}
+        onMouseDown={(e) => {
+          console.log(`[Crop] Handle mousedown: ${position}`);
+          handleHandleDown(position, e);
+        }}
+        onTouchStart={(e) => {
+          console.log(`[Crop] Handle touchstart: ${position}, touches=${e.touches.length}`);
+          handleHandleDown(position, e);
+        }}
+        onPointerDown={(e) => {
+          console.log(`[Crop] Handle pointerdown: ${position}, pointerId=${e.pointerId}`);
+          handleHandleDown(position, e);
+        }}
+        className="absolute touch-none"
+        style={{
+          ...positionStyles[position],
+          width: touchHitSize,
+          height: touchHitSize,
+          pointerEvents: "auto",
+          zIndex: 50,
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          WebkitTouchCallout: "none",
+          touchAction: "none",
+          cursor: position.includes("top") && position.includes("left") ? "nwse-resize" :
+                  position.includes("top") && position.includes("right") ? "nesw-resize" :
+                  position.includes("bottom") && position.includes("left") ? "nesw-resize" :
+                  position.includes("bottom") && position.includes("right") ? "nwse-resize" :
+                  position.includes("top") || position.includes("bottom") ? "ns-resize" :
+                  "ew-resize",
+        }}
+      >
+        {/* Visible indicator dot (smaller than hit area) */}
+        <div
+          className={`absolute top-1/2 left-1/2 w-3 h-3 rounded-full transition-all pointer-events-none ${
+            isActive ? "bg-primary scale-150 shadow-lg" : "bg-white/90 shadow"
+          }`}
+          style={{ transform: "translate(-50%, -50%)" }}
+        />
+      </div>
+    );
+  };
 
   return (
     <motion.div
@@ -548,14 +597,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
               )}
 
               {/* 8 Crop handles */}
-              <CropHandle position="top-left" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="top-center" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="top-right" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="middle-left" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="middle-right" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="bottom-left" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="bottom-center" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
-              <CropHandle position="bottom-right" activeHandle={activeHandle} onHandleDown={handleHandleDown} />
+              <CropHandle position="top-left" />
+              <CropHandle position="top-center" />
+              <CropHandle position="top-right" />
+              <CropHandle position="middle-left" />
+              <CropHandle position="middle-right" />
+              <CropHandle position="bottom-left" />
+              <CropHandle position="bottom-center" />
+              <CropHandle position="bottom-right" />
             </div>
           </>
         ) : (

@@ -139,7 +139,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           }`}>
             {form.image_url && isValidImageUrl(form.image_url) ? (
               <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
-                <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
+                <img src={form.image_url} alt="Vision" className="w-full h-full object-contain pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button

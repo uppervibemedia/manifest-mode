@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useModalState } from "@/lib/ModalContext";
-import ImageCropTool from "@/components/vision/ImageCropTool.jsx";
+import ImageCropTool from "@/components/vision/ImageCropTool";
 
 const SCENE_OPTIONS = [
   { id: "standing_front", label: "Standing in front", icon: "🧍" },

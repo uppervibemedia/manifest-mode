@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { X, Download, Image as ImageIcon, Check, Loader2, Sparkles } from "lucide-react";
+import { X, Download, Image as ImageIcon, Check, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getCategoryMeta } from "@/lib/categories";
 
@@ -11,11 +11,13 @@ function getAiGeneratedUrls(vision) {
   return new Set([...matches].map(m => m[1]));
 }
 
-export default function VisionImageViewer({ vision, userEmail, onClose, onRegenerate, onUpdate }) {
+export default function VisionImageViewer({ vision, userEmail, onClose, onRegenerate, onUpdate, onDelete }) {
   const meta = getCategoryMeta(vision.category);
   const [downloading, setDownloading] = useState(false);
   const [settingFocus, setSettingFocus] = useState(false);
   const [focusSet, setFocusSet] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Determine the image to display — use main image_url
   const imageUrl = vision.image_url;
@@ -34,6 +36,14 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
     a.click();
     URL.revokeObjectURL(url);
     setDownloading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setDeleting(true);
+    await base44.entities.VisionItem.delete(vision.id);
+    onDelete?.(vision.id);
+    onClose();
   };
 
   const handleSetAsFocus = async () => {
@@ -116,7 +126,7 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
         <div className="shrink-0 border-t border-border bg-card/95 backdrop-blur px-5 pt-4 space-y-2.5"
           style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))" }}>
 
-          {/* Download */}
+          {/* Download + Focus */}
           <div className="flex gap-2">
             <button
               onClick={handleDownload}
@@ -139,6 +149,18 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
             </button>
           </div>
 
+          {/* Delete */}
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className={`w-full py-3 rounded-xl border font-semibold flex items-center justify-center gap-2 transition-colors text-sm ${
+              confirmDelete
+                ? "border-destructive bg-destructive/10 text-destructive"
+                : "border-border/60 bg-transparent text-muted-foreground hover:border-destructive/40 hover:text-destructive"
+            }`}>
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            {deleting ? "Deleting…" : confirmDelete ? "Tap again to confirm delete" : "Delete Vision"}
+          </button>
 
         </div>
       </motion.div>

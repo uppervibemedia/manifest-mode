@@ -12,10 +12,11 @@ export default function FutureSelf() {
   const navigate = useNavigate();
   const { user, profile, loading: profileLoading } = useUserProfile();
   const [analysis, setAnalysis] = useState(null);
-  const [activeTab, setActiveTab] = useState("journal");
+  const [activeTab, setActiveTab] = useState("journal"); // "journal" or "coach"
   const [loading, setLoading] = useState(true);
   const hasCoachAccess = profile?.subscription_tier === "premium";
 
+  // Coach state
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [coaching, setCoaching] = useState(false);
@@ -94,6 +95,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
           </motion.div>
         ) : (
           <>
+            {/* Tabs */}
             <div className="flex gap-2 mb-6">
               <button
                 onClick={() => setActiveTab("journal")}
@@ -116,12 +118,14 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
             </div>
 
             <AnimatePresence mode="wait">
+              {/* Journal Tab */}
               {activeTab === "journal" && (
                 <motion.div key="journal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <FutureSelfJournal userEmail={user?.email} />
                 </motion.div>
               )}
 
+              {/* Coach Tab */}
               {activeTab === "coach" && (
                 <motion.div key="coach" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col h-[calc(100vh-280px)]">
                   {!hasCoachAccess ? (
@@ -136,6 +140,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
                     </div>
                   ) : (
                     <>
+                      {/* Messages */}
                       <div className="flex-1 overflow-y-auto mb-4 space-y-3">
                         {messages.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -171,6 +176,7 @@ Provide concise, identity-focused coaching. Reference their blueprint. Be warm a
                         )}
                       </div>
 
+                      {/* Input */}
                       <div className="flex gap-2">
                         <input
                           type="text"

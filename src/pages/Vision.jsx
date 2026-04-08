@@ -8,16 +8,15 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import SeeMeModal from "@/components/vision/SeeMeModal";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionImageViewer from "@/components/vision/VisionImageViewer";
-import VisionDetailModal from "@/components/vision/VisionDetailModal";
 
 const CATEGORIES = [
-  { id: "wealth", label: "Wealth", icon: "💰" },
-  { id: "home", label: "Home", icon: "🏡" },
-  { id: "body", label: "Body", icon: "💪" },
-  { id: "love", label: "Love", icon: "❤️" },
-  { id: "business", label: "Business", icon: "🚀" },
-  { id: "lifestyle", label: "Lifestyle", icon: "✨" },
-  { id: "spiritual", label: "Spiritual", icon: "🌙" },
+  { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
+  { id: "home", label: "Home", icon: "🏡", meaning: "house, apartment, dream space, environment" },
+  { id: "body", label: "Body", icon: "💪", meaning: "fitness, health, appearance, energy" },
+  { id: "love", label: "Love", icon: "❤️", meaning: "relationships, marriage, family, connection" },
+  { id: "business", label: "Business", icon: "🚀", meaning: "brand, career, clients, success, productivity" },
+  { id: "lifestyle", label: "Lifestyle", icon: "✨", meaning: "car, travel, fashion, freedom, experiences" },
+  { id: "spiritual", label: "Spiritual", icon: "🌙", meaning: "peace, purpose, faith, healing, inner alignment" },
 ];
 
 export default function Vision() {
@@ -29,7 +28,6 @@ export default function Vision() {
   const [seeMeVision, setSeeMeVision] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
   const [viewerVision, setViewerVision] = useState(null);
-  const [detailVision, setDetailVision] = useState(null);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -44,6 +42,9 @@ export default function Vision() {
       setLoading(false);
     })();
   }, [user?.email, profileLoading]);
+
+  // Optimistic vision card click → open viewer immediately
+  const handleVisionClick = (vision) => setViewerVision(vision);
 
   const tier = profile?.subscription_tier || "free";
   const uploadLimit = tier === "free" ? 3 : tier === "supporter" ? 15 : 999;
@@ -79,7 +80,7 @@ export default function Vision() {
           </button>
         </div>
 
-        {/* See Me In This Vision */}
+        {/* See Me In This Vision — Premium Feature */}
         {canUseSeeMe ? (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
@@ -169,13 +170,14 @@ export default function Vision() {
                     )}
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+
                     <div className="absolute inset-0 left-0 right-0 p-4 flex flex-col justify-end">
                       <div className="mb-2 h-1 bg-white/20 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${vision.progress || 0}%` }}
                           transition={{ duration: 0.8 }}
-                          className="h-full rounded-full bg-primary"
+                          className="h-full rounded-full" style={{ backgroundColor: cat?.icon ? "hsl(45 80% 60%)" : "#fbbf24" }}
                         />
                       </div>
                       <div className="flex items-end justify-between gap-1">
@@ -240,25 +242,6 @@ export default function Vision() {
             }}
             onUpdate={(updated) => setVisions(prev => prev.map(v => v.id === updated.id ? updated : v))}
             onDelete={(id) => setVisions(prev => prev.filter(v => v.id !== id))}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {detailVision && (
-          <VisionDetailModal
-            vision={detailVision}
-            profile={profile}
-            onClose={() => setDetailVision(null)}
-            onUpdate={(updated) => {
-              setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
-              setDetailVision(updated);
-            }}
-            onGenerateScene={(v) => {
-              setDetailVision(null);
-              setSeeMeVision(v);
-              setShowSeeMe(true);
-            }}
           />
         )}
       </AnimatePresence>

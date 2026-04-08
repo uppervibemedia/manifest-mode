@@ -19,9 +19,9 @@ export default class LazyErrorBoundary extends Component {
       error?.message?.includes("Importing a module script failed");
 
     if (isChunkError) {
-      const attempts = parseInt(sessionStorage.getItem(RELOAD_KEY) || "0", 10);
-      if (attempts < 3) {
-        sessionStorage.setItem(RELOAD_KEY, String(attempts + 1));
+      // Only auto-reload once per session to avoid infinite reload loops
+      if (!sessionStorage.getItem(RELOAD_KEY)) {
+        sessionStorage.setItem(RELOAD_KEY, "1");
         window.location.reload();
       }
     }

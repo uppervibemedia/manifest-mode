@@ -26,6 +26,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   const [showCropTool, setShowCropTool] = useState(false);
   const fileInputRef = useRef(null);
   const formRef = useRef(form);
+  // Store the image URL that was in place BEFORE the crop tool opened, so cancel can restore it
+  const prevImageUrlRef = useRef(vision?.image_url || "");
   useEffect(() => { formRef.current = form; }, [form]);
 
   // Hide bottom nav when modal opens
@@ -38,6 +40,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = null;
+    // Save the current image URL so crop cancel can restore it
+    prevImageUrlRef.current = formRef.current.image_url;
     // Create a local preview URL and open the crop tool
     const localUrl = URL.createObjectURL(file);
     setForm(prev => ({ ...prev, image_url: localUrl }));
@@ -103,8 +107,9 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
             imageUrl={form.image_url}
             onSave={handleCropSave}
             onCancel={() => {
+              // Restore whatever image was there before — never blank it out
+              setForm(prev => ({ ...prev, image_url: prevImageUrlRef.current }));
               setShowCropTool(false);
-              setForm(prev => ({ ...prev, image_url: "" }));
             }}
             onSkip={handleCropSkip}
           />
@@ -153,7 +158,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
                     </div>
                   ) : (
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setShowCropTool(true); }}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); prevImageUrlRef.current = formRef.current.image_url; setShowCropTool(true); }}
                         className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary text-background rounded-xl">
                         <Crop className="w-3.5 h-3.5" /> Crop
                       </button>

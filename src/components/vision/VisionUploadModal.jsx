@@ -5,6 +5,7 @@ import { X, Upload, Loader2, Star, Crop } from "lucide-react";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useModalState } from "@/lib/ModalContext";
 import ImageCropTool from "@/components/vision/ImageCropTool";
+import { saveFallbackVision } from "@/lib/visionFallbackStorage";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 
@@ -231,9 +232,22 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         if (!isPersisted) {
           console.error('[VisionUploadModal] ⚠️ WARNING: Save returned success but record is not readable from backend');
           console.error('[VisionUploadModal] ⚠️ ERROR:', verifyError);
-          // Still show the vision locally but mark it as unverified
-          onSave(saved);
-          // TODO: Surface warning to user that vision may not be persisted
+          console.log('[VisionUploadModal] FALLBACK: Saving vision to localStorage as resilience layer');
+          
+          // Save to fallback storage to prevent data loss
+          const fallbackVision = saveFallbackVision(saved, userEmail);
+          if (fallbackVision) {
+            console.log('[VisionUploadModal] ✓ FALLBACK SAVED: Vision stored locally with ID:', fallbackVision.id);
+            // Return fallback vision with indicator that it's not yet backend-persisted
+            onSave({
+              ...fallbackVision,
+              isFallback: true,
+              syncStatus: 'pending_backend',
+            });
+          } else {
+            // Even fallback failed, but still try to show user the data they entered
+            onSave(saved);
+          }
         } else {
           console.log('[VisionUploadModal] ✓ CONFIRMED: Record is truly persisted and readable');
           onSave(saved);

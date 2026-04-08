@@ -272,7 +272,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           </button>
         </div>
         </motion.div>
-        </motion.div>
-        </>
-        );
-        }
+      </motion.div>
+    </>
+  );
+}

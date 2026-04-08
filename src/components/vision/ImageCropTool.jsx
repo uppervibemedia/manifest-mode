@@ -287,13 +287,10 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
               draggable={false}
               className="absolute pointer-events-none"
               style={{
-                top: 0,
-                left: 0,
-                width: imageDimensions.width,
-                height: imageDimensions.height,
-                transform: `translate(${imageOffset.x}px, ${imageOffset.y}px) scale(${zoomScale})`,
-                transformOrigin: "0 0",
-                cursor: "grab",
+                top: imageOffset.y,
+                left: imageOffset.x,
+                width: imageDimensions.width * zoomScale,
+                height: imageDimensions.height * zoomScale,
               }}
             />
 

@@ -37,8 +37,33 @@ export default function Vision() {
   useEffect(() => {
     (async () => {
       if (!user || profileLoading) return;
+      
+      console.log('[Vision] PAGE LOAD: Fetching visions for user:', user.email);
       const items = await base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }, "-created_date");
+      
+      console.log('[Vision] PAGE LOAD: Fetch response count:', items?.length || 0);
+      if (items && items.length > 0) {
+        console.log('[Vision] PAGE LOAD: First record from fetch:', {
+          id: items[0].id,
+          title: items[0].title,
+          image_url: items[0].image_url?.substring(0, 50) + '...',
+          image_url_exists: !!items[0].image_url,
+        });
+        console.log('[Vision] PAGE LOAD: Full first record:', items[0]);
+      }
+      
+      console.log('[Vision] STATE HYDRATION: Setting visions to state, count:', items?.length || 0);
       setVisions(items);
+      
+      console.log('[Vision] STATE HYDRATION: After setState, checking state...');
+      if (items && items.length > 0) {
+        console.log('[Vision] STATE HYDRATION: First vision in state:', {
+          id: items[0].id,
+          image_url: items[0].image_url?.substring(0, 50) + '...',
+          image_url_exists: !!items[0].image_url,
+        });
+      }
+      
       setLoading(false);
     })();
   }, [user?.email, profileLoading]);
@@ -149,12 +174,13 @@ export default function Vision() {
             <AnimatePresence>
               {visions.map((vision, i) => {
                 const cat = CATEGORIES.find(c => c.id === vision.category);
-                console.log('[Vision] Rendering vision card:', { 
+                console.log('[Vision] RENDER: Vision card mounting:', { 
                   id: vision.id, 
                   title: vision.title, 
                   has_image: !!vision.image_url,
                   image_url: vision.image_url?.substring(0, 50) + '...'
                 });
+                console.log('[Vision] RENDER: Full vision object:', vision);
                 return (
                   <motion.div key={vision.id}
                     initial={{ opacity: 0, scale: 0.92 }}
@@ -166,11 +192,16 @@ export default function Vision() {
                     style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
 
                     {(() => {
-                      console.log('[Vision] Vision card rendering img:', { 
+                      console.log('[Vision] IMG RENDER: About to render img tag for vision:', { 
                         id: vision.id, 
                         has_image_url: !!vision.image_url,
-                        image_url_value: vision.image_url?.substring(0, 50) + '...'
+                        image_url_value: vision.image_url?.substring(0, 50) + '...',
                       });
+                      if (vision.image_url) {
+                        console.log('[Vision] IMG RENDER: Using permanent URL as src:', vision.image_url);
+                      } else {
+                        console.log('[Vision] IMG RENDER: NO IMAGE_URL - showing placeholder');
+                      }
                       return null;
                     })()}
 
@@ -180,6 +211,8 @@ export default function Vision() {
                         className="w-full h-full object-cover"
                         whileHover={{ scale: 1.05 }}
                         transition={{ duration: 0.6 }}
+                        onLoad={() => console.log('[Vision] IMG LOADED:', { id: vision.id, src: vision.image_url?.substring(0, 50) })}
+                        onError={(err) => console.error('[Vision] IMG FAILED:', { id: vision.id, src: vision.image_url, error: err })}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-muted/40">

@@ -184,6 +184,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           image_url_type: saved.image_url?.startsWith('blob:') ? 'ERROR: BLOB!' : 'PERMANENT',
         });
         
+        console.log('[VisionUploadModal] SAVE STEP 5D-FULL: Full saved record from DB:', saved);
+        
         console.log('[VisionUploadModal] SAVE STEP 5E: Calling onSave with saved data');
         onSave(saved);
       }

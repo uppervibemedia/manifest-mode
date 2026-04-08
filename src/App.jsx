@@ -103,7 +103,7 @@ const AuthenticatedApp = () => {
               <Route path="/score" element={<ScorePage />} />
               <Route path="/daily-shift" element={<DailyShift />} />
               <Route path="/vision" element={<Vision />} />
-              <Route path="/vision-vault" element={<VisionVault />} />
+              <Route path="/vision-vault" element={<Navigate to="/vision" replace />} />
               <Route path="/vision/add" element={<Vision />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/future-self" element={<FutureSelf />} />

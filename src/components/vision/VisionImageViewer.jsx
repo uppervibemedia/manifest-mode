@@ -12,7 +12,7 @@ function getAiGeneratedUrls(vision) {
   return new Set([...matches].map(m => m[1]));
 }
 
-export default function VisionImageViewer({ vision, userEmail, onClose, onRegenerate, onUpdate }) {
+export default function VisionImageViewer({ vision, userEmail, tier, onClose, onGenerateSeeMe, onUpdate }) {
   const meta = getCategoryMeta(vision.category);
   const [downloading, setDownloading] = useState(false);
   const [settingFocus, setSettingFocus] = useState(false);
@@ -105,6 +105,50 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
           {vision.emotional_goal && (
             <div className="px-5 py-4">
               <p className="text-sm text-foreground/70 italic leading-relaxed">"{vision.emotional_goal}"</p>
+            </div>
+          )}
+
+          {/* Premium AI Details Section */}
+          {tier === "premium" ? (
+            <div className="px-5 py-4 border-t border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <p className="text-xs font-semibold text-foreground uppercase tracking-widest">AI Vision Plan</p>
+              </div>
+              {vision.why_i_want_this && (
+                <div className="mb-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-semibold">Why I Want This</p>
+                  <p className="text-xs text-foreground leading-relaxed">{vision.why_i_want_this}</p>
+                </div>
+              )}
+              {vision.desired_timeline && (
+                <div className="mb-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1 font-semibold">Timeline</p>
+                  <p className="text-xs text-foreground">{vision.desired_timeline}</p>
+                </div>
+              )}
+              {vision.action_steps && vision.action_steps.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1.5 font-semibold">Action Steps</p>
+                  <ul className="space-y-1">
+                    {vision.action_steps.slice(0, 3).map((step, i) => (
+                      <li key={i} className="text-xs text-foreground flex gap-2">
+                        <span className="text-primary shrink-0">✦</span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="px-5 py-4 border-t border-border/50">
+              <button
+                onClick={onGenerateSeeMe}
+                className="w-full py-2.5 rounded-lg border border-primary/30 bg-primary/5 text-primary text-xs font-semibold flex items-center justify-center gap-2 hover:bg-primary/10 transition-colors">
+                <Sparkles className="w-3 h-3" />
+                Unlock AI Vision Plan
+              </button>
             </div>
           )}
         </div>

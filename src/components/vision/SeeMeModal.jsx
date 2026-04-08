@@ -921,33 +921,34 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                   </p>
 
                   {/* Result image */}
-                  <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", damping: 20 }}
-                    className="rounded-2xl overflow-hidden mb-4 border border-primary/25 glow-gold"
-                  >
-                    {(() => {
-                      // PRIORITY: savedFileUrl > savedAsset > resultImageUrl
-                      const displayUrl = savedFileUrl || savedAsset?.generated_image_url || result;
-                      
-                      console.log('[SeeMeModal] RENDER VERIFY: Image source decision');
-                      console.log('[SeeMeModal] RENDER VERIFY: resultImageUrl:', result?.substring(0, 50));
-                      console.log('[SeeMeModal] RENDER VERIFY: savedFileUrl:', savedFileUrl?.substring(0, 50));
-                      console.log('[SeeMeModal] RENDER VERIFY: savedAsset.url:', savedAsset?.generated_image_url?.substring(0, 50));
-                      console.log('[SeeMeModal] RENDER VERIFY: saved state:', saved);
-                      console.log('[SeeMeModal] RENDER VERIFY: FINAL displayUrl used:', displayUrl?.substring(0, 50) + '...');
-                      console.log('[SeeMeModal] RENDER VERIFY: displayUrl source:', 
-                        savedFileUrl ? 'FROM savedFileUrl' : savedAsset?.generated_image_url ? 'FROM savedAsset' : 'FROM resultImageUrl (temporary)');
-                      
-                      if (saved && !savedFileUrl) {
-                        console.warn('[SeeMeModal] RENDER VERIFY: BUG CHECK - saved=true but savedFileUrl is empty!');
-                      }
-                      
-                      return null;
-                    })()}
-                    <img src={displayUrl} alt="Your vision" className="w-full h-auto" />
-                  </motion.div>
+                  {(() => {
+                    // PRIORITY: savedFileUrl > savedAsset > resultImageUrl
+                    const displayUrl = savedFileUrl || savedAsset?.generated_image_url || result;
+                    
+                    console.log('[SeeMeModal] RENDER VERIFY: Image source decision');
+                    console.log('[SeeMeModal] RENDER VERIFY: resultImageUrl:', result?.substring(0, 50));
+                    console.log('[SeeMeModal] RENDER VERIFY: savedFileUrl:', savedFileUrl?.substring(0, 50));
+                    console.log('[SeeMeModal] RENDER VERIFY: savedAsset.url:', savedAsset?.generated_image_url?.substring(0, 50));
+                    console.log('[SeeMeModal] RENDER VERIFY: saved state:', saved);
+                    console.log('[SeeMeModal] RENDER VERIFY: FINAL displayUrl used:', displayUrl?.substring(0, 50) + '...');
+                    console.log('[SeeMeModal] RENDER VERIFY: displayUrl source:', 
+                      savedFileUrl ? 'FROM savedFileUrl' : savedAsset?.generated_image_url ? 'FROM savedAsset' : 'FROM resultImageUrl (temporary)');
+                    
+                    if (saved && !savedFileUrl) {
+                      console.warn('[SeeMeModal] RENDER VERIFY: BUG CHECK - saved=true but savedFileUrl is empty!');
+                    }
+                    
+                    return (
+                      <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ type: "spring", damping: 20 }}
+                        className="rounded-2xl overflow-hidden mb-4 border border-primary/25 glow-gold"
+                      >
+                        <img src={displayUrl} alt="Your vision" className="w-full h-auto" />
+                      </motion.div>
+                    );
+                  })()}
 
                   {/* Reference row */}
                   <div className="flex gap-2 mb-5">

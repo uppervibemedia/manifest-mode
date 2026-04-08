@@ -54,28 +54,22 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
       const cw = container.offsetWidth;
       const ch = container.offsetHeight;
-      const padding = 48;
 
-      const cropW = Math.min(cw - padding, 300);
-      const cropH = Math.min(ch - padding, 400);
+      // Crop box fills the full canvas area
+      const box = { top: 0, left: 0, right: cw, bottom: ch };
 
-      const left = (cw - cropW) / 2;
-      const top = (ch - cropH) / 2;
+      // Scale image to COVER the full canvas (fill, not fit)
+      const coverScale = Math.max(cw / nw, ch / nh);
+      const scaledW = nw * coverScale;
+      const scaledH = nh * coverScale;
+      const offsetX = (cw - scaledW) / 2;
+      const offsetY = (ch - scaledH) / 2;
 
-      const box = { top, left, right: left + cropW, bottom: top + cropH };
-
-      const fitScale = Math.min(cropW / nw, cropH / nh);
-      const scaledW = nw * fitScale;
-      const scaledH = nh * fitScale;
-      const offsetX = left + (cropW - scaledW) / 2;
-      const offsetY = top + (cropH - scaledH) / 2;
-
-      zoomScaleRef.current = fitScale;
-      setZoomScale(fitScale);
+      zoomScaleRef.current = coverScale;
+      setZoomScale(coverScale);
       syncCropBox(box);
       syncImageOffset({ x: offsetX, y: offsetY });
       setImageLoaded(true);
-      console.log("[CropTool] Initialized. Image layers rendered: 1");
     }, 80);
   }, []);
 
@@ -214,19 +208,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     if (!container || !naturalSize.w) return;
     const cw = container.offsetWidth;
     const ch = container.offsetHeight;
-    const padding = 48;
-    const cropW = Math.min(cw - padding, 300);
-    const cropH = Math.min(ch - padding, 400);
-    const left = (cw - cropW) / 2;
-    const top = (ch - cropH) / 2;
-    const box = { top, left, right: left + cropW, bottom: top + cropH };
-    const fitScale = Math.min(cropW / naturalSize.w, cropH / naturalSize.h);
-    const scaledW = naturalSize.w * fitScale;
-    const scaledH = naturalSize.h * fitScale;
-    zoomScaleRef.current = fitScale;
-    setZoomScale(fitScale);
+    const box = { top: 0, left: 0, right: cw, bottom: ch };
+    const coverScale = Math.max(cw / naturalSize.w, ch / naturalSize.h);
+    const scaledW = naturalSize.w * coverScale;
+    const scaledH = naturalSize.h * coverScale;
+    zoomScaleRef.current = coverScale;
+    setZoomScale(coverScale);
     syncCropBox(box);
-    syncImageOffset({ x: left + (cropW - scaledW) / 2, y: top + (cropH - scaledH) / 2 });
+    syncImageOffset({ x: (cw - scaledW) / 2, y: (ch - scaledH) / 2 });
   };
 
   const cw = cropBox.right - cropBox.left;

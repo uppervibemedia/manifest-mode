@@ -102,39 +102,43 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     };
   }, []);
 
-  // Handle touch start (for image drag)
+  // Handle touch start (for image drag only if no handle active)
   const handleTouchStart = (e) => {
-    // If touch is on a handle, do NOT start image pan
-    if (e.target.closest('[data-handle]')) return;
+    // If touch is on a handle, do NOT start image pan — handle events will manage it
+    if (e.target.closest('[data-handle]')) {
+      return;
+    }
     
-    // Only single finger allowed for image pan
+    // Prevent multi-touch while crop is open
     if (e.touches.length > 1) {
       e.preventDefault();
       return;
     }
 
+    // Only allow image pan if no handle is active
     if (e.touches.length === 1 && !activeHandleRef.current) {
-      // Image pan start
       const touch = e.touches[0];
       setDragStart({ x: touch.clientX - imageOffset.x, y: touch.clientY - imageOffset.y });
       setIsInteracting(true);
     }
   };
 
-  // Handle touch move (for image drag)
+  // Handle touch move (for image drag only if no handle active)
   const handleTouchMove = (e) => {
-    // Prevent multi-touch and zooming
+    // Prevent multi-touch
     if (e.touches.length > 1) {
       e.preventDefault();
       return;
     }
 
-    // If a handle is active, let pointer events handle it
-    if (activeHandleRef.current) return;
+    // If a handle is active, pointer events handle the crop drag — skip image pan
+    if (activeHandleRef.current) {
+      return;
+    }
 
+    // Only pan image if no handle is active and we started image interaction
     if (e.touches.length === 1 && isInteracting) {
       e.preventDefault();
-      // Image pan
       const touch = e.touches[0];
       setImageOffset({
         x: touch.clientX - dragStart.x,
@@ -151,18 +155,25 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   const handleHandleDown = (position, e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Lock this handle immediately
+    activeHandleRef.current = position;
+    setActiveHandle(position);
+    
+    // Get exact touch point
     const touch = e.touches?.[0];
     const clientX = touch?.clientX || e.clientX;
     const clientY = touch?.clientY || e.clientY;
     
-    setActiveHandle(position);
-    activeHandleRef.current = position;
+    console.log(`[Crop] Handle down: ${position} at (${clientX}, ${clientY})`);
+    
     setDragStart({ x: clientX, y: clientY });
     setIsInteracting(true);
   };
 
   const handleHandleMove = (clientX, clientY) => {
-    if (!activeHandle) return;
+    const currentHandle = activeHandleRef.current;
+    if (!currentHandle) return;
 
     const deltaX = clientX - dragStart.x;
     const deltaY = clientY - dragStart.y;
@@ -178,39 +189,54 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     const maxBottom = container.offsetHeight - padding;
 
     const newBox = { ...cropBox };
+    let changed = false;
 
-    switch (activeHandle) {
+    switch (currentHandle) {
       case "top-left":
-        newBox.top = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
-        newBox.left = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
+        const newTopLeft = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
+        const newLeftLeft = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
+        if (newTopLeft !== newBox.top) { newBox.top = newTopLeft; changed = true; }
+        if (newLeftLeft !== newBox.left) { newBox.left = newLeftLeft; changed = true; }
         break;
       case "top-center":
-        newBox.top = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
+        const newTopCenter = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
+        if (newTopCenter !== newBox.top) { newBox.top = newTopCenter; changed = true; }
         break;
       case "top-right":
-        newBox.top = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
-        newBox.right = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
+        const newTopRight = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
+        const newRightTop = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
+        if (newTopRight !== newBox.top) { newBox.top = newTopRight; changed = true; }
+        if (newRightTop !== newBox.right) { newBox.right = newRightTop; changed = true; }
         break;
       case "middle-left":
-        newBox.left = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
+        const newLeftMid = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
+        if (newLeftMid !== newBox.left) { newBox.left = newLeftMid; changed = true; }
         break;
       case "middle-right":
-        newBox.right = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
+        const newRightMid = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
+        if (newRightMid !== newBox.right) { newBox.right = newRightMid; changed = true; }
         break;
       case "bottom-left":
-        newBox.bottom = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
-        newBox.left = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
+        const newBottomLeft = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
+        const newLeftBot = Math.max(maxLeft, Math.min(cropBox.right - minSize, cropBox.left + deltaX));
+        if (newBottomLeft !== newBox.bottom) { newBox.bottom = newBottomLeft; changed = true; }
+        if (newLeftBot !== newBox.left) { newBox.left = newLeftBot; changed = true; }
         break;
       case "bottom-center":
-        newBox.bottom = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
+        const newBottomCenter = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
+        if (newBottomCenter !== newBox.bottom) { newBox.bottom = newBottomCenter; changed = true; }
         break;
       case "bottom-right":
-        newBox.bottom = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
-        newBox.right = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
+        const newBottomRight = Math.min(maxBottom, Math.max(cropBox.top + minSize, cropBox.bottom + deltaY));
+        const newRightBot = Math.min(maxRight, Math.max(cropBox.left + minSize, cropBox.right + deltaX));
+        if (newBottomRight !== newBox.bottom) { newBox.bottom = newBottomRight; changed = true; }
+        if (newRightBot !== newBox.right) { newBox.right = newRightBot; changed = true; }
         break;
     }
 
-    setCropBox(newBox);
+    if (changed) {
+      setCropBox(newBox);
+    }
     setDragStart({ x: clientX, y: clientY });
   };
 
@@ -222,22 +248,22 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       return;
     }
 
-    if (!activeHandleRef.current && !isInteracting) return;
+    // Only respond to active handle dragging
+    if (!activeHandleRef.current) return;
+    
     const clientX = e.touches?.[0]?.clientX || e.clientX;
     const clientY = e.touches?.[0]?.clientY || e.clientY;
     
-    if (activeHandleRef.current) {
-      handleHandleMove(clientX, clientY);
-    } else if (isInteracting && !activeHandleRef.current) {
-      // Image pan during interaction
-      setImageOffset({
-        x: clientX - dragStart.x,
-        y: clientY - dragStart.y,
-      });
-    }
+    console.log(`[Crop] Move: ${activeHandleRef.current} to (${clientX}, ${clientY})`);
+    
+    e.preventDefault();
+    handleHandleMove(clientX, clientY);
   };
 
   const handlePointerUp = () => {
+    if (activeHandleRef.current) {
+      console.log(`[Crop] Handle released: ${activeHandleRef.current}`);
+    }
     setActiveHandle(null);
     activeHandleRef.current = null;
     setIsInteracting(false);
@@ -293,18 +319,18 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
   // Crop handle component with 8 positions — larger hit area on mobile
   const CropHandle = ({ position, handleSize = 40 }) => {
     const isActive = activeHandle === position;
-    const touchHitSize = 56; // Larger invisible touch target
+    const touchHitSize = 64; // Large invisible touch target for mobile
     
-    // Position styles for each handle
+    // Position styles for each handle (center the large invisible area around the actual corner/edge)
     const positionStyles = {
-      "top-left": { top: -handleSize / 2, left: -handleSize / 2 },
-      "top-center": { top: -handleSize / 2, left: "50%", transform: "translateX(-50%)" },
-      "top-right": { top: -handleSize / 2, right: -handleSize / 2 },
-      "middle-left": { top: "50%", left: -handleSize / 2, transform: "translateY(-50%)" },
-      "middle-right": { top: "50%", right: -handleSize / 2, transform: "translateY(-50%)" },
-      "bottom-left": { bottom: -handleSize / 2, left: -handleSize / 2 },
-      "bottom-center": { bottom: -handleSize / 2, left: "50%", transform: "translateX(-50%)" },
-      "bottom-right": { bottom: -handleSize / 2, right: -handleSize / 2 },
+      "top-left": { top: -touchHitSize / 2, left: -touchHitSize / 2 },
+      "top-center": { top: -touchHitSize / 2, left: "50%", marginLeft: -touchHitSize / 2 },
+      "top-right": { top: -touchHitSize / 2, right: -touchHitSize / 2 },
+      "middle-left": { top: "50%", marginTop: -touchHitSize / 2, left: -touchHitSize / 2 },
+      "middle-right": { top: "50%", marginTop: -touchHitSize / 2, right: -touchHitSize / 2 },
+      "bottom-left": { bottom: -touchHitSize / 2, left: -touchHitSize / 2 },
+      "bottom-center": { bottom: -touchHitSize / 2, left: "50%", marginLeft: -touchHitSize / 2 },
+      "bottom-right": { bottom: -touchHitSize / 2, right: -touchHitSize / 2 },
     };
 
     return (
@@ -312,21 +338,28 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
         data-handle={position}
         onMouseDown={(e) => handleHandleDown(position, e)}
         onTouchStart={(e) => handleHandleDown(position, e)}
-        className="absolute z-40 touch-none"
+        className="absolute touch-none"
         style={{
           ...positionStyles[position],
           width: touchHitSize,
           height: touchHitSize,
           pointerEvents: "auto",
+          zIndex: 50,
           WebkitUserSelect: "none",
           userSelect: "none",
           WebkitTouchCallout: "none",
+          cursor: position.includes("top") && position.includes("left") ? "nwse-resize" :
+                  position.includes("top") && position.includes("right") ? "nesw-resize" :
+                  position.includes("bottom") && position.includes("left") ? "nesw-resize" :
+                  position.includes("bottom") && position.includes("right") ? "nwse-resize" :
+                  position.includes("top") || position.includes("bottom") ? "ns-resize" :
+                  "ew-resize",
         }}
       >
         {/* Visible indicator dot (smaller than hit area) */}
         <div
           className={`absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full transition-all pointer-events-none ${
-            isActive ? "bg-primary scale-125" : "bg-white/80"
+            isActive ? "bg-primary scale-125 shadow-lg" : "bg-white/80 shadow"
           }`}
           style={{ transform: "translate(-50%, -50%)" }}
         />
@@ -479,13 +512,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
             {/* Crop frame container */}
             <div
-              className="absolute z-20"
+              className="absolute"
               style={{
                 left: cropBox.left,
                 top: cropBox.top,
                 width: cropBox.right - cropBox.left,
                 height: cropBox.bottom - cropBox.top,
                 border: "2px solid rgba(212, 175, 55, 0.8)",
+                zIndex: 20,
+                pointerEvents: "none",
               }}
             >
               {/* Rule of thirds grid (visible when interacting) */}

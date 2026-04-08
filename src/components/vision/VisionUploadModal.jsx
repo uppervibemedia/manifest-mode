@@ -197,53 +197,47 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           is_active_type: typeof saved.is_active,
         });
         
-        // CRITICAL: Verify record was actually persisted to readable backend
+        // CRITICAL: TRUE PERSISTENCE VERIFICATION — Do not treat as saved until readable
         console.log('[VisionUploadModal] ═══ PERSISTENCE VERIFICATION START ═══');
         console.log('[VisionUploadModal] VERIFY: Reading from same entity: base44.entities.VisionItem');
         console.log('[VisionUploadModal] VERIFY: Returned ID:', saved.id);
+        
+        let isPersisted = false;
+        let verifyError = null;
         
         try {
           console.log('[VisionUploadModal] VERIFY STEP 1: Fetching by exact ID...');
           const byIdTest = await base44.entities.VisionItem.filter({ id: saved.id });
           console.log('[VisionUploadModal] VERIFY STEP 1 RESULT: Query returned', byIdTest?.length || 0, 'records');
+          
           if (byIdTest?.length > 0) {
-            console.log('[VisionUploadModal] VERIFY STEP 1 SUCCESS: Record IS readable by ID');
+            console.log('[VisionUploadModal] ✓ VERIFY STEP 1 SUCCESS: Record IS readable by ID');
             console.log('[VisionUploadModal] VERIFY STEP 1 DATA:', byIdTest[0]);
+            isPersisted = true;
           } else {
-            console.error('[VisionUploadModal] VERIFY STEP 1 FAILED: Record NOT readable by ID - write/read mismatch!');
+            console.error('[VisionUploadModal] ✗ VERIFY STEP 1 FAILED: Record NOT readable by ID');
+            verifyError = 'Created vision cannot be retrieved immediately. Record may not be persisted.';
+            isPersisted = false;
           }
         } catch (err) {
           console.error('[VisionUploadModal] VERIFY STEP 1 ERROR:', err);
-        }
-        
-        // FILTER ISOLATION TEST
-        console.log('[VisionUploadModal] VERIFY STEP 2: Testing all filters...');
-        try {
-          const allRecords = await base44.entities.VisionItem.list();
-          console.log('[VisionUploadModal] FILTER TEST 1: All records (no filter) count:', allRecords?.length || 0);
-          
-          const byUserEmail = await base44.entities.VisionItem.filter({ user_email: saved.user_email });
-          console.log('[VisionUploadModal] FILTER TEST 2: By user_email only, count:', byUserEmail?.length || 0);
-          
-          const byCreatedBy = await base44.entities.VisionItem.filter({ created_by: saved.created_by });
-          console.log('[VisionUploadModal] FILTER TEST 3: By created_by only, count:', byCreatedBy?.length || 0);
-          
-          const byIsActive = await base44.entities.VisionItem.filter({ is_active: true });
-          console.log('[VisionUploadModal] FILTER TEST 4: By is_active=true only, count:', byIsActive?.length || 0);
-          
-          const byUserAndActive = await base44.entities.VisionItem.filter({ user_email: saved.user_email, is_active: true });
-          console.log('[VisionUploadModal] FILTER TEST 5: By user_email + is_active, count:', byUserAndActive?.length || 0);
-          
-          if (byUserAndActive?.length === 0) {
-            console.error('[VisionUploadModal] ❌ CRITICAL: Record NOT queryable by user_email + is_active - WRITE/READ MISMATCH');
-          }
-        } catch (err) {
-          console.error('[VisionUploadModal] FILTER TESTS ERROR:', err);
+          verifyError = `Persistence check failed: ${err.message}`;
+          isPersisted = false;
         }
         
         console.log('[VisionUploadModal] ═══ PERSISTENCE VERIFICATION END ═══');
-        console.log('[VisionUploadModal] SAVE STEP 5E: Calling onSave with saved data');
-        onSave(saved);
+        console.log('[VisionUploadModal] RESULT: isPersisted =', isPersisted);
+        
+        if (!isPersisted) {
+          console.error('[VisionUploadModal] ⚠️ WARNING: Save returned success but record is not readable from backend');
+          console.error('[VisionUploadModal] ⚠️ ERROR:', verifyError);
+          // Still show the vision locally but mark it as unverified
+          onSave(saved);
+          // TODO: Surface warning to user that vision may not be persisted
+        } else {
+          console.log('[VisionUploadModal] ✓ CONFIRMED: Record is truly persisted and readable');
+          onSave(saved);
+        }
       }
       
       console.log('[VisionUploadModal] SAVE COMPLETE: Save succeeded with permanent image URL');

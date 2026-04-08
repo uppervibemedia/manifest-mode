@@ -22,8 +22,8 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
   const imageUrl = vision.image_url;
   const validImageUrl = isValidImageUrl(imageUrl);
   const aiGeneratedUrls = getAiGeneratedUrls(vision);
-  // Image is AI-generated if its URL appears in the notes markers OR if the vision title is the default AI title
-  const isAiGenerated = validImageUrl && (aiGeneratedUrls.has(imageUrl) || vision.title === "See Me In This Vision");
+  // Image is AI-generated if its URL appears in the notes markers OR if the vision title is the default AI title OR if it's in proof_images from See Me
+  const isAiGenerated = validImageUrl && (aiGeneratedUrls.has(imageUrl) || vision.title === "See Me In This Vision" || vision.proof_images?.includes(imageUrl));
 
   const handleDownload = async () => {
     if (!validImageUrl) return;

@@ -28,18 +28,6 @@ export default function VisionVault() {
   const navigate = useNavigate();
 
   const scrollContainer = useScrollContainer();
-  const handleRefresh = useCallback(async () => { await loadData(); }, []);
-  const { isRefreshing } = usePullToRefresh(scrollContainer, handleRefresh);
-
-  // Auth guard
-  useEffect(() => {
-    if (profileLoading) return;
-    if (!user) {
-      navigate("/");
-    }
-  }, [user, profileLoading, navigate]);
-
-  useEffect(() => { loadData(); }, [user?.email, profileLoading]);
 
   const loadData = async () => {
     try {
@@ -52,6 +40,19 @@ export default function VisionVault() {
       setLoading(false);
     }
   };
+
+  const handleRefresh = useCallback(async () => { await loadData(); }, []);
+  const { isRefreshing } = usePullToRefresh(scrollContainer, handleRefresh);
+
+  // Auth guard
+  useEffect(() => {
+    if (profileLoading) return;
+    if (!user) {
+      navigate("/");
+    }
+  }, [user, profileLoading, navigate]);
+
+  useEffect(() => { loadData(); }, [user?.email, profileLoading]);
 
   const handleDelete = (id) => {
     // Optimistic: remove immediately

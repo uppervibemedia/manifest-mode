@@ -5,6 +5,7 @@ import { X, Upload, Loader2, Star, Crop } from "lucide-react";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useModalState } from "@/lib/ModalContext";
 import ImageCropTool from "@/components/vision/ImageCropTool";
+import { isValidImageUrl } from "@/lib/imageUrlValidator";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 
@@ -44,10 +45,19 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     e.target.value = null;
   };
 
-  const handleCropSave = (croppedUrl, metadata) => {
-    setForm(prev => ({ ...prev, image_url: croppedUrl }));
+  const handleCropSave = async (croppedUrl, metadata) => {
+    // Upload cropped image immediately instead of saving blob URL
+    try {
+      const blob = await fetch(croppedUrl).then(r => r.blob());
+      const file = new File([blob], "vision-cropped.jpg", { type: "image/jpeg" });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      console.log('[VisionUploadModal] Cropped image uploaded:', file_url);
+      setForm(prev => ({ ...prev, image_url: file_url }));
+    } catch (error) {
+      console.error('[VisionUploadModal] Failed to upload cropped image:', error);
+      setForm(prev => ({ ...prev, image_url: croppedUrl })); // Fallback to blob if upload fails
+    }
     setShowCropTool(false);
-    // Metadata is available if needed (cropTop, cropLeft, cropRight, cropBottom, zoomScale, imageOffsetX, imageOffsetY)
   };
 
   const handleCropSkip = () => {
@@ -125,9 +135,9 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           {/* Image Upload */}
           <label className="block mb-5 cursor-pointer">
           <div className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
-            form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
+            form.image_url && isValidImageUrl(form.image_url) ? "border-transparent" : "border-border hover:border-primary/40"
           }`}>
-            {form.image_url ? (
+            {form.image_url && isValidImageUrl(form.image_url) ? (
               <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
                 <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />

@@ -8,6 +8,7 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import SeeMeModal from "@/components/vision/SeeMeModal";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionImageViewer from "@/components/vision/VisionImageViewer";
+import { isValidImageUrl, logImageUrlStatus } from "@/lib/imageUrlValidator";
 
 const CATEGORIES = [
   { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
@@ -146,6 +147,13 @@ export default function Vision() {
             <AnimatePresence>
               {visions.map((vision, i) => {
                 const cat = CATEGORIES.find(c => c.id === vision.category);
+                const validImageUrl = isValidImageUrl(vision.image_url);
+                
+                // Log image URL status for debugging
+                useEffect(() => {
+                  logImageUrlStatus(vision.id, vision.image_url);
+                }, [vision.id, vision.image_url]);
+                
                 return (
                   <motion.div key={vision.id}
                     initial={{ opacity: 0, scale: 0.92 }}
@@ -156,7 +164,7 @@ export default function Vision() {
                     onClick={() => setViewerVision(vision)}
                     style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
 
-                    {vision.image_url ? (
+                    {validImageUrl ? (
                       <motion.img
                         src={vision.image_url} alt={vision.title}
                         className="w-full h-full object-cover"

@@ -260,18 +260,19 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     console.log(`[${activeCropBoxId}] PHASE 3 START: Committing cropped output`);
 
     try {
-      // Fetch cropped blob from data URL
+      // Upload cropped image immediately instead of saving blob URL
       const blob = await fetch(croppedUrl).then(r => r.blob());
       const croppedFile = new File([blob], `${activeCropBoxId}-cropped.jpg`, { type: "image/jpeg" });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: croppedFile });
 
-      console.log(`[${activeCropBoxId}] Cropped file created:`, croppedFile.size, 'bytes');
+      console.log(`[${activeCropBoxId}] Cropped image uploaded to permanent URL:`, file_url);
 
-      // Update the correct box
+      // Update the correct box with permanent URL (not blob)
       if (activeCropBoxId === 'vision') {
         setVisionBox(prev => ({
           ...prev,
           croppedFile,
-          croppedUrl,
+          croppedUrl: file_url, // Store permanent URL, not blob
           status: 'complete',
         }));
         console.log(`[vision] Cropped output committed to vision box`);
@@ -279,7 +280,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         setSelfBox(prev => ({
           ...prev,
           croppedFile,
-          croppedUrl,
+          croppedUrl: file_url, // Store permanent URL, not blob
           status: 'complete',
         }));
         console.log(`[self] Cropped output committed to self box`);
@@ -291,9 +292,8 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     } catch (error) {
       console.error(`[${activeCropBoxId}] PHASE 3 FAILED:`, error);
       
-      // FAILSAFE: Use original if crop fails
+      // FAILSAFE: Use original if crop upload fails
       console.log(`[${activeCropBoxId}] FAILSAFE: Saving original instead of cropped`);
-      const boxState = activeCropBoxId === 'vision' ? visionBox : selfBox;
       
       if (activeCropBoxId === 'vision') {
         setVisionBox(prev => ({
@@ -301,7 +301,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           croppedFile: prev.sourceFile,
           croppedUrl: prev.sourceUrl,
           status: 'complete',
-          error: `Crop processing failed, saved original. Retry crop later.`,
+          error: `Crop upload failed, saved original. Retry crop later.`,
         }));
       } else if (activeCropBoxId === 'self') {
         setSelfBox(prev => ({
@@ -309,7 +309,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
           croppedFile: prev.sourceFile,
           croppedUrl: prev.sourceUrl,
           status: 'complete',
-          error: `Crop processing failed, saved original. Retry crop later.`,
+          error: `Crop upload failed, saved original. Retry crop later.`,
         }));
       }
 

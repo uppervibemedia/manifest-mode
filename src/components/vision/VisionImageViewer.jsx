@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { X, Download, Image as ImageIcon, Check, Loader2, Sparkles } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getCategoryMeta } from "@/lib/categories";
+import { isValidImageUrl } from "@/lib/imageUrlValidator";
 
 // Parse which proof images are AI-generated from the vision's notes field
 function getAiGeneratedUrls(vision) {
@@ -19,12 +20,13 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
 
   // Determine the image to display — use main image_url
   const imageUrl = vision.image_url;
+  const validImageUrl = isValidImageUrl(imageUrl);
   const aiGeneratedUrls = getAiGeneratedUrls(vision);
   // Image is AI-generated if its URL appears in the notes markers OR if the vision title is the default AI title
-  const isAiGenerated = imageUrl && (aiGeneratedUrls.has(imageUrl) || vision.title === "See Me In This Vision");
+  const isAiGenerated = validImageUrl && (aiGeneratedUrls.has(imageUrl) || vision.title === "See Me In This Vision");
 
   const handleDownload = async () => {
-    if (!imageUrl) return;
+    if (!validImageUrl) return;
     setDownloading(true);
     const blob = await fetch(imageUrl).then(r => r.blob());
     const url = URL.createObjectURL(blob);
@@ -37,7 +39,7 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
   };
 
   const handleSetAsFocus = async () => {
-    if (!vision?.id || focusSet || !imageUrl) return;
+    if (!vision?.id || focusSet || !validImageUrl) return;
     setSettingFocus(true);
     await base44.entities.VisionItem.update(vision.id, { is_priority: true });
     onUpdate?.({ ...vision, is_priority: true });
@@ -81,7 +83,7 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
 
         {/* Image */}
         <div className="flex-1 overflow-y-auto">
-          {imageUrl ? (
+          {validImageUrl ? (
             <div className={`w-full ${isAiGenerated ? "border-b border-primary/20 glow-gold" : ""}`}>
               <img src={imageUrl} alt={vision.title} className="w-full h-auto" />
             </div>
@@ -120,7 +122,7 @@ export default function VisionImageViewer({ vision, userEmail, onClose, onRegene
           <div className="flex gap-2">
             <button
               onClick={handleDownload}
-              disabled={downloading || !imageUrl}
+              disabled={downloading || !validImageUrl}
               className="flex-1 py-3 rounded-xl border border-border bg-background text-foreground font-semibold flex items-center justify-center gap-2 hover:border-primary/40 transition-colors text-sm disabled:opacity-40">
               {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {downloading ? "Downloading…" : "Download"}

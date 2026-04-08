@@ -108,19 +108,44 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
             </div>
           )}
 
-          {/* AI Roadmap — Only show for AI-generated images (premium) */}
-          {isAiGenerated && tier === "premium" && (
+          {/* AI Roadmap & Insights Section */}
+          {tier === "premium" && (
             <div className="px-5 py-4 space-y-4 border-t border-border/50">
-              {/* AI Scene Badge */}
-              <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <p className="text-sm font-semibold text-foreground">Your AI Vision</p>
-                </div>
-                <p className="text-[10px] text-muted-foreground">Manifested with See Me In This Vision</p>
-              </div>
+              {isAiGenerated ? (
+                <>
+                  {/* AI Scene Badge */}
+                  <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-semibold text-foreground">Your AI Vision</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Manifested with See Me In This Vision</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Generate See Me Button for non-AI images */}
+                  <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">AI places you inside your dream</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={onGenerateSeeMe}
+                      className="w-full py-2 rounded-lg gold-gradient text-background text-xs font-semibold flex items-center justify-center gap-1.5">
+                      <Sparkles className="w-3 h-3" />
+                      Generate Now
+                    </button>
+                  </div>
+                </>
+              )}
 
-              {/* Vision Context */}
+              {/* Vision Context & Roadmap */}
               <div className="space-y-3">
                 {vision.why_i_want_this && (
                   <div className="glass-card rounded-xl p-3 border border-border/50">

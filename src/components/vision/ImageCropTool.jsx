@@ -65,6 +65,9 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
           const offsetX = left + (cropWidth - scaledWidth) / 2;
           const offsetY = top + (cropHeight - scaledHeight) / 2;
 
+          console.log(`[Crop INIT] Image loaded: ${img.width}x${img.height}, fitScale=${fitScale.toFixed(3)}`);
+          console.log(`[Crop INIT] Initial offset: (${offsetX.toFixed(1)}, ${offsetY.toFixed(1)})`);
+
           setZoomScale(fitScale);
           setImageOffset({ x: offsetX, y: offsetY });
         }
@@ -73,6 +76,15 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     img.onerror = () => console.error("Failed to load image");
     img.src = imageUrl;
   }, [imageUrl]);
+
+  // Monitor for unexpected imageOffset or zoomScale changes during side-handle dragging
+  useEffect(() => {
+    if (activeHandle === "middle-left" || activeHandle === "middle-right") {
+      const expectedScale = zoomScale; // Should not change
+      const expectedOffsetX = imageOffset.x; // Should only change on image pan, not on crop
+      console.log(`[Crop MONITOR] Active handle=${activeHandle}, zoomScale=${expectedScale.toFixed(3)}, offsetX=${expectedOffsetX.toFixed(1)}`);
+    }
+  }, [imageOffset, zoomScale, activeHandle]);
 
   // Lock body scroll and disable pinch-to-zoom for REAL mobile
   useEffect(() => {
@@ -227,7 +239,11 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
 
     if (changed) {
       if (currentHandle === "middle-left" || currentHandle === "middle-right") {
-        console.log(`[Crop DEBUG]   After: left=${newBox.left}, right=${newBox.right}, width=${newBox.right - newBox.left}`);
+        const oldWidth = cropBox.right - cropBox.left;
+        const newWidth = newBox.right - newBox.left;
+        console.log(`[Crop DEBUG]   After: left=${newBox.left}, right=${newBox.right}, width=${newWidth}`);
+        console.log(`[Crop DEBUG]   CropBox width change: ${oldWidth} → ${newWidth} (${newWidth - oldWidth > 0 ? '+' : ''}${newWidth - oldWidth}px)`);
+        console.log(`[Crop DEBUG]   Image should NOT change: width=${imageDimensions.width}, zoomScale=${zoomScale}, rendered=${imageDimensions.width * zoomScale}`);
       }
       setCropBox(newBox);
     }

@@ -8,7 +8,6 @@ import { useUserProfile } from "@/lib/UserProfileContext";
 import SeeMeModal from "@/components/vision/SeeMeModal";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionImageViewer from "@/components/vision/VisionImageViewer";
-import { getFallbackVisions, removeFallbackVision } from "@/lib/visionFallbackStorage";
 
 const CATEGORIES = [
   { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
@@ -51,44 +50,8 @@ export default function Vision() {
       console.log('[Vision] ═══ PAGE LOAD RESPONSE RECEIVED ═══');
       console.log('[Vision] PAGE LOAD: Backend fetch count:', items?.length || 0);
       
-      // Load fallback visions from localStorage
-      console.log('[Vision] FALLBACK LOAD: Checking localStorage for pending visions...');
-      const fallbackVisions = getFallbackVisions(user.email);
-      console.log('[Vision] FALLBACK LOAD: Found', fallbackVisions.length, 'fallback visions');
-      
-      // Merge backend visions with fallback visions
-      // Avoid duplicates by checking if a fallback vision has been persisted to backend
-      const mergedVisions = [...(items || [])];
-      
-      for (const fallback of fallbackVisions) {
-        // Check if this fallback vision has been persisted to backend
-        const isPersistedToBackend = mergedVisions.some(v => 
-          v.image_url === fallback.image_url && 
-          v.title === fallback.title &&
-          !v.isFallback
-        );
-        
-        if (isPersistedToBackend) {
-          // Backend has the vision, remove fallback
-          console.log('[Vision] FALLBACK CLEANUP: Vision', fallback.id, 'is now in backend, removing fallback');
-          removeFallbackVision(fallback.id, user.email);
-        } else {
-          // Fallback still needed, add it to display
-          mergedVisions.push(fallback);
-          console.log('[Vision] FALLBACK MERGE: Added fallback vision', fallback.id, 'to display list');
-        }
-      }
-      
-      // Sort by created date (fallbacks use createdAt, backend uses created_date)
-      mergedVisions.sort((a, b) => {
-        const aDate = new Date(a.created_date || a.createdAt);
-        const bDate = new Date(b.created_date || b.createdAt);
-        return bDate - aDate;
-      });
-      
-      console.log('[Vision] STATE HYDRATION: Setting visions to state, count:', mergedVisions.length);
-      console.log('[Vision] STATE HYDRATION: Backend count:', items?.length || 0, 'Fallback count:', fallbackVisions.length);
-      setVisions(mergedVisions);
+      console.log('[Vision] STATE HYDRATION: Setting visions to state, count:', items?.length || 0);
+      setVisions(items || []);
       
       console.log('[Vision] ═══ PAGE LOAD END ═══');
       setLoading(false);
@@ -249,12 +212,7 @@ export default function Vision() {
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
 
-                    {/* Fallback indicator badge */}
-                    {vision.isFallback && (
-                      <div className="absolute top-2 right-2 px-2 py-1 bg-orange-500/80 rounded-lg backdrop-blur-sm">
-                        <p className="text-[9px] font-semibold text-white uppercase tracking-widest">Pending sync</p>
-                      </div>
-                    )}
+
 
                     <div className="absolute inset-0 left-0 right-0 p-4 flex flex-col justify-end">
                       <div className="mb-2 h-1 bg-white/20 rounded-full overflow-hidden">

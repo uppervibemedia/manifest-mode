@@ -5,7 +5,6 @@ import { X, Upload, Loader2, Star, Crop } from "lucide-react";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useModalState } from "@/lib/ModalContext";
 import ImageCropTool from "@/components/vision/ImageCropTool";
-import { saveFallbackVision } from "@/lib/visionFallbackStorage";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 
@@ -199,59 +198,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         });
         
         // CRITICAL: TRUE PERSISTENCE VERIFICATION — Do not treat as saved until readable
-        console.log('[VisionUploadModal] ═══ PERSISTENCE VERIFICATION START ═══');
-        console.log('[VisionUploadModal] VERIFY: Reading from same entity: base44.entities.VisionItem');
-        console.log('[VisionUploadModal] VERIFY: Returned ID:', saved.id);
-        
-        let isPersisted = false;
-        let verifyError = null;
-        
-        try {
-          console.log('[VisionUploadModal] VERIFY STEP 1: Fetching by exact ID...');
-          const byIdTest = await base44.entities.VisionItem.filter({ id: saved.id });
-          console.log('[VisionUploadModal] VERIFY STEP 1 RESULT: Query returned', byIdTest?.length || 0, 'records');
-          
-          if (byIdTest?.length > 0) {
-            console.log('[VisionUploadModal] ✓ VERIFY STEP 1 SUCCESS: Record IS readable by ID');
-            console.log('[VisionUploadModal] VERIFY STEP 1 DATA:', byIdTest[0]);
-            isPersisted = true;
-          } else {
-            console.error('[VisionUploadModal] ✗ VERIFY STEP 1 FAILED: Record NOT readable by ID');
-            verifyError = 'Created vision cannot be retrieved immediately. Record may not be persisted.';
-            isPersisted = false;
-          }
-        } catch (err) {
-          console.error('[VisionUploadModal] VERIFY STEP 1 ERROR:', err);
-          verifyError = `Persistence check failed: ${err.message}`;
-          isPersisted = false;
-        }
-        
-        console.log('[VisionUploadModal] ═══ PERSISTENCE VERIFICATION END ═══');
-        console.log('[VisionUploadModal] RESULT: isPersisted =', isPersisted);
-        
-        if (!isPersisted) {
-          console.error('[VisionUploadModal] ⚠️ WARNING: Save returned success but record is not readable from backend');
-          console.error('[VisionUploadModal] ⚠️ ERROR:', verifyError);
-          console.log('[VisionUploadModal] FALLBACK: Saving vision to localStorage as resilience layer');
-          
-          // Save to fallback storage to prevent data loss
-          const fallbackVision = saveFallbackVision(saved, userEmail);
-          if (fallbackVision) {
-            console.log('[VisionUploadModal] ✓ FALLBACK SAVED: Vision stored locally with ID:', fallbackVision.id);
-            // Return fallback vision with indicator that it's not yet backend-persisted
-            onSave({
-              ...fallbackVision,
-              isFallback: true,
-              syncStatus: 'pending_backend',
-            });
-          } else {
-            // Even fallback failed, but still try to show user the data they entered
-            onSave(saved);
-          }
-        } else {
-          console.log('[VisionUploadModal] ✓ CONFIRMED: Record is truly persisted and readable');
-          onSave(saved);
-        }
+        console.log('[VisionUploadModal] ✓ Vision created and saved');
+        onSave(saved);
       }
       
       console.log('[VisionUploadModal] SAVE COMPLETE: Save succeeded with permanent image URL');

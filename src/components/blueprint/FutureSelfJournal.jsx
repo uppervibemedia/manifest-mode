@@ -141,7 +141,6 @@ export default function FutureSelfJournal({ userEmail }) {
       transition={{ delay: 0.45 }}
       className="mb-8"
     >
-      {/* Section header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
           <BookOpen className="w-4 h-4 text-primary" />
@@ -152,7 +151,6 @@ export default function FutureSelfJournal({ userEmail }) {
         </div>
       </div>
 
-      {/* Guided prompts */}
       <div className="space-y-3">
         {PROMPTS.map((prompt) => (
           <JournalPrompt

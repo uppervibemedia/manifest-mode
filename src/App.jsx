@@ -24,6 +24,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Assessment = lazy(() => import('./pages/Assessment'));
 const ScorePage = lazy(() => import('./pages/ScorePage'));
 const VisionVault = lazy(() => import('./pages/VisionVault'));
+const SeeMeVisionView = lazy(() => import('./pages/SeeMeVisionView'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const FutureSelfSetup = lazy(() => import('./pages/onboarding/FutureSelfSetup'));
 const FirstVision = lazy(() => import('./pages/onboarding/FirstVision'));
@@ -104,6 +105,7 @@ const AuthenticatedApp = () => {
               <Route path="/daily-shift" element={<DailyShift />} />
               <Route path="/vision" element={<Vision />} />
               <Route path="/vision-vault" element={<VisionVault />} />
+              <Route path="/vision/view" element={<SeeMeVisionView />} />
               <Route path="/vision/add" element={<Vision />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/future-self" element={<FutureSelf />} />

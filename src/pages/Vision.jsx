@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Lock, Sparkles, Image } from "lucide-react";
+import { Plus, Lock, Sparkles } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import SeeMeModal from "@/components/vision/SeeMeModal";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionImageViewer from "@/components/vision/VisionImageViewer";
-import { isValidImageUrl, logImageUrlStatus } from "@/lib/imageUrlValidator";
+import VisionCard from "@/components/vision/VisionCard";
 
 const CATEGORIES = [
   { id: "wealth", label: "Wealth", icon: "💰", meaning: "money, income, abundance, savings, luxury purchases" },
@@ -145,60 +145,14 @@ export default function Vision() {
         ) : (
           <div className="grid grid-cols-2 gap-3">
             <AnimatePresence>
-              {visions.map((vision, i) => {
-                const cat = CATEGORIES.find(c => c.id === vision.category);
-                const validImageUrl = isValidImageUrl(vision.image_url);
-                
-                // Log image URL status for debugging
-                useEffect(() => {
-                  logImageUrlStatus(vision.id, vision.image_url);
-                }, [vision.id, vision.image_url]);
-                
-                return (
-                  <motion.div key={vision.id}
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.92 }}
-                    transition={{ delay: i * 0.04 }}
-                    className="relative rounded-2xl overflow-hidden group cursor-pointer"
-                    onClick={() => setViewerVision(vision)}
-                    style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
-
-                    {validImageUrl ? (
-                      <motion.img
-                        src={vision.image_url} alt={vision.title}
-                        className="w-full h-full object-cover"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.6 }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-muted/40">
-                        <Image className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                    )}
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
-
-                    <div className="absolute inset-0 left-0 right-0 p-4 flex flex-col justify-end">
-                      <div className="mb-2 h-1 bg-white/20 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${vision.progress || 0}%` }}
-                          transition={{ duration: 0.8 }}
-                          className="h-full rounded-full" style={{ backgroundColor: cat?.icon ? "hsl(45 80% 60%)" : "#fbbf24" }}
-                        />
-                      </div>
-                      <div className="flex items-end justify-between gap-1">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-white line-clamp-2">{vision.title}</p>
-                          <p className="text-[9px] text-white/60 mt-0.5">{cat?.label || "Vision"}</p>
-                        </div>
-                        <span className="text-lg shrink-0">{cat?.icon}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+              {visions.map((vision, i) => (
+                <VisionCard
+                  key={vision.id}
+                  vision={vision}
+                  index={i}
+                  onClick={() => setViewerVision(vision)}
+                />
+              ))}
             </AnimatePresence>
           </div>
         )}

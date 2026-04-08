@@ -124,12 +124,12 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `You are an elite performance coach analyzing a user's weekly alignment data based on their actual behavior.
 
-Weekly Stats:
-- Average Reality Match Score: ${displayData.avgScore}/100
-- Score Movement: ${displayData.scoreMovement > 0 ? "+" : ""}${displayData.scoreMovement} points
-- Days Tracked: ${displayData.daysTracked}/7
-- Strongest Area: ${displayData.strongest.name} (${displayData.strongest.avg})
-- Weakest Area: ${displayData.weakest.name} (${displayData.weakest.avg})
+      Weekly Stats:
+      - Average Reality Match Score: ${summaryData.avgScore}/100
+      - Score Movement: ${summaryData.scoreMovement > 0 ? "+" : ""}${summaryData.scoreMovement} points
+      - Days Tracked: ${summaryData.daysTracked}/7
+      - Strongest Area: ${summaryData.strongest.name} (${summaryData.strongest.avg})
+      - Weakest Area: ${summaryData.weakest.name} (${summaryData.weakest.avg})
 
 Weekly Habit Performance:
 ${habitsAnalysis || "No habits tracked"}

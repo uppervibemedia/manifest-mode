@@ -80,7 +80,7 @@ export default function Vision() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">The Life You Want</p>
-            <h1 className="font-playfair text-2xl font-semibold">Living Vision Board</h1>
+            <h1 className="font-playfair text-2xl font-semibold">My Vision Board</h1>
             <p className="text-xs text-muted-foreground mt-1">{visions.length} vision{visions.length !== 1 ? "s" : ""}</p>
           </div>
           <button

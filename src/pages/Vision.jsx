@@ -104,7 +104,7 @@ export default function Vision() {
             <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-xl">🪞</div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
+                <p className="text-sm font-semibold text-foreground">See Me In This Realty</p>
                 <span className="text-[9px] uppercase tracking-widest font-bold text-foreground bg-primary/15 border border-primary/30 rounded-full px-1.5 py-0.5">Premium Only</span>
               </div>
               <p className="text-xs text-muted-foreground">Place yourself inside your dream life with AI</p>
@@ -121,7 +121,7 @@ export default function Vision() {
             <div className="w-11 h-11 rounded-xl bg-border flex items-center justify-center shrink-0 text-xl">🪞</div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <p className="text-sm font-semibold text-muted-foreground">See Me In This Vision</p>
+                <p className="text-sm font-semibold text-muted-foreground">See Me In This Realty</p>
                 <span className="text-[9px] uppercase tracking-widest font-bold text-background bg-primary rounded-full px-1.5 py-0.5">Unlock</span>
               </div>
               <p className="text-xs text-muted-foreground">AI scene generation. Premium feature only.</p>

@@ -385,14 +385,10 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
 
     if (vision?.id) {
       const currentProof = vision.proof_images || [];
-      const aiNotes = vision.notes ? vision.notes : "";
-      const aiMarker = `[ai_generated:${file_url}]`;
-      const notesUpdated = aiNotes.includes(aiMarker) ? aiNotes : `${aiNotes}\n${aiMarker}`.trim();
       base44.entities.VisionItem.update(vision.id, {
         proof_images: [...currentProof, file_url],
-        notes: notesUpdated,
       }).then(() => {
-        onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url], notes: notesUpdated });
+        onSave && onSave({ ...vision, proof_images: [...(vision.proof_images || []), file_url] });
       });
     } else {
       base44.entities.VisionItem.create({
@@ -400,7 +396,6 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         title: "See Me In This Vision",
         category: "lifestyle",
         image_url: file_url,
-        notes: `[ai_generated:${file_url}]`,
         is_active: true,
         progress: 0,
       }).then((newVision) => {

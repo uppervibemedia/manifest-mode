@@ -201,7 +201,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       croppedFile: null,
       croppedUrl: null,
       isImageLoaded: false,
-      status: 'uploading',
+      status: 'preview-ready',  // Changed from 'uploading' - file is ready to use
       error: null,
     };
 
@@ -211,7 +211,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       setSelfBox(newBoxState);
     }
 
-    console.log(`[${boxId}] File stored in state, waiting for preview to load`);
+    console.log(`[${boxId}] File stored in state, ready for use`);
   };
 
   const handleImageLoaded = (boxId) => {
@@ -508,7 +508,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                         onFileSelected={handleFileSelected}
                         onImageLoaded={handleImageLoaded}
                         onCropStart={handleCropStart}
-                        uploading={visionBox.status === 'uploading'}
+                        uploading={false}
                       />
                       <p className="text-[10px] text-muted-foreground text-center mt-1.5">The scene you want</p>
                       {visionBox.error && (
@@ -527,7 +527,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                         onFileSelected={handleFileSelected}
                         onImageLoaded={handleImageLoaded}
                         onCropStart={handleCropStart}
-                        uploading={selfBox.status === 'uploading'}
+                        uploading={false}
                       />
                       <p className="text-[10px] text-muted-foreground text-center mt-1.5">A clear photo of you</p>
                       {selfBox.error && (

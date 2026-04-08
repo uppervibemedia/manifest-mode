@@ -43,23 +43,27 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
   const inputRef = useRef();
 
   const handleChange = (e) => {
-    console.log(`[${boxId}] Upload box clicked - file picker opened`);
-    const file = e.target.files?.[0];
+    console.log(`[${boxId}] File input onChange fired`);
+    const files = e.target.files;
+    console.log(`[${boxId}] Files array:`, files ? `length=${files.length}` : 'null');
     
-    if (!file) {
+    if (!files || files.length === 0) {
       console.log(`[${boxId}] No file selected or cancelled`);
       return;
     }
     
-    console.log(`[${boxId}] File picker returned file:`, file.name, file.size, file.type);
-    console.log(`[${boxId}] File captured from event immediately`);
+    const file = files[0];
+    console.log(`[${boxId}] File picker returned file:`, { name: file.name, size: file.size, type: file.type });
     
     // CRITICAL: Call handler with file immediately while event is active
+    console.log(`[${boxId}] Calling onFileSelected handler`);
     onFileSelected(boxId, file);
+    console.log(`[${boxId}] onFileSelected handler returned`);
     
     // Reset input AFTER file is passed to handler so same file can be selected again
-    console.log(`[${boxId}] Resetting input value to allow re-selection`);
+    console.log(`[${boxId}] Resetting input value to ''`);
     e.target.value = '';
+    console.log(`[${boxId}] Input value reset complete`);
   };
 
   const handleDrop = (e) => {
@@ -194,6 +198,27 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     return () => setActiveFullscreenModal(null);
   }, [setActiveFullscreenModal]);
 
+  // DEBUG: Log state after every render
+  useEffect(() => {
+    console.log('[SeeMeModal] Current state:', {
+      visionBox: {
+        sourceFile: !!visionBox.sourceFile,
+        sourceUrl: !!visionBox.sourceUrl,
+        croppedFile: !!visionBox.croppedFile,
+        isImageLoaded: visionBox.isImageLoaded,
+        status: visionBox.status,
+      },
+      selfBox: {
+        sourceFile: !!selfBox.sourceFile,
+        sourceUrl: !!selfBox.sourceUrl,
+        croppedFile: !!selfBox.croppedFile,
+        isImageLoaded: selfBox.isImageLoaded,
+        status: selfBox.status,
+      },
+      canGenerate,
+    });
+  });
+
   // ───────────────────────────────────────────────────────────────────────────
   // PHASE 1: FILE ACQUISITION
   // ───────────────────────────────────────────────────────────────────────────
@@ -202,8 +227,15 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
     console.log(`[${boxId}] PHASE 1 START: File acquisition - storing immediately`);
     
     // CRITICAL: Verify file exists and is valid
-    if (!file || !file.type.startsWith('image/')) {
-      console.error(`[${boxId}] File is invalid:`, file);
+    if (!file) {
+      console.error(`[${boxId}] File is NULL!`);
+      return;
+    }
+    
+    console.log(`[${boxId}] File received:`, { name: file.name, size: file.size, type: file.type });
+    
+    if (!file.type.startsWith('image/')) {
+      console.error(`[${boxId}] File type is not an image:`, file.type);
       return;
     }
     
@@ -220,6 +252,12 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       return;
     }
 
+    // CRITICAL: Verify file is still accessible after URL creation
+    if (file.size === 0) {
+      console.error(`[${boxId}] CRITICAL: File size is 0 bytes after URL creation!`);
+      return;
+    }
+
     const newBoxState = {
       sourceFile: file,
       sourceUrl: previewUrl,
@@ -230,12 +268,23 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
       error: null,
     };
 
+    console.log(`[${boxId}] About to update state with:`, {
+      sourceFile: !!newBoxState.sourceFile,
+      sourceUrl: !!newBoxState.sourceUrl,
+      status: newBoxState.status,
+    });
+
     if (boxId === 'vision') {
-      console.log(`[${boxId}] File stored in vision box state`);
+      console.log(`[${boxId}] Calling setVisionBox`);
       setVisionBox(newBoxState);
+      console.log(`[${boxId}] setVisionBox called`);
     } else if (boxId === 'self') {
-      console.log(`[${boxId}] File stored in self box state`);
+      console.log(`[${boxId}] Calling setSelfBox`);
       setSelfBox(newBoxState);
+      console.log(`[${boxId}] setSelfBox called`);
+    } else {
+      console.error(`[${boxId}] CRITICAL: boxId is invalid!`);
+      return;
     }
 
     console.log(`[${boxId}] File and preview URL ready, waiting for image preload`);
@@ -244,12 +293,33 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   const handleImageLoaded = (boxId) => {
     console.log(`[${boxId}] Image preload success - image is confirmed and usable`);
     
+    const boxState = boxId === 'vision' ? visionBox : selfBox;
+    
+    // CRITICAL: Verify file is still accessible
+    if (!boxState.sourceFile) {
+      console.error(`[${boxId}] CRITICAL: sourceFile was garbage collected or lost!`);
+      return;
+    }
+    
+    if (!boxState.sourceUrl) {
+      console.error(`[${boxId}] CRITICAL: sourceUrl is null!`);
+      return;
+    }
+    
+    console.log(`[${boxId}] File still accessible: name=${boxState.sourceFile.name}, size=${boxState.sourceFile.size}, type=${boxState.sourceFile.type}`);
+    
     if (boxId === 'vision') {
-      console.log(`[vision] Marking as preview-ready - now can proceed to crop or save`);
-      setVisionBox(prev => ({ ...prev, isImageLoaded: true, status: 'preview-ready' }));
+      console.log(`[vision] Marking as preview-ready`);
+      setVisionBox(prev => {
+        console.log(`[vision] State update: sourceFile exists?`, !!prev.sourceFile, 'sourceUrl exists?', !!prev.sourceUrl);
+        return { ...prev, isImageLoaded: true, status: 'preview-ready' };
+      });
     } else if (boxId === 'self') {
-      console.log(`[self] Marking as preview-ready - now can proceed to crop or save`);
-      setSelfBox(prev => ({ ...prev, isImageLoaded: true, status: 'preview-ready' }));
+      console.log(`[self] Marking as preview-ready`);
+      setSelfBox(prev => {
+        console.log(`[self] State update: sourceFile exists?`, !!prev.sourceFile, 'sourceUrl exists?', !!prev.sourceUrl);
+        return { ...prev, isImageLoaded: true, status: 'preview-ready' };
+      });
     }
   };
 

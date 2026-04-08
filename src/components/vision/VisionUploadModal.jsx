@@ -189,7 +189,41 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           created_by: saved.created_by,
           user_email_type: typeof saved.user_email,
           created_by_type: typeof saved.created_by,
+          is_active: saved.is_active,
+          is_active_type: typeof saved.is_active,
         });
+        
+        // RAW READ TEST: Fetch by ID immediately to confirm persistence
+        console.log('[VisionUploadModal] PERSISTENCE TEST: Fetching by ID to verify record was written...');
+        try {
+          const byIdTest = await base44.entities.VisionItem.filter({ id: saved.id });
+          console.log('[VisionUploadModal] PERSISTENCE TEST: Fetch by ID result count:', byIdTest?.length || 0);
+          console.log('[VisionUploadModal] PERSISTENCE TEST: Fetch by ID full result:', byIdTest);
+        } catch (err) {
+          console.error('[VisionUploadModal] PERSISTENCE TEST: Fetch by ID failed:', err);
+        }
+        
+        // FILTER ISOLATION TEST
+        console.log('[VisionUploadModal] FILTER ISOLATION: Running incremental filter tests...');
+        try {
+          const allRecords = await base44.entities.VisionItem.list();
+          console.log('[VisionUploadModal] FILTER 1: All records (no filter) count:', allRecords?.length || 0);
+          
+          const byUserEmail = await base44.entities.VisionItem.filter({ user_email: saved.user_email });
+          console.log('[VisionUploadModal] FILTER 2: By user_email only, count:', byUserEmail?.length || 0);
+          
+          const byCreatedBy = await base44.entities.VisionItem.filter({ created_by: saved.created_by });
+          console.log('[VisionUploadModal] FILTER 3: By created_by only, count:', byCreatedBy?.length || 0);
+          
+          const byIsActive = await base44.entities.VisionItem.filter({ is_active: true });
+          console.log('[VisionUploadModal] FILTER 4: By is_active=true only, count:', byIsActive?.length || 0);
+          
+          const byUserAndActive = await base44.entities.VisionItem.filter({ user_email: saved.user_email, is_active: true });
+          console.log('[VisionUploadModal] FILTER 5: By user_email + is_active, count:', byUserAndActive?.length || 0);
+          console.log('[VisionUploadModal] FILTER 5: By user_email + is_active, full result:', byUserAndActive);
+        } catch (err) {
+          console.error('[VisionUploadModal] FILTER ISOLATION: Tests failed:', err);
+        }
         
         console.log('[VisionUploadModal] SAVE STEP 5E: Calling onSave with saved data');
         onSave(saved);

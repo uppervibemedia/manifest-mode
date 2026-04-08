@@ -37,7 +37,7 @@ export default function Vision() {
   useEffect(() => {
     (async () => {
       if (!user || profileLoading) return;
-      const items = await base44.entities.VisionItem.filter({ user_email: user.email }, "-created_date");
+      const items = await base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }, "-created_date");
       setVisions(items);
       setLoading(false);
     })();
@@ -241,7 +241,6 @@ export default function Vision() {
               setShowSeeMe(true);
             }}
             onUpdate={(updated) => setVisions(prev => prev.map(v => v.id === updated.id ? updated : v))}
-            onDelete={(id) => setVisions(prev => prev.filter(v => v.id !== id))}
           />
         )}
       </AnimatePresence>

@@ -39,8 +39,10 @@ export default function Vision() {
       if (!user || profileLoading) return;
       
       console.log('[Vision] PAGE LOAD: Fetching visions for user:', user.email);
+      console.log('[Vision] PAGE LOAD: Fetch query filter:', { user_email: user.email, is_active: true });
       const items = await base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }, "-created_date");
       
+      console.log('[Vision] PAGE LOAD: Full fetch response:', items);
       console.log('[Vision] PAGE LOAD: Fetch response count:', items?.length || 0);
       if (items && items.length > 0) {
         console.log('[Vision] PAGE LOAD: First record from fetch:', {

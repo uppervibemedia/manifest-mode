@@ -166,12 +166,10 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           proof_images: [],
         };
         
-        console.log('[VisionUploadModal] SAVE STEP 5B: Create payload:', {
-          title: createPayload.title,
-          category: createPayload.category,
-          image_url: createPayload.image_url?.substring(0, 50) + '...',
-          image_url_type: createPayload.image_url?.startsWith('blob:') ? 'ERROR: BLOB!' : 'PERMANENT',
-          user_email: createPayload.user_email,
+        console.log('[VisionUploadModal] SAVE STEP 5B: Create payload (DETAILED):', createPayload);
+        console.log('[VisionUploadModal] SAVE STEP 5B: Create ownership field:', {
+          user_email_field: createPayload.user_email,
+          user_email_type: typeof createPayload.user_email,
         });
         
         console.log('[VisionUploadModal] SAVE STEP 5C: Calling create');
@@ -185,6 +183,13 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         });
         
         console.log('[VisionUploadModal] SAVE STEP 5D-FULL: Full saved record from DB:', saved);
+        console.log('[VisionUploadModal] SAVE STEP 5D-OWNERSHIP: Saved record ownership fields:', {
+          id: saved.id,
+          user_email: saved.user_email,
+          created_by: saved.created_by,
+          user_email_type: typeof saved.user_email,
+          created_by_type: typeof saved.created_by,
+        });
         
         console.log('[VisionUploadModal] SAVE STEP 5E: Calling onSave with saved data');
         onSave(saved);

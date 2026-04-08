@@ -108,26 +108,16 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
             </div>
           )}
 
-          {/* AI Roadmap Section */}
-          {tier === "premium" ? (
+          {/* AI Roadmap — Only show for AI-generated images (premium) */}
+          {isAiGenerated && tier === "premium" && (
             <div className="px-5 py-4 space-y-4 border-t border-border/50">
-              {/* See Me in This Vision Feature */}
-              <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">See Me In This Vision</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">AI places you inside your dream</p>
-                  </div>
+              {/* AI Scene Badge */}
+              <div className="glass-card glow-gold border border-primary/25 rounded-2xl p-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-semibold text-foreground">Your AI Vision</p>
                 </div>
-                <button
-                  onClick={onGenerateSeeMe}
-                  className="w-full py-2 rounded-lg gold-gradient text-background text-xs font-semibold flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-3 h-3" />
-                  Generate Now
-                </button>
+                <p className="text-[10px] text-muted-foreground">Manifested with See Me In This Vision</p>
               </div>
 
               {/* Vision Context */}
@@ -162,7 +152,10 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
                 )}
               </div>
             </div>
-          ) : (
+          )}
+
+          {/* Premium Feature Teaser for non-premium users */}
+          {!isAiGenerated && tier !== "premium" && (
             <div className="px-5 py-4 space-y-3 border-t border-border/50">
               {/* Premium Teaser */}
               <div className="glass-card border border-primary/30 rounded-2xl p-4 bg-primary/5">
@@ -186,7 +179,7 @@ export default function VisionImageViewer({ vision, userEmail, tier, onClose, on
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-primary text-xs">✦</span>
-                    <p className="text-[10px] text-foreground/80">Save to your vision proof gallery</p>
+                    <p className="text-[10px] text-foreground/80">View your AI roadmap</p>
                   </div>
                 </div>
                 <button

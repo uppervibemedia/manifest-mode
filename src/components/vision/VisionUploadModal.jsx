@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { X, Upload, Loader2, Star, Crop } from "lucide-react";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useModalState } from "@/lib/ModalContext";
-import ImageCropTool from "@/components/vision/ImageCropTool";
+import ImageCropTool from "@/components/vision/ImageCropTool.jsx";
 
 const TIMELINES = ["3 months", "6 months", "1 year", "2 years", "3+ years"];
 

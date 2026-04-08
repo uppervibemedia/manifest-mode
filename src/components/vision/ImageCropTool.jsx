@@ -532,39 +532,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
               zIndex: 5,
             }} />
 
-            {/* Clipping container - shows live preview of what's being cropped */}
-            {imageDimensions.width > 0 && (
-            <div
-              style={{
-                position: "absolute",
-                left: cropBox.left,
-                top: cropBox.top,
-                width: cropBox.right - cropBox.left,
-                height: cropBox.bottom - cropBox.top,
-                overflow: "hidden",
-                border: "2px solid rgba(212, 175, 55, 0.8)",
-                zIndex: 15,
-                backgroundColor: "rgba(0,0,0,0.1)",
-              }}
-            >
-              <img
-                src={imageUrl}
-                alt="crop preview"
-                style={{
-                  position: "absolute",
-                  left: imageOffset.x - cropBox.left,
-                  top: imageOffset.y - cropBox.top,
-                  width: imageDimensions.width * zoomScale,
-                  height: imageDimensions.height * zoomScale,
-                  pointerEvents: "none",
-                  willChange: "none",
-                }}
-                draggable={false}
-              />
-            </div>
-            )}
-
-            {/* Image layer (for interaction) */}
+            {/* Single image layer */}
             <img
               src={imageUrl}
               alt="crop"
@@ -597,7 +565,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
               draggable={false}
             />
 
-            {/* Crop frame container */}
+            {/* Crop frame container — visual guide only */}
             <div
               className="absolute"
               style={{
@@ -605,9 +573,10 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 top: cropBox.top,
                 width: cropBox.right - cropBox.left,
                 height: cropBox.bottom - cropBox.top,
-                border: "2px solid rgba(212, 175, 55, 0.8)",
+                border: "2px solid rgba(212, 175, 55, 0.9)",
                 zIndex: 20,
                 pointerEvents: "none",
+                boxShadow: "0 0 20px rgba(212, 175, 55, 0.4)",
               }}
             >
               {/* Rule of thirds grid (visible when interacting) */}

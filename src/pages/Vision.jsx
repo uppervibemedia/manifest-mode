@@ -38,10 +38,16 @@ export default function Vision() {
     (async () => {
       if (!user || profileLoading) return;
       
+      console.log('[Vision] ═══ PAGE LOAD START ═══');
+      console.log('[Vision] ENTITY CHECK: base44.entities.VisionItem =', base44.entities.VisionItem);
+      console.log('[Vision] ENTITY NAME: VisionItem');
+      console.log('[Vision] READ METHOD: base44.entities.VisionItem.filter()');
       console.log('[Vision] PAGE LOAD: Fetching visions for user:', user.email);
       console.log('[Vision] PAGE LOAD: Fetch query filter:', { user_email: user.email, is_active: true });
+      
       const items = await base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }, "-created_date");
       
+      console.log('[Vision] ═══ PAGE LOAD RESPONSE RECEIVED ═══');
       console.log('[Vision] PAGE LOAD: Full fetch response:', items);
       console.log('[Vision] PAGE LOAD: Fetch response count:', items?.length || 0);
       if (items && items.length > 0) {
@@ -66,6 +72,7 @@ export default function Vision() {
         });
       }
       
+      console.log('[Vision] ═══ PAGE LOAD END ═══');
       setLoading(false);
     })();
   }, [user?.email, profileLoading]);

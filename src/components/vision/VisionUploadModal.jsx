@@ -155,7 +155,10 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         });
       } else {
         // Create new vision
-        console.log('[VisionUploadModal] SAVE STEP 5A: Creating new vision');
+        console.log('[VisionUploadModal] ═══ CREATE FLOW START ═══');
+        console.log('[VisionUploadModal] ENTITY CHECK: base44.entities.VisionItem =', base44.entities.VisionItem);
+        console.log('[VisionUploadModal] ENTITY NAME: VisionItem');
+        console.log('[VisionUploadModal] CREATE METHOD: base44.entities.VisionItem.create()');
         
         const createPayload = {
           ...data,
@@ -175,6 +178,7 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
         console.log('[VisionUploadModal] SAVE STEP 5C: Calling create');
         const saved = await base44.entities.VisionItem.create(createPayload);
         
+        console.log('[VisionUploadModal] ═══ CREATE RESPONSE RECEIVED ═══');
         console.log('[VisionUploadModal] SAVE STEP 5D: Create succeeded with response:', {
           id: saved.id,
           title: saved.title,
@@ -193,38 +197,51 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           is_active_type: typeof saved.is_active,
         });
         
-        // RAW READ TEST: Fetch by ID immediately to confirm persistence
-        console.log('[VisionUploadModal] PERSISTENCE TEST: Fetching by ID to verify record was written...');
+        // CRITICAL: Verify record was actually persisted to readable backend
+        console.log('[VisionUploadModal] ═══ PERSISTENCE VERIFICATION START ═══');
+        console.log('[VisionUploadModal] VERIFY: Reading from same entity: base44.entities.VisionItem');
+        console.log('[VisionUploadModal] VERIFY: Returned ID:', saved.id);
+        
         try {
+          console.log('[VisionUploadModal] VERIFY STEP 1: Fetching by exact ID...');
           const byIdTest = await base44.entities.VisionItem.filter({ id: saved.id });
-          console.log('[VisionUploadModal] PERSISTENCE TEST: Fetch by ID result count:', byIdTest?.length || 0);
-          console.log('[VisionUploadModal] PERSISTENCE TEST: Fetch by ID full result:', byIdTest);
+          console.log('[VisionUploadModal] VERIFY STEP 1 RESULT: Query returned', byIdTest?.length || 0, 'records');
+          if (byIdTest?.length > 0) {
+            console.log('[VisionUploadModal] VERIFY STEP 1 SUCCESS: Record IS readable by ID');
+            console.log('[VisionUploadModal] VERIFY STEP 1 DATA:', byIdTest[0]);
+          } else {
+            console.error('[VisionUploadModal] VERIFY STEP 1 FAILED: Record NOT readable by ID - write/read mismatch!');
+          }
         } catch (err) {
-          console.error('[VisionUploadModal] PERSISTENCE TEST: Fetch by ID failed:', err);
+          console.error('[VisionUploadModal] VERIFY STEP 1 ERROR:', err);
         }
         
         // FILTER ISOLATION TEST
-        console.log('[VisionUploadModal] FILTER ISOLATION: Running incremental filter tests...');
+        console.log('[VisionUploadModal] VERIFY STEP 2: Testing all filters...');
         try {
           const allRecords = await base44.entities.VisionItem.list();
-          console.log('[VisionUploadModal] FILTER 1: All records (no filter) count:', allRecords?.length || 0);
+          console.log('[VisionUploadModal] FILTER TEST 1: All records (no filter) count:', allRecords?.length || 0);
           
           const byUserEmail = await base44.entities.VisionItem.filter({ user_email: saved.user_email });
-          console.log('[VisionUploadModal] FILTER 2: By user_email only, count:', byUserEmail?.length || 0);
+          console.log('[VisionUploadModal] FILTER TEST 2: By user_email only, count:', byUserEmail?.length || 0);
           
           const byCreatedBy = await base44.entities.VisionItem.filter({ created_by: saved.created_by });
-          console.log('[VisionUploadModal] FILTER 3: By created_by only, count:', byCreatedBy?.length || 0);
+          console.log('[VisionUploadModal] FILTER TEST 3: By created_by only, count:', byCreatedBy?.length || 0);
           
           const byIsActive = await base44.entities.VisionItem.filter({ is_active: true });
-          console.log('[VisionUploadModal] FILTER 4: By is_active=true only, count:', byIsActive?.length || 0);
+          console.log('[VisionUploadModal] FILTER TEST 4: By is_active=true only, count:', byIsActive?.length || 0);
           
           const byUserAndActive = await base44.entities.VisionItem.filter({ user_email: saved.user_email, is_active: true });
-          console.log('[VisionUploadModal] FILTER 5: By user_email + is_active, count:', byUserAndActive?.length || 0);
-          console.log('[VisionUploadModal] FILTER 5: By user_email + is_active, full result:', byUserAndActive);
+          console.log('[VisionUploadModal] FILTER TEST 5: By user_email + is_active, count:', byUserAndActive?.length || 0);
+          
+          if (byUserAndActive?.length === 0) {
+            console.error('[VisionUploadModal] ❌ CRITICAL: Record NOT queryable by user_email + is_active - WRITE/READ MISMATCH');
+          }
         } catch (err) {
-          console.error('[VisionUploadModal] FILTER ISOLATION: Tests failed:', err);
+          console.error('[VisionUploadModal] FILTER TESTS ERROR:', err);
         }
         
+        console.log('[VisionUploadModal] ═══ PERSISTENCE VERIFICATION END ═══');
         console.log('[VisionUploadModal] SAVE STEP 5E: Calling onSave with saved data');
         onSave(saved);
       }

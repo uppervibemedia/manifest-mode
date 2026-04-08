@@ -7,6 +7,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import VisionUploadModal from "@/components/vision/VisionUploadModal";
 import VisionDetailModal from "@/components/vision/VisionDetailModal";
 import FutureSelfSceneModal from "@/components/vision/FutureSelfSceneModal";
+import SeeMeModal from "@/components/vision/SeeMeModal";
 import { CATEGORIES, getCategoryMeta } from "@/lib/categories";
 import { useUserProfile } from "@/lib/UserProfileContext";
 import { usePullToRefresh } from "@/lib/usePullToRefresh";
@@ -22,6 +23,7 @@ export default function VisionVault() {
   const [editVision, setEditVision] = useState(null);
   const [detailVision, setDetailVision] = useState(null);
   const [sceneVision, setSceneVision] = useState(null);
+  const [showSeeMe, setShowSeeMe] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -99,19 +101,29 @@ export default function VisionVault() {
     <AppLayout>
       <div className="px-5 pt-12 pb-32">
         {/* Header */}
-        <div className="flex items-start justify-between mb-2">
+         <div className="flex items-start justify-between mb-2">
           <div>
             <p className="text-xs uppercase tracking-widest text-primary/70 font-medium mb-1">Your Future, Visualized</p>
             <h1 className="font-playfair text-2xl font-semibold">Living Vision Board</h1>
             <p className="text-xs text-muted-foreground mt-1">{visions.length} vision{visions.length !== 1 ? "s" : ""} · {tier !== "free" ? "Unlimited" : `${visions.length}/${uploadLimit}`} uploads</p>
           </div>
-          <button
-            onClick={() => canUpload ? setShowUpload(true) : null}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-              canUpload ? "gold-gradient text-background" : "bg-border text-muted-foreground"
-            }`}>
-            {canUpload ? <Plus className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
-          </button>
+          <div className="flex gap-2">
+            {profile?.subscription_tier === "premium" && (
+              <button
+                onClick={() => setShowSeeMe(true)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 gold-gradient text-background"
+                title="See Me In This Realty">
+                <Sparkles className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={() => canUpload ? setShowUpload(true) : null}
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                canUpload ? "gold-gradient text-background" : "bg-border text-muted-foreground"
+              }`}>
+              {canUpload ? <Plus className="w-5 h-5" /> : <Lock className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         {/* Category filter pills */}
@@ -326,6 +338,22 @@ export default function VisionVault() {
               }
               setShowUpload(false);
               setEditVision(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSeeMe && (
+          <SeeMeModal
+            vision={null}
+            userEmail={user?.email}
+            onClose={() => setShowSeeMe(false)}
+            onSave={(updated) => {
+              if (updated?.id) {
+                setVisions(prev => [updated, ...prev]);
+              }
+              setShowSeeMe(false);
             }}
           />
         )}

@@ -204,12 +204,23 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
 
   // If a saved asset exists, load it immediately
   useEffect(() => {
+    console.log('[SeeMeModal] savedAsset effect triggered:', { 
+      exists: !!savedAsset, 
+      hasUrl: !!savedAsset?.generated_image_url,
+      url: savedAsset?.generated_image_url?.substring(0, 50)
+    });
+    
     if (savedAsset && savedAsset.generated_image_url) {
-      console.log('[SeeMeModal] Loading saved generated image:', savedAsset.generated_image_url);
+      console.log('[SeeMeModal] RENDER STEP 1: Loading saved generated image from asset');
+      console.log('[SeeMeModal] RENDER STEP 2: Asset ID:', savedAsset.id);
+      console.log('[SeeMeModal] RENDER STEP 3: Setting result to URL:', savedAsset.generated_image_url.substring(0, 50) + '...');
       setResult(savedAsset.generated_image_url);
       setSavedFileUrl(savedAsset.generated_image_url);
       setSaved(true);
       setStep(2);
+      console.log('[SeeMeModal] RENDER COMPLETE: Saved image loaded into state');
+    } else {
+      console.log('[SeeMeModal] No saved asset available, step stays at 1');
     }
   }, [savedAsset]);
 
@@ -624,18 +635,49 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
   };
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result) {
+      console.error('[handleSave] CRITICAL: result is null/undefined!');
+      return;
+    }
+    
+    console.log('[handleSave] STEP 1: Save triggered, result source:', result.substring(0, 50) + '...');
     setSaving(true);
 
     try {
-      // Upload the generated image to permanent storage
+      // STEP 2: Convert result to blob
+      console.log('[handleSave] STEP 2: Fetching blob from result URL...');
       const blob = await fetch(result).then(r => r.blob());
+      console.log('[handleSave] STEP 2: Blob created, size:', blob.size, 'bytes, type:', blob.type);
+      
+      if (blob.size === 0) {
+        throw new Error('[handleSave] CRITICAL: Blob size is 0!');
+      }
+
+      // STEP 3: Create File object
       const file = new File([blob], "see-me-vision.jpg", { type: "image/jpeg" });
-      const { file_url: generatedImageUrl } = await base44.integrations.Core.UploadFile({ file });
+      console.log('[handleSave] STEP 3: File object created:', file.name, file.size, 'bytes');
 
-      console.log('[handleSave] Generated image uploaded:', generatedImageUrl);
+      // STEP 4: Upload to permanent storage
+      console.log('[handleSave] STEP 4: Starting upload to permanent storage...');
+      const uploadResponse = await base44.integrations.Core.UploadFile({ file });
+      const generatedImageUrl = uploadResponse?.file_url;
+      
+      console.log('[handleSave] STEP 4: Upload response:', uploadResponse);
+      console.log('[handleSave] STEP 4: Extracted generatedImageUrl:', generatedImageUrl);
+      
+      if (!generatedImageUrl) {
+        throw new Error('[handleSave] CRITICAL: Upload succeeded but no file_url returned!');
+      }
 
-      // Save as a persistent SeeMeGeneratedImage asset
+      // STEP 5: Save to database
+      console.log('[handleSave] STEP 5: Saving to SeeMeGeneratedImage database...');
+      console.log('[handleSave] STEP 5: Save data:', {
+        user_email: userEmail,
+        vision_id: vision?.id,
+        generated_image_url: generatedImageUrl,
+        is_active: true,
+      });
+
       const generatedAsset = await base44.entities.SeeMeGeneratedImage.create({
         user_email: userEmail,
         vision_id: vision?.id || null,
@@ -652,26 +694,35 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
         },
       });
 
-      console.log('[handleSave] Generated asset saved to database:', generatedAsset.id);
+      console.log('[handleSave] STEP 5: Asset created with ID:', generatedAsset.id);
+      console.log('[handleSave] STEP 5: Full asset saved:', generatedAsset);
 
-      // Mark any previous versions as inactive
+      // STEP 6: Deactivate previous versions
       if (vision?.id) {
+        console.log('[handleSave] STEP 6: Deactivating previous assets for vision:', vision.id);
         const previousAssets = await base44.entities.SeeMeGeneratedImage.filter({
           user_email: userEmail,
           vision_id: vision.id,
           is_active: true,
         });
+        console.log('[handleSave] STEP 6: Found', previousAssets.length, 'previous active assets');
         for (const asset of previousAssets) {
           if (asset.id !== generatedAsset.id) {
+            console.log('[handleSave] STEP 6: Deactivating asset:', asset.id);
             await base44.entities.SeeMeGeneratedImage.update(asset.id, { is_active: false });
           }
         }
       }
 
+      // STEP 7: Update local state with persistent URL
+      console.log('[handleSave] STEP 7: Updating local state to persist URL:', generatedImageUrl);
+      setSavedFileUrl(generatedImageUrl);
       setSaved(true);
+      
+      console.log('[handleSave] COMPLETE: Image saved and persisted successfully');
       onSave && onSave({ ...vision, generated_image_asset_id: generatedAsset.id });
     } catch (error) {
-      console.error('[handleSave] Failed to save generated image:', error);
+      console.error('[handleSave] FAILED:', error.message, error);
       setSaved(false);
     } finally {
       setSaving(false);
@@ -876,6 +927,14 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                     transition={{ type: "spring", damping: 20 }}
                     className="rounded-2xl overflow-hidden mb-4 border border-primary/25 glow-gold"
                   >
+                    {(() => {
+                      console.log('[SeeMeModal] RENDER VERIFY: About to render result image');
+                      console.log('[SeeMeModal] RENDER VERIFY: result source:', result?.substring(0, 50));
+                      console.log('[SeeMeModal] RENDER VERIFY: savedFileUrl:', savedFileUrl?.substring(0, 50));
+                      console.log('[SeeMeModal] RENDER VERIFY: saved state:', saved);
+                      console.log('[SeeMeModal] RENDER VERIFY: Using source:', result?.substring(0, 50) + '...');
+                      return null;
+                    })()}
                     <img src={result} alt="Your vision" className="w-full h-auto" />
                   </motion.div>
 

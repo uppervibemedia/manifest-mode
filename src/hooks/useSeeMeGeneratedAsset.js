@@ -11,13 +11,17 @@ export function useSeeMeGeneratedAsset(userEmail, visionId = null) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log('[useSeeMeGeneratedAsset] Hook mounted/updated:', { userEmail, visionId });
+    
     if (!userEmail) {
+      console.log('[useSeeMeGeneratedAsset] No userEmail provided, skipping load');
       setLoading(false);
       return;
     }
 
     (async () => {
       try {
+        console.log('[useSeeMeGeneratedAsset] STEP 1: Starting asset load...');
         setLoading(true);
         setError(null);
 
@@ -26,17 +30,27 @@ export function useSeeMeGeneratedAsset(userEmail, visionId = null) {
           ? { user_email: userEmail, vision_id: visionId, is_active: true }
           : { user_email: userEmail, is_active: true };
 
+        console.log('[useSeeMeGeneratedAsset] STEP 2: Query filter:', query);
         const assets = await base44.entities.SeeMeGeneratedImage.filter(query, '-created_date', 1);
 
+        console.log('[useSeeMeGeneratedAsset] STEP 3: Query returned', assets?.length || 0, 'asset(s)');
+        
         if (assets && assets.length > 0) {
-          console.log('[useSeeMeGeneratedAsset] Loaded saved asset:', assets[0].id);
-          setAsset(assets[0]);
+          const asset = assets[0];
+          console.log('[useSeeMeGeneratedAsset] STEP 4: Asset found!');
+          console.log('[useSeeMeGeneratedAsset] STEP 4: Asset ID:', asset.id);
+          console.log('[useSeeMeGeneratedAsset] STEP 4: Generated image URL:', asset.generated_image_url);
+          console.log('[useSeeMeGeneratedAsset] STEP 4: Is active:', asset.is_active);
+          console.log('[useSeeMeGeneratedAsset] STEP 4: Full asset:', asset);
+          setAsset(asset);
         } else {
-          console.log('[useSeeMeGeneratedAsset] No saved asset found');
+          console.log('[useSeeMeGeneratedAsset] STEP 3: No saved asset found for query:', query);
           setAsset(null);
         }
+        
+        console.log('[useSeeMeGeneratedAsset] COMPLETE: Asset load finished');
       } catch (err) {
-        console.error('[useSeeMeGeneratedAsset] Error loading asset:', err);
+        console.error('[useSeeMeGeneratedAsset] FAILED:', err.message, err);
         setError(err);
       } finally {
         setLoading(false);

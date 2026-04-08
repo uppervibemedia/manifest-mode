@@ -16,7 +16,7 @@ import { getInitialRoute, trackPageVisit } from '@/lib/dailyRoutingEngine';
 
 // Lazy load pages for code splitting
 const DailyShift = lazy(() => import('./pages/DailyShift'));
-const Vision = lazy(() => import('./pages/Vision'));
+const Vision = lazy(() => import('./pages/Vision.jsx'));
 const Progress = lazy(() => import('./pages/Progress'));
 const FutureSelf = lazy(() => import('./pages/FutureSelf'));
 const Profile = lazy(() => import('./pages/Profile'));

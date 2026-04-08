@@ -25,6 +25,8 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   const [saving, setSaving] = useState(false);
   const [showCropTool, setShowCropTool] = useState(false);
   const fileInputRef = useRef(null);
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; }, [form]);
 
   // Hide bottom nav when modal opens
   useEffect(() => {
@@ -38,16 +40,17 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     e.target.value = null;
     setUploading(true);
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    // Auto-save to vision board immediately with a generated title
-    const categoryLabel = CATEGORIES.find(c => c.id === form.category)?.label || "Vision";
-    const autoTitle = form.title || `My ${categoryLabel} Vision`;
+    // Read from ref to avoid stale closure
+    const f = formRef.current;
+    const categoryLabel = CATEGORIES.find(c => c.id === f.category)?.label || "Vision";
+    const autoTitle = f.title || `My ${categoryLabel} Vision`;
     const saved = await base44.entities.VisionItem.create({
       user_email: userEmail,
       title: autoTitle,
-      category: form.category,
+      category: f.category,
       image_url: file_url,
-      secondary_category: form.secondary_category || "none",
-      is_priority: form.is_priority,
+      secondary_category: f.secondary_category || "none",
+      is_priority: f.is_priority,
       is_active: true,
       progress: 0,
       action_steps: [],

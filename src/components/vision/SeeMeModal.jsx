@@ -71,17 +71,17 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
   const showLoading = uploading && !preview;
 
   return (
-    <label className="block cursor-pointer">
+    <div>
       <div
-        className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
+        className={`aspect-square rounded-2xl overflow-hidden border-2 border-dashed transition-all cursor-pointer ${
           preview ? "border-transparent" : "border-border hover:border-primary/40"
         }`}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !uploading && inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
       >
         {preview ? (
-          <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full h-full group">
             <img
               src={preview}
               alt={label}
@@ -96,7 +96,6 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log(`[${boxId}] Crop button clicked`);
                   onCropStart(boxId);
                 }}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-background rounded-lg"
@@ -129,7 +128,7 @@ function UploadZone({ boxId, label, hint, boxState, onFileSelected, onImageLoade
         onChange={handleChange}
         disabled={uploading}
       />
-    </label>
+    </div>
   );
 }
 

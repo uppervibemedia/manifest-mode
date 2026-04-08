@@ -86,16 +86,6 @@ export default function WeeklyPatternPanel({ userEmail, scores, tier }) {
     }
   }, [scores]);
 
-  // Use calculated summary data or provide default if still calculating
-  const displayData = summaryData || {
-    avgScore: scores && scores.length > 0 ? Math.round(scores.slice(0, 7).reduce((sum, s) => sum + (s.overall_score || 0), 0) / Math.min(7, scores.length)) : 0,
-    scoreMovement: 0,
-    completions: 0,
-    daysTracked: scores?.length || 0,
-    strongest: { name: "Calculating...", avg: 0 },
-    weakest: { name: "Calculating...", avg: 0 },
-  };
-
   // Generate AI analysis for Plus+ users
   const generateAIAnalysis = async () => {
     if (!canAccessAI || !summaryData) return;
@@ -184,6 +174,16 @@ Return ONLY valid JSON:
   };
 
 
+
+  // Use calculated summary data or provide default if still calculating
+  const displayData = summaryData || {
+    avgScore: scores && scores.length > 0 ? Math.round(scores.slice(0, 7).reduce((sum, s) => sum + (s.overall_score || 0), 0) / Math.min(7, scores.length)) : 0,
+    scoreMovement: 0,
+    completions: 0,
+    daysTracked: scores?.length || 0,
+    strongest: { name: "Calculating...", avg: 0 },
+    weakest: { name: "Calculating...", avg: 0 },
+  };
 
   return (
     <motion.div

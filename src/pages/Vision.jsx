@@ -37,32 +37,14 @@ export default function Vision() {
   useEffect(() => {
     (async () => {
       if (!user || profileLoading) return;
-      
-      console.log('[Vision] ═══ PAGE LOAD START ═══');
-      console.log('[Vision] ENTITY CHECK: base44.entities.VisionItem =', base44.entities.VisionItem);
-      console.log('[Vision] ENTITY NAME: VisionItem');
-      console.log('[Vision] READ METHOD: base44.entities.VisionItem.filter()');
-      console.log('[Vision] PAGE LOAD: Fetching visions for user:', user.email);
-      console.log('[Vision] PAGE LOAD: Fetch query filter:', { user_email: user.email, is_active: true });
-      
       const items = await base44.entities.VisionItem.filter({ user_email: user.email, is_active: true }, "-created_date");
-      
-      console.log('[Vision] ═══ PAGE LOAD RESPONSE RECEIVED ═══');
-      console.log('[Vision] PAGE LOAD: Backend fetch count:', items?.length || 0);
-      
-      console.log('[Vision] STATE HYDRATION: Setting visions to state, count:', items?.length || 0);
-      setVisions(items || []);
-      
-      console.log('[Vision] ═══ PAGE LOAD END ═══');
+      setVisions(items);
       setLoading(false);
     })();
   }, [user?.email, profileLoading]);
 
   // Optimistic vision card click → open viewer immediately
-  const handleVisionClick = (vision) => {
-    console.log('[Vision] Vision card clicked:', { id: vision.id, title: vision.title, image_url: vision.image_url?.substring(0, 50) });
-    setViewerVision(vision);
-  }
+  const handleVisionClick = (vision) => setViewerVision(vision);
 
   const tier = profile?.subscription_tier || "free";
   const uploadLimit = tier === "free" ? 3 : tier === "supporter" ? 15 : 999;
@@ -164,13 +146,6 @@ export default function Vision() {
             <AnimatePresence>
               {visions.map((vision, i) => {
                 const cat = CATEGORIES.find(c => c.id === vision.category);
-                console.log('[Vision] RENDER: Vision card mounting:', { 
-                  id: vision.id, 
-                  title: vision.title, 
-                  has_image: !!vision.image_url,
-                  image_url: vision.image_url?.substring(0, 50) + '...'
-                });
-                console.log('[Vision] RENDER: Full vision object:', vision);
                 return (
                   <motion.div key={vision.id}
                     initial={{ opacity: 0, scale: 0.92 }}
@@ -181,28 +156,12 @@ export default function Vision() {
                     onClick={() => setViewerVision(vision)}
                     style={{ aspectRatio: i % 5 === 0 ? "1/1.3" : "3/4" }}>
 
-                    {(() => {
-                      console.log('[Vision] IMG RENDER: About to render img tag for vision:', { 
-                        id: vision.id, 
-                        has_image_url: !!vision.image_url,
-                        image_url_value: vision.image_url?.substring(0, 50) + '...',
-                      });
-                      if (vision.image_url) {
-                        console.log('[Vision] IMG RENDER: Using permanent URL as src:', vision.image_url);
-                      } else {
-                        console.log('[Vision] IMG RENDER: NO IMAGE_URL - showing placeholder');
-                      }
-                      return null;
-                    })()}
-
                     {vision.image_url ? (
                       <motion.img
                         src={vision.image_url} alt={vision.title}
                         className="w-full h-full object-cover"
                         whileHover={{ scale: 1.05 }}
                         transition={{ duration: 0.6 }}
-                        onLoad={() => console.log('[Vision] IMG LOADED:', { id: vision.id, src: vision.image_url?.substring(0, 50) })}
-                        onError={(err) => console.error('[Vision] IMG FAILED:', { id: vision.id, src: vision.image_url, error: err })}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-muted/40">
@@ -211,8 +170,6 @@ export default function Vision() {
                     )}
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
-
-
 
                     <div className="absolute inset-0 left-0 right-0 p-4 flex flex-col justify-end">
                       <div className="mb-2 h-1 bg-white/20 rounded-full overflow-hidden">
@@ -265,23 +222,7 @@ export default function Vision() {
             userEmail={user?.email}
             onClose={() => setShowUpload(false)}
             onSave={(v) => {
-              console.log('[Vision] onSave called for new vision:', { 
-                id: v.id, 
-                title: v.title, 
-                image_url: v.image_url?.substring(0, 50) + '...',
-                image_url_exists: !!v.image_url
-              });
-              console.log('[Vision] Adding vision to state, before:', visions.length);
-              setVisions(prev => {
-                const updated = [v, ...prev];
-                console.log('[Vision] Added vision to state, after:', updated.length);
-                console.log('[Vision] Updated vision object in state:', {
-                  id: updated[0].id,
-                  image_url: updated[0].image_url?.substring(0, 50) + '...',
-                  image_url_exists: !!updated[0].image_url,
-                });
-                return updated;
-              });
+              setVisions(prev => [v, ...prev]);
               setShowUpload(false);
             }}
           />
@@ -293,24 +234,13 @@ export default function Vision() {
           <VisionImageViewer
             vision={viewerVision}
             userEmail={user?.email}
-            onClose={() => {
-              console.log('[Vision] Closing viewer for vision:', viewerVision.id);
-              setViewerVision(null);
-            }}
+            onClose={() => setViewerVision(null)}
             onRegenerate={(v) => {
-              console.log('[Vision] onRegenerate called:', v.id);
               setViewerVision(null);
               setSeeMeVision(v);
               setShowSeeMe(true);
             }}
-            onUpdate={(updated) => {
-              console.log('[Vision] onUpdate called for vision:', { 
-                id: updated.id, 
-                image_url: updated.image_url?.substring(0, 50) + '...',
-                is_priority: updated.is_priority
-              });
-              setVisions(prev => prev.map(v => v.id === updated.id ? updated : v));
-            }}
+            onUpdate={(updated) => setVisions(prev => prev.map(v => v.id === updated.id ? updated : v))}
           />
         )}
       </AnimatePresence>

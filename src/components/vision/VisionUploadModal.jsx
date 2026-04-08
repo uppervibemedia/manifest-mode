@@ -21,8 +21,6 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     image_url: vision?.image_url || "",
     is_priority: vision?.is_priority || false,
   });
-  const [sourceFile, setSourceFile] = useState(null); // Actual File object for upload
-  const [previewUrl, setPreviewUrl] = useState(vision?.image_url || ""); // Temporary blob URL or existing permanent URL
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showCropTool, setShowCropTool] = useState(false);
@@ -37,43 +35,19 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     e.stopPropagation();
     const file = e.target.files[0];
     if (!file) return;
-    
-    console.log('[VisionUploadModal] Image file selected:', { name: file.name, size: file.size, type: file.type });
-    
-    // Store the actual file for later upload during save
-    setSourceFile(file);
-    
-    // Create temporary preview URL for immediate UI display
-    const tempUrl = URL.createObjectURL(file);
-    console.log('[VisionUploadModal] Temporary preview URL created:', tempUrl);
-    setPreviewUrl(tempUrl);
-    
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(prev => ({ ...prev, image_url: file_url }));
     setShowCropTool(true);
-    
+    setUploading(false);
     // Reset file input to allow re-uploading same file
-    e.target.value = "";
+    e.target.value = null;
   };
 
-  const handleCropSave = async (croppedUrl, metadata) => {
-    console.log('[VisionUploadModal] Crop complete, storing cropped preview');
-    
-    // Convert cropped data URL to File object for later upload
-    try {
-      const blob = await fetch(croppedUrl).then(r => r.blob());
-      const croppedFile = new File([blob], "vision-cropped.jpg", { type: "image/jpeg" });
-      console.log('[VisionUploadModal] Cropped file created:', { size: croppedFile.size, type: croppedFile.type });
-      
-      // Store the cropped file for upload during save
-      setSourceFile(croppedFile);
-      
-      // Store preview URL (temporary blob URL)
-      setPreviewUrl(croppedUrl);
-      console.log('[VisionUploadModal] Preview URL stored (temporary blob):', croppedUrl);
-    } catch (err) {
-      console.error('[VisionUploadModal] Failed to process cropped image:', err);
-    }
-    
+  const handleCropSave = (croppedUrl, metadata) => {
+    setForm(prev => ({ ...prev, image_url: croppedUrl }));
     setShowCropTool(false);
+    // Metadata is available if needed (cropTop, cropLeft, cropRight, cropBottom, zoomScale, imageOffsetX, imageOffsetY)
   };
 
   const handleCropSkip = () => {
@@ -81,132 +55,28 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
   };
 
   const handleSave = async () => {
-    console.log('[VisionUploadModal] SAVE STEP 1: Save button clicked');
-    
-    if (!form.title) {
-      console.warn('[VisionUploadModal] SAVE FAILED: No title provided');
-      return;
-    }
-    
-    console.log('[VisionUploadModal] SAVE STEP 2: Pre-save state:', {
-      sourceFile: sourceFile ? { name: sourceFile.name, size: sourceFile.size } : null,
-      previewUrl: previewUrl?.substring(0, 50) + '...',
-      previewUrlType: previewUrl?.startsWith('blob:') ? 'BLOB (temporary)' : 'PERMANENT',
-    });
-    
+    if (!form.title) return;
     setSaving(true);
-    
-    try {
-      // STEP 1: Upload image file if one was selected or cropped
-      let permanentImageUrl = form.image_url;
-      
-      if (sourceFile) {
-        console.log('[VisionUploadModal] SAVE STEP 3A: Image file needs upload:', {
-          name: sourceFile.name,
-          size: sourceFile.size,
-          type: sourceFile.type,
-        });
-        
-        console.log('[VisionUploadModal] SAVE STEP 3B: Uploading image to permanent storage...');
-        const uploadResponse = await base44.integrations.Core.UploadFile({ file: sourceFile });
-        permanentImageUrl = uploadResponse?.file_url;
-        
-        console.log('[VisionUploadModal] SAVE STEP 3C: Upload succeeded');
-        console.log('[VisionUploadModal] SAVE STEP 3C: Permanent image URL:', permanentImageUrl?.substring(0, 50) + '...');
-        
-        if (!permanentImageUrl) {
-          throw new Error('Upload succeeded but no file_url returned');
-        }
-      } else {
-        console.log('[VisionUploadModal] SAVE STEP 3A: No new file selected, using existing image_url');
-      }
-      
-      // STEP 2: Build save payload with permanent image URL
-      const data = {
-        ...form,
-        image_url: permanentImageUrl, // Use permanent URL, not blob preview
-        secondary_category: form.secondary_category || "none",
-      };
-      
-      console.log('[VisionUploadModal] SAVE STEP 4: Final save payload:', {
-        title: data.title,
-        category: data.category,
-        image_url: data.image_url?.substring(0, 50) + '...',
-        image_url_type: data.image_url?.startsWith('blob:') ? 'ERROR: BLOB!' : 'PERMANENT',
-      });
+    const data = { ...form, secondary_category: form.secondary_category || "none" };
 
-      if (vision) {
-        // Update existing vision
-        console.log('[VisionUploadModal] SAVE STEP 5A: Updating existing vision:', vision.id);
-        const optimistic = { ...vision, ...data };
-        
-        console.log('[VisionUploadModal] SAVE STEP 5B: Calling onSave with updated data');
-        onSave(optimistic);
-        
-        console.log('[VisionUploadModal] SAVE STEP 5C: Starting server update');
-        base44.entities.VisionItem.update(vision.id, data).then((updated) => {
-          console.log('[VisionUploadModal] SAVE STEP 5D: Server update succeeded:', {
-            id: updated.id,
-            image_url: updated.image_url?.substring(0, 50) + '...',
-            image_url_type: updated.image_url?.startsWith('blob:') ? 'ERROR: BLOB!' : 'PERMANENT',
-          });
-        }).catch((err) => {
-          console.error('[VisionUploadModal] SAVE STEP 5D: Server update failed:', err);
-        });
-      } else {
-        // Create new vision
-        console.log('[VisionUploadModal] ═══ CREATE FLOW START ═══');
-        console.log('[VisionUploadModal] ENTITY CHECK: base44.entities.VisionItem =', base44.entities.VisionItem);
-        console.log('[VisionUploadModal] ENTITY NAME: VisionItem');
-        console.log('[VisionUploadModal] CREATE METHOD: base44.entities.VisionItem.create()');
-        
-        const createPayload = {
-          ...data,
-          user_email: userEmail,
-          is_active: true,
-          progress: 0,
-          action_steps: [],
-          proof_images: [],
-        };
-        
-        console.log('[VisionUploadModal] SAVE STEP 5B: Create payload (DETAILED):', createPayload);
-        console.log('[VisionUploadModal] SAVE STEP 5B: Create ownership field:', {
-          user_email_field: createPayload.user_email,
-          user_email_type: typeof createPayload.user_email,
-        });
-        
-        console.log('[VisionUploadModal] SAVE STEP 5C: Calling create');
-        const saved = await base44.entities.VisionItem.create(createPayload);
-        
-        console.log('[VisionUploadModal] ═══ CREATE RESPONSE RECEIVED ═══');
-        console.log('[VisionUploadModal] SAVE STEP 5D: Create succeeded with response:', {
-          id: saved.id,
-          title: saved.title,
-          image_url: saved.image_url?.substring(0, 50) + '...',
-          image_url_type: saved.image_url?.startsWith('blob:') ? 'ERROR: BLOB!' : 'PERMANENT',
-        });
-        
-        console.log('[VisionUploadModal] SAVE STEP 5D-FULL: Full saved record from DB:', saved);
-        console.log('[VisionUploadModal] SAVE STEP 5D-OWNERSHIP: Saved record ownership fields:', {
-          id: saved.id,
-          user_email: saved.user_email,
-          created_by: saved.created_by,
-          user_email_type: typeof saved.user_email,
-          created_by_type: typeof saved.created_by,
-          is_active: saved.is_active,
-          is_active_type: typeof saved.is_active,
-        });
-        
-        // CRITICAL: TRUE PERSISTENCE VERIFICATION — Do not treat as saved until readable
-        console.log('[VisionUploadModal] ✓ Vision created and saved');
-        onSave(saved);
-      }
-      
-      console.log('[VisionUploadModal] SAVE COMPLETE: Save succeeded with permanent image URL');
-    } catch (error) {
-      console.error('[VisionUploadModal] SAVE FAILED:', error.message, error);
-    } finally {
-      setSaving(false);
+    if (vision) {
+      // Optimistic: call onSave immediately with merged data, then confirm with server
+      const optimistic = { ...vision, ...data };
+      onSave(optimistic);
+      base44.entities.VisionItem.update(vision.id, data).catch(() => {
+        // silent — next load will resync
+      });
+    } else {
+      // For new items we need a real id — wait for server but close immediately after
+      const saved = await base44.entities.VisionItem.create({
+        ...data,
+        user_email: userEmail,
+        is_active: true,
+        progress: 0,
+        action_steps: [],
+        proof_images: [],
+      });
+      onSave(saved);
     }
   };
 
@@ -255,11 +125,11 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           {/* Image Upload */}
           <label className="block mb-5 cursor-pointer">
           <div className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
-            previewUrl ? "border-transparent" : "border-border hover:border-primary/40"
+            form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
           }`}>
-            {previewUrl ? (
+            {form.image_url ? (
               <div className="relative w-full h-full group" onClick={(e) => e.stopPropagation()}>
-                <img src={previewUrl} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
+                <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   <button

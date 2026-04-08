@@ -174,6 +174,14 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     const newBox = { ...cropBox };
     let changed = false;
 
+    // Log for side handle dragging (left/right)
+    if (currentHandle === "middle-left" || currentHandle === "middle-right") {
+      console.log(`[Crop DEBUG] Handle: ${currentHandle}`);
+      console.log(`[Crop DEBUG]   Before: left=${cropBox.left}, right=${cropBox.right}, width=${cropBox.right - cropBox.left}`);
+      console.log(`[Crop DEBUG]   Image: width=${imageDimensions.width}, zoomScale=${zoomScale}, renderedWidth=${imageDimensions.width * zoomScale}`);
+      console.log(`[Crop DEBUG]   ImageOffset: x=${imageOffset.x}, y=${imageOffset.y}`);
+    }
+
     switch (currentHandle) {
       case "top-left":
         const newTopLeft = Math.max(maxTop, Math.min(cropBox.bottom - minSize, cropBox.top + deltaY));
@@ -218,6 +226,9 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
     }
 
     if (changed) {
+      if (currentHandle === "middle-left" || currentHandle === "middle-right") {
+        console.log(`[Crop DEBUG]   After: left=${newBox.left}, right=${newBox.right}, width=${newBox.right - newBox.left}`);
+      }
       setCropBox(newBox);
     }
     setDragStart({ x: clientX, y: clientY });

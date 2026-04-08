@@ -154,15 +154,25 @@ export default function Vision() {
 
         {/* See Me AI Section Headline */}
         {visions.some(v => v.title === "See Me In This Vision") && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
+          <motion.button
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            onClick={() => {
+              if (tier === "premium") {
+                setShowSeeMe(true);
+              } else {
+                navigate("/pricing");
+              }
+            }}
+            className="w-full mb-6 flex items-center gap-2.5 p-4 rounded-2xl glass-card border border-primary/20 hover:border-primary/40 transition-all">
+            <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
-            <div>
+            <div className="text-left flex-1">
               <p className="text-xs uppercase tracking-widest font-semibold text-primary">See Me In This Vision</p>
               <p className="text-[10px] text-muted-foreground">Premium AI-generated manifestations & insights</p>
             </div>
-          </motion.div>
+          </motion.button>
         )}
 
         {/* Grid */}
@@ -273,6 +283,14 @@ export default function Vision() {
                           <div className="flex items-center gap-1 mt-0.5">
                             <span className="text-[10px]">{meta.icon}</span>
                             <span className="text-[9px] text-white/60 font-medium">{meta.label}</span>
+                            {vision.title === "See Me In This Vision" && tier === "premium" && (
+                              <>
+                                <span className="text-white/40 text-[8px]">•</span>
+                                <span className="text-[9px] text-primary font-semibold flex items-center gap-0.5">
+                                  <Sparkles className="w-2.5 h-2.5" /> AI Insights
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                         {vision.is_priority && (

@@ -34,40 +34,37 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
     return () => setActiveFullscreenModal(null);
   }, [setActiveFullscreenModal]);
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = null;
+    // Create a local preview URL and open the crop tool
+    const localUrl = URL.createObjectURL(file);
+    setForm(prev => ({ ...prev, image_url: localUrl }));
+    setShowCropTool(true);
+  };
+
+  const handleCropSave = async (croppedUrl) => {
+    setShowCropTool(false);
     setUploading(true);
+    // Convert the cropped blob URL to a file and upload
+    const blob = await fetch(croppedUrl).then(r => r.blob());
+    const file = new File([blob], "vision-cropped.jpg", { type: "image/jpeg" });
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    // Read from ref to avoid stale closure
-    const f = formRef.current;
-    const categoryLabel = CATEGORIES.find(c => c.id === f.category)?.label || "Vision";
-    const autoTitle = f.title || `My ${categoryLabel} Vision`;
-    const saved = await base44.entities.VisionItem.create({
-      user_email: userEmail,
-      title: autoTitle,
-      category: f.category,
-      image_url: file_url,
-      secondary_category: f.secondary_category || "none",
-      is_priority: f.is_priority,
-      is_active: true,
-      progress: 0,
-      action_steps: [],
-      proof_images: [],
-    });
+    setForm(prev => ({ ...prev, image_url: file_url }));
     setUploading(false);
-    onSave(saved);
   };
 
-  const handleCropSave = (croppedUrl, metadata) => {
-    setForm(prev => ({ ...prev, image_url: croppedUrl }));
+  const handleCropSkip = async () => {
+    // Skip crop — upload the original local blob as-is
+    const localUrl = formRef.current.image_url;
     setShowCropTool(false);
-    // Metadata is available if needed (cropTop, cropLeft, cropRight, cropBottom, zoomScale, imageOffsetX, imageOffsetY)
-  };
-
-  const handleCropSkip = () => {
-    setShowCropTool(false);
+    setUploading(true);
+    const blob = await fetch(localUrl).then(r => r.blob());
+    const file = new File([blob], "vision.jpg", { type: "image/jpeg" });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(prev => ({ ...prev, image_url: file_url }));
+    setUploading(false);
   };
 
   const handleSave = async () => {
@@ -141,16 +138,32 @@ export default function VisionUploadModal({ vision, userEmail, onClose, onSave }
           {/* Image Upload */}
           <div className="mb-5">
             <div
-              className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all cursor-pointer ${
-                form.image_url ? "border-transparent" : "border-border hover:border-primary/40"
+              className={`aspect-video rounded-2xl overflow-hidden border-2 border-dashed transition-all ${
+                form.image_url ? "border-transparent" : "border-border hover:border-primary/40 cursor-pointer"
               }`}
-              onClick={() => !uploading && fileInputRef.current?.click()}
+              onClick={() => !uploading && !form.image_url && fileInputRef.current?.click()}
             >
               {form.image_url ? (
                 <div className="relative w-full h-full group">
                   <img src={form.image_url} alt="Vision" className="w-full h-full object-cover pointer-events-none" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-                  <p className="absolute bottom-2 left-3 text-[10px] text-white/70">Tap to change</p>
+                  {uploading ? (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setShowCropTool(true); }}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-primary text-background rounded-xl">
+                        <Crop className="w-3.5 h-3.5" /> Crop
+                      </button>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-black/60 text-white rounded-xl">
+                        <Upload className="w-3.5 h-3.5" /> Change
+                      </button>
+                    </div>
+                  )}
+                  <p className="absolute bottom-2 left-3 text-[10px] text-white/70 pointer-events-none">Hold to crop or change</p>
                 </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground bg-muted/20 min-h-[140px]">

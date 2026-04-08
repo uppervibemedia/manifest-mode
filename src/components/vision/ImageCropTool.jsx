@@ -292,7 +292,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black z-[9999] flex flex-col select-none"
+      className="fixed inset-0 bg-black z-[99999] flex flex-col select-none"
       onMouseMove={handlePointerMove}
       onMouseUp={handlePointerUp}
       onMouseLeave={handlePointerUp}

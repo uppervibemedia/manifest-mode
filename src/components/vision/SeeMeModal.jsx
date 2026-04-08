@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, Sparkles, RefreshCw, Download, Check, Loader2, Star, Image as ImageIcon, Crop, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -433,15 +434,14 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
 
   return (
     <>
-      <AnimatePresence>
-        {isCropModalOpen && activeCropBoxId && (
-          <ImageCropTool
-            imageUrl={activeCropBoxId === 'vision' ? visionBox.sourceUrl : selfBox.sourceUrl}
-            onSave={handleCropSave}
-            onCancel={handleCropCancel}
-          />
-        )}
-      </AnimatePresence>
+      {isCropModalOpen && activeCropBoxId && createPortal(
+        <ImageCropTool
+          imageUrl={activeCropBoxId === 'vision' ? visionBox.sourceUrl : selfBox.sourceUrl}
+          onSave={handleCropSave}
+          onCancel={handleCropCancel}
+        />,
+        document.body
+      )}
 
       <motion.div
         initial={{ opacity: 0 }}

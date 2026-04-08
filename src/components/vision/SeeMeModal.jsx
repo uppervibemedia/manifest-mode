@@ -928,14 +928,25 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                     className="rounded-2xl overflow-hidden mb-4 border border-primary/25 glow-gold"
                   >
                     {(() => {
-                      console.log('[SeeMeModal] RENDER VERIFY: About to render result image');
-                      console.log('[SeeMeModal] RENDER VERIFY: result source:', result?.substring(0, 50));
+                      // PRIORITY: savedFileUrl > savedAsset > resultImageUrl
+                      const displayUrl = savedFileUrl || savedAsset?.generated_image_url || result;
+                      
+                      console.log('[SeeMeModal] RENDER VERIFY: Image source decision');
+                      console.log('[SeeMeModal] RENDER VERIFY: resultImageUrl:', result?.substring(0, 50));
                       console.log('[SeeMeModal] RENDER VERIFY: savedFileUrl:', savedFileUrl?.substring(0, 50));
+                      console.log('[SeeMeModal] RENDER VERIFY: savedAsset.url:', savedAsset?.generated_image_url?.substring(0, 50));
                       console.log('[SeeMeModal] RENDER VERIFY: saved state:', saved);
-                      console.log('[SeeMeModal] RENDER VERIFY: Using source:', result?.substring(0, 50) + '...');
+                      console.log('[SeeMeModal] RENDER VERIFY: FINAL displayUrl used:', displayUrl?.substring(0, 50) + '...');
+                      console.log('[SeeMeModal] RENDER VERIFY: displayUrl source:', 
+                        savedFileUrl ? 'FROM savedFileUrl' : savedAsset?.generated_image_url ? 'FROM savedAsset' : 'FROM resultImageUrl (temporary)');
+                      
+                      if (saved && !savedFileUrl) {
+                        console.warn('[SeeMeModal] RENDER VERIFY: BUG CHECK - saved=true but savedFileUrl is empty!');
+                      }
+                      
                       return null;
                     })()}
-                    <img src={result} alt="Your vision" className="w-full h-auto" />
+                    <img src={displayUrl} alt="Your vision" className="w-full h-auto" />
                   </motion.div>
 
                   {/* Reference row */}
@@ -953,7 +964,7 @@ export default function SeeMeModal({ vision, userEmail, onClose, onSave }) {
                     )}
                     <div className="flex items-center justify-center text-muted-foreground text-lg">→</div>
                     <div className="flex-1 rounded-xl overflow-hidden border border-primary/30" style={{ aspectRatio: "1/1" }}>
-                      <img src={result} alt="Result" className="w-full h-full object-cover" />
+                      <img src={savedFileUrl || result} alt="Result" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </motion.div>

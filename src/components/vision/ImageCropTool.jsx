@@ -557,7 +557,7 @@ export default function ImageCropTool({ imageUrl, onSave, onCancel }) {
                 transformOrigin: "0 0",
                 willChange: "transform",
                 pointerEvents: activeHandleRef.current ? "none" : "auto",
-                opacity: 0.3,
+                opacity: 1,
                 touchAction: "none",
                 WebkitUserSelect: "none",
                 userSelect: "none",

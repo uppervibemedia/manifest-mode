@@ -51,8 +51,6 @@ export function UserProfileProvider({ children }) {
           userProfile = await base44.entities.UserProfile.create({
             user_email: u.email,
             onboarding_completed: false,
-            subscription_tier: "free",
-            billing_cycle: "monthly",
             ai_credits: 0,
             notifications_enabled: true,
             streak_count: 0,

@@ -120,25 +120,9 @@ export async function getOfferings() {
  * @param {string} [packageIdentifier] - optional, used to infer billing_cycle on purchase
  */
 async function _syncCustomerInfo(customerInfo, packageIdentifier) {
-  const active = customerInfo?.entitlements?.active || {};
-  const tier = entitlementsToTier(active);
-
-  // Infer billing cycle: prefer product identifier from the active entitlement,
-  // fall back to the purchased package identifier.
-  const productIdentifier =
-    active["premium"]?.productIdentifier ||
-    active["plus"]?.productIdentifier ||
-    packageIdentifier ||
-    "";
-  const billingCycle = inferBillingCycle(productIdentifier);
-  const renewalDate = extractRenewalDate(active);
-
-  await base44.functions.invoke("revenueCatSyncTier", {
-    tier,
-    billing_cycle: billingCycle,
-    renewal_date: renewalDate,
-    rc_user_id: customerInfo?.userID,
-  });
-
-  return tier;
+  // The native result confirms the purchase flow completed. Premium access is
+  // resolved independently by the backend using the authenticated account.
+  const response = await base44.functions.invoke("revenueCatSyncTier", {});
+  if (!response.data?.ok) throw new Error("Subscription verification failed");
+  return response.data.tier;
 }

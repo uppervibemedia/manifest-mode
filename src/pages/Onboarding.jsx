@@ -63,7 +63,6 @@ export default function Onboarding() {
       await base44.entities.UserProfile.create({
         user_email: user.email,
         goal_categories: selectedCategories,
-        subscription_tier: "free",
         onboarding_completed: false,
         streak_count: 0,
       });

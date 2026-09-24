@@ -91,6 +91,12 @@ export default function Profile() {
 
       await Promise.all(deletePromises);
 
+      let trainingSessions = await base44.entities.TrainingSession.filter({ created_by: user.email }, '-created_date', 100);
+      while (trainingSessions.length) {
+        await Promise.all(trainingSessions.map(session => base44.entities.TrainingSession.delete(session.id)));
+        trainingSessions = await base44.entities.TrainingSession.filter({ created_by: user.email }, '-created_date', 100);
+      }
+
       // Delete user profile
       const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
       if (profiles[0]) {

@@ -15,6 +15,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import { getInitialRoute, trackPageVisit } from '@/lib/dailyRoutingEngine';
 
 // Lazy load pages for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Training = lazy(() => import('./pages/Training'));
 const DailyShift = lazy(() => import('./pages/DailyShift'));
 const Vision = lazy(() => import('./pages/Vision'));
 const Progress = lazy(() => import('./pages/Progress'));
@@ -101,6 +103,8 @@ const AuthenticatedApp = () => {
               <Route path="/assessment" element={<Assessment />} />
               <Route path="/" element={<NewUserGate />} />
               <Route path="/score" element={<ScorePage />} />
+              <Route path="/today" element={<Dashboard />} />
+              <Route path="/train" element={<Training />} />
               <Route path="/daily-shift" element={<DailyShift />} />
               <Route path="/vision" element={<Vision />} />
               <Route path="/vision-vault" element={<VisionVault />} />

@@ -1,0 +1,22 @@
+{
+  "name": "TrainingSession",
+  "type": "object",
+  "properties": {
+    "client_session_id": { "type": "string" },
+    "game": { "type": "string", "enum": ["focus", "memory"] },
+    "score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "xp": { "type": "number", "minimum": 10, "maximum": 50 },
+    "session_date": { "type": "string", "format": "date" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "duration_seconds": { "type": "number", "minimum": 1 },
+    "hits": { "type": "number", "minimum": 0 },
+    "mistakes": { "type": "number", "minimum": 0 }
+  },
+  "required": ["client_session_id", "game", "score", "xp", "session_date", "completed_at"],
+  "rls": {
+    "create": { "$or": [{ "user_condition": { "role": "user" } }, { "user_condition": { "role": "admin" } }] },
+    "read": { "created_by": "{{user.email}}" },
+    "update": false,
+    "delete": { "created_by": "{{user.email}}" }
+  }
+}

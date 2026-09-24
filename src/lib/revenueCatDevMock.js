@@ -92,7 +92,7 @@ function delay(ms) {
 }
 
 // Auto-inject if ?rc_mock=1 is in URL
-if (typeof window !== "undefined") {
+if (import.meta.env.DEV && typeof window !== "undefined") {
   const params = new URLSearchParams(window.location.search);
   if (params.get("rc_mock") === "1") {
     const bridge = createMockBridge();

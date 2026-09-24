@@ -15,17 +15,17 @@ export function isNewDay(userEmail) {
 
 /**
  * Get the page to route to on app open
- * - New day: Daily Shift
- * - Same day: last visited page (or fallback to Daily Shift)
+ * - New day: Today
+ * - Same day: last visited page (or fallback to Today)
  */
 export function getInitialRoute(userEmail) {
   const today = getLocalToday();
 
   if (isNewDay(userEmail)) {
-    // New day: always go to Daily Shift
+    // New day: always go to Today
     localStorage.setItem(lastVisitKey(userEmail), today);
     localStorage.removeItem(lastPageKey(userEmail)); // Clear previous day's page
-    return '/daily-shift';
+    return '/today';
   }
 
   // Same day: try to restore last visited page
@@ -34,8 +34,8 @@ export function getInitialRoute(userEmail) {
     return lastPage;
   }
 
-  // Fallback to Daily Shift
-  return '/daily-shift';
+  // Fallback to Today
+  return '/today';
 }
 
 /**
@@ -52,6 +52,8 @@ export function trackPageVisit(pathname, userEmail) {
  */
 function isValidPage(pathname) {
   const validPages = [
+    '/today',
+    '/train',
     '/daily-shift',
     '/vision',
     '/progress',

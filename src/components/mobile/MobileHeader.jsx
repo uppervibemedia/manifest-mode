@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Sparkles } from 'lucide-react';
+import { ChevronLeft, Sparkles, User } from 'lucide-react';
 
-const TAB_ROOTS = ['/daily-shift', '/vision', '/progress', '/future-self', '/profile'];
+const TAB_ROOTS = ['/today', '/train', '/daily-shift', '/vision', '/progress', '/future-self', '/profile'];
 
 export default function MobileHeader() {
   const location = useLocation();
@@ -13,15 +13,15 @@ export default function MobileHeader() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[60] max-w-md mx-auto glass-card border-b border-border"
+      className="fixed top-0 left-0 right-0 z-[60] max-w-md mx-auto glass-card border-b border-border mm-app-header"
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="flex items-center justify-between px-5 h-14">
         {isTabRoot ? (
-          <div className="flex items-center gap-2">
+          <><div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <span className="font-playfair text-lg font-semibold gold-text">Manifest Mode</span>
-          </div>
+            <span className="text-sm font-semibold tracking-tight">manifest<span className="text-primary">mode</span><span className="mm-brand-dot">®</span></span>
+          </div><button onClick={() => navigate("/profile")} aria-label="Open profile" className="mm-profile-button"><User size={18} /></button></>
         ) : (
           <>
             <button
@@ -44,6 +44,8 @@ export default function MobileHeader() {
 
 function getPageTitle(pathname) {
   const titles = {
+    '/train': 'Mind training',
+    '/today': 'Today',
     '/daily-shift': 'Daily Shift',
     '/vision': 'Vision',
     '/vision-vault': 'Vision Vault',

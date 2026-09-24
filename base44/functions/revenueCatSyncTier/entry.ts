@@ -1,56 +1,26 @@
-/**
- * Called from the frontend after a RevenueCat purchase, restore, or app-launch sync.
- * Updates the authenticated user's UserProfile with the resolved subscription state.
- *
- * Accepts:
- *   tier          — "free" | "supporter" | "premium"
- *   billing_cycle — "monthly" | "annual"  (optional, defaults to "monthly")
- *   renewal_date  — ISO string or null    (optional, Apple-managed expiry date)
- *   rc_user_id    — RevenueCat user ID    (optional, stored for debugging)
- */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
-
-const VALID_TIERS = ['free', 'supporter', 'premium'];
+import { canSyncAppleProfile, fetchAppleSubscription } from './subscriptionState.js';
 
 Deno.serve(async (req) => {
+  if (req.method !== 'POST') return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  const base44 = createClientFromRequest(req);
+  let user;
+  try { user = await base44.auth.me(); } catch { return Response.json({ error: 'Unauthorized' }, { status: 401 }); }
+  if (!user?.email) return Response.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { tier, billing_cycle, renewal_date, rc_user_id } = await req.json();
-
-    if (!VALID_TIERS.includes(tier)) {
-      return Response.json({ error: `Invalid tier: ${tier}` }, { status: 400 });
-    }
-
     const profiles = await base44.asServiceRole.entities.UserProfile.filter({ user_email: user.email });
-    if (!profiles[0]) return Response.json({ error: 'Profile not found' }, { status: 404 });
-
-    const isFree = tier === 'free';
-
-    const updates = {
-      subscription_tier: tier,
-      billing_platform: isFree ? 'none' : 'apple',
-      billing_cycle: isFree ? 'monthly' : (billing_cycle || 'monthly'),
-      renewal_date: isFree ? null : (renewal_date || null),
-    };
-
-    // Clear Stripe fields when Apple takes over
-    if (!isFree) {
-      updates.stripe_subscription_id = null;
-    }
-
-    // Downgrade: also clear trial state
-    if (isFree) {
-      updates.trial_ends_at = null;
-      updates.stripe_subscription_id = null;
-    }
-
-    await base44.asServiceRole.entities.UserProfile.update(profiles[0].id, updates);
-
-    return Response.json({ ok: true, tier });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    const profile = profiles[0];
+    if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+    if (!canSyncAppleProfile(profile)) return Response.json({ ok: true, tier: profile.subscription_tier, unchanged: true });
+    // Ignore all submitted tiers, dates and RevenueCat user IDs. The existing native
+    // bridge contract uses the authenticated email as the RevenueCat app_user_id.
+    const updates = await fetchAppleSubscription(user.email, {
+      apiKey: Deno.env.get('REVENUECAT_SECRET_API_KEY'),
+      allowSandbox: Deno.env.get('REVENUECAT_ALLOW_SANDBOX') === 'true',
+    });
+    await base44.asServiceRole.entities.UserProfile.update(profile.id, updates);
+    return Response.json({ ok: true, tier: updates.subscription_tier });
+  } catch {
+    return Response.json({ error: 'Unable to verify your subscription. Please try again.' }, { status: 503 });
   }
 });

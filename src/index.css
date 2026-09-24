@@ -112,3 +112,14 @@
 ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.3); border-radius: 2px; }
 
 /* Safe area support for mobile — handled via inline styles in AppLayout */
+/* Solid chrome keeps controls readable over scrolling content. */
+.mm-app-header, .mm-bottom-nav { background: #121713f5; color: #f6f3e9; border-color: #ffffff0d; }
+.mm-app-header .text-primary, .mm-bottom-nav .text-primary { color: #e7c77c; }
+.mm-bottom-nav .text-muted-foreground { color: #939f92; }
+.mm-app-shell { background: #101411; }
+.mm-profile-button { border: 1px solid #ffffff18; border-radius: 50%; display: grid; place-items: center; color: #c9d0c4; }
+.mm-brand-dot { font-size: 8px; vertical-align: super; margin-left: 2px; color: #929e8e; }
+.mm-bottom-nav button[aria-current="page"] { background: #e7c77c0b; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+.mm-app-header .text-foreground { color: #f6f3e9; }
